@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Pencil, Check } from 'lucide-react'
 import { useOrder } from '../hooks/useOrder'
 import { useOrderItems } from '../hooks/useOrderItems'
 import { useWorkLogs } from '../hooks/useWorkLogs'
@@ -32,6 +32,10 @@ export default function OrderDetailPage() {
   const { getPriceForVariant } = useClientPricing(order?.client_id ?? null)
   const [showItemForm, setShowItemForm] = useState(false)
   const [showLogForm, setShowLogForm] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [editDesc, setEditDesc] = useState('')
+  const [editDate, setEditDate] = useState('')
+  const [editNotes, setEditNotes] = useState('')
 
   if (loading) {
     return (
@@ -60,6 +64,27 @@ export default function OrderDetailPage() {
     await updateOrder({ [field]: value })
   }
 
+  const startEdit = () => {
+    setEditDesc(order.description ?? '')
+    setEditDate(order.planned_date ?? '')
+    setEditNotes(order.notes ?? '')
+    setEditing(true)
+  }
+
+  const saveEdit = async () => {
+    await updateOrder({
+      description: editDesc || null,
+      planned_date: editDate || null,
+      notes: editNotes || null,
+    })
+    setEditing(false)
+  }
+
+  const handleDeleteItem = async (itemId: string) => {
+    if (!confirm('Usunąć ten element?')) return
+    await deleteItem(itemId)
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -73,10 +98,37 @@ export default function OrderDetailPage() {
             <p className="text-sm text-zinc-400">{getClientName(order as unknown as Record<string, unknown>)} &middot; {order.description || 'Brak opisu'}</p>
           </div>
         </div>
-        <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium text-white ${statusColors[order.status]}`}>
-          {statusLabels[order.status]}
+        <div className="flex items-center gap-2">
+          <button onClick={editing ? saveEdit : startEdit}
+            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 transition-colors">
+            {editing ? <><Check className="h-3.5 w-3.5" /> Zapisz</> : <><Pencil className="h-3.5 w-3.5" /> Edytuj</>}
+          </button>
+          <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium text-white ${statusColors[order.status]}`}>
+            {statusLabels[order.status]}
+          </div>
         </div>
       </div>
+
+      {/* Editable fields */}
+      {editing && (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 rounded-lg bg-zinc-800 p-4">
+          <div>
+            <label className="block text-xs font-medium text-zinc-400 uppercase mb-1">Opis</label>
+            <input type="text" value={editDesc} onChange={(e) => setEditDesc(e.target.value)}
+              className="w-full rounded-lg bg-zinc-900 border border-zinc-700 px-3 py-2 text-sm text-zinc-200 outline-none focus:ring-2 focus:ring-amber-500/50" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-zinc-400 uppercase mb-1">Planowana data</label>
+            <input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)}
+              className="w-full rounded-lg bg-zinc-900 border border-zinc-700 px-3 py-2 text-sm text-zinc-200 outline-none focus:ring-2 focus:ring-amber-500/50" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-zinc-400 uppercase mb-1">Notatki</label>
+            <input type="text" value={editNotes} onChange={(e) => setEditNotes(e.target.value)}
+              className="w-full rounded-lg bg-zinc-900 border border-zinc-700 px-3 py-2 text-sm text-zinc-200 outline-none focus:ring-2 focus:ring-amber-500/50" />
+          </div>
+        </div>
+      )}
 
       {/* Status flow */}
       <div className="flex flex-wrap gap-2">
@@ -149,7 +201,7 @@ export default function OrderDetailPage() {
                   <td className="px-3 py-2 text-right text-zinc-300">{Number(item.price_per_m2).toFixed(0)}</td>
                   <td className="px-3 py-2 text-right font-medium text-amber-400">{Number(item.total_price).toFixed(2)}</td>
                   <td className="px-3 py-2">
-                    <button onClick={() => deleteItem(item.id)} className="rounded p-1 text-zinc-500 hover:text-red-400 hover:bg-zinc-700">
+                    <button onClick={() => handleDeleteItem(item.id)} className="rounded p-1 text-zinc-500 hover:text-red-400 hover:bg-zinc-700">
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </td>

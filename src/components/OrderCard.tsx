@@ -16,7 +16,13 @@ function getClientName(order: Order): string {
   return client?.name ?? '—'
 }
 
+function getOrderValue(order: Order): number {
+  const items = (order as unknown as Record<string, unknown>).order_items as { total_price: number }[] | undefined
+  return items?.reduce((s, i) => s + Number(i.total_price), 0) ?? 0
+}
+
 export default function OrderCard({ order }: { order: Order }) {
+  const value = getOrderValue(order)
   return (
     <Link
       to={`/zamowienia/${order.id}`}
@@ -32,9 +38,12 @@ export default function OrderCard({ order }: { order: Order }) {
         )}
       </div>
       <p className="mt-1 text-sm text-zinc-200 line-clamp-1">{order.description || 'Brak opisu'}</p>
-      <div className="mt-2 flex items-center gap-1 text-xs text-zinc-400">
-        <User className="h-3 w-3" />
-        {getClientName(order)}
+      <div className="mt-2 flex items-center justify-between">
+        <span className="flex items-center gap-1 text-xs text-zinc-400">
+          <User className="h-3 w-3" />
+          {getClientName(order)}
+        </span>
+        {value > 0 && <span className="text-xs font-medium text-emerald-400">{value.toFixed(0)} zł</span>}
       </div>
     </Link>
   )

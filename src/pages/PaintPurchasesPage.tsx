@@ -58,6 +58,12 @@ export default function PaintPurchasesPage() {
               {purchases.length === 0 && (
                 <tr><td colSpan={6} className="px-4 py-8 text-center text-zinc-500">Brak zakupów</td></tr>
               )}
+              {purchases.length > 0 && (
+                <tr className="bg-zinc-800/30 font-medium">
+                  <td className="px-4 py-2 text-zinc-300" colSpan={5}>Razem</td>
+                  <td className="px-4 py-2 text-right font-medium text-amber-400">{purchases.reduce((s, p) => s + Number(p.total), 0).toFixed(2)} zł</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

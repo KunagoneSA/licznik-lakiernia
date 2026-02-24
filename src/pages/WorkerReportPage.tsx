@@ -105,6 +105,14 @@ export default function WorkerReportPage() {
               {filtered.length === 0 && (
                 <tr><td colSpan={6} className="px-4 py-8 text-center text-zinc-500">Brak wpisów</td></tr>
               )}
+              {filtered.length > 0 && (
+                <tr className="bg-zinc-800/30 font-medium">
+                  <td className="px-4 py-2 text-zinc-300" colSpan={3}>Razem</td>
+                  <td className="px-4 py-2 text-right text-zinc-300">{filtered.reduce((s, l) => s + Number(l.hours), 0).toFixed(1)}</td>
+                  <td className="px-4 py-2 text-right text-zinc-400">—</td>
+                  <td className="px-4 py-2 text-right font-medium text-amber-400">{filtered.reduce((s, l) => s + Number(l.cost), 0).toFixed(2)} zł</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
