@@ -4,6 +4,12 @@ import AppLayout from './layouts/AppLayout'
 import ProtectedRoute from './components/ProtectedRoute'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
+import OrdersListPage from './pages/OrdersListPage'
+import OrderDetailPage from './pages/OrderDetailPage'
+import WorkerReportPage from './pages/WorkerReportPage'
+import FinancePage from './pages/FinancePage'
+import ClientsPage from './pages/ClientsPage'
+import PaintPurchasesPage from './pages/PaintPurchasesPage'
 
 export const router = createBrowserRouter([
   {
@@ -19,6 +25,12 @@ export const router = createBrowserRouter([
         ),
         children: [
           { index: true, element: <DashboardPage /> },
+          { path: 'zamowienia', element: <OrdersListPage /> },
+          { path: 'zamowienia/:id', element: <OrderDetailPage /> },
+          { path: 'raport', element: <WorkerReportPage /> },
+          { path: 'finanse', element: <FinancePage /> },
+          { path: 'klienci', element: <ClientsPage /> },
+          { path: 'lakiery', element: <PaintPurchasesPage /> },
         ],
       },
     ],
