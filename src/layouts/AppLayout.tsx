@@ -1,18 +1,20 @@
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
-import { LayoutDashboard, ClipboardList, Users, BarChart3, ShoppingCart, Menu, X, Paintbrush } from 'lucide-react'
+import { LayoutDashboard, ClipboardList, Users, BarChart3, ShoppingCart, Menu, X, Paintbrush, LogOut } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Tablica' },
-  { to: '/zamowienia', icon: ClipboardList, label: 'Zamowienia' },
-  { to: '/raport', icon: BarChart3, label: 'Raport pracownikow' },
+  { to: '/zamowienia', icon: ClipboardList, label: 'Zamówienia' },
+  { to: '/raport', icon: BarChart3, label: 'Raport pracowników' },
   { to: '/finanse', icon: BarChart3, label: 'Finanse' },
   { to: '/klienci', icon: Users, label: 'Klienci i cenniki' },
-  { to: '/lakiery', icon: ShoppingCart, label: 'Zakupy lakierow' },
+  { to: '/lakiery', icon: ShoppingCart, label: 'Zakupy lakierów' },
 ] as const
 
 export default function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const { signOut } = useAuth()
 
   const renderNavLink = (
     { to, icon: Icon, label }: typeof navItems[number],
@@ -26,8 +28,8 @@ export default function AppLayout() {
       className={({ isActive }) =>
         `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
           isActive
-            ? 'bg-slate-800 text-amber-400'
-            : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
+            ? 'bg-amber-500/15 text-amber-400'
+            : 'text-slate-400 hover:bg-zinc-800 hover:text-slate-200'
         }`
       }
     >
@@ -37,20 +39,26 @@ export default function AppLayout() {
   )
 
   return (
-    <div className="flex h-screen bg-slate-900">
+    <div className="flex h-screen bg-zinc-950">
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex md:w-64 md:flex-col md:border-r md:border-slate-800 bg-slate-950">
-        <div className="flex h-14 items-center gap-2 px-5 border-b border-slate-800">
+      <aside className="hidden md:flex md:w-64 md:flex-col md:border-r md:border-zinc-800 bg-zinc-900">
+        <div className="flex h-14 items-center gap-2 px-5 border-b border-zinc-800">
           <div className="h-7 w-7 rounded-md bg-amber-500 flex items-center justify-center">
             <Paintbrush className="h-4 w-4 text-slate-900" />
           </div>
-          <span className="text-sm font-semibold tracking-wide text-slate-100 uppercase">
+          <span className="text-sm font-semibold tracking-wide text-zinc-100 uppercase">
             Lakiernia
           </span>
         </div>
         <nav className="flex-1 py-4 px-3 space-y-1">
           {navItems.map((item) => renderNavLink(item))}
         </nav>
+        <div className="px-3 pb-4">
+          <button onClick={signOut} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300 transition-colors">
+            <LogOut className="h-[18px] w-[18px]" />
+            Wyloguj się
+          </button>
+        </div>
       </aside>
 
       {/* Mobile overlay */}
@@ -59,30 +67,36 @@ export default function AppLayout() {
       )}
 
       {/* Mobile sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-950 transform transition-transform duration-200 ease-out md:hidden ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="flex h-14 items-center justify-between px-5 border-b border-slate-800">
+      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-zinc-900 flex flex-col transform transition-transform duration-200 ease-out md:hidden ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="flex h-14 items-center justify-between px-5 border-b border-zinc-800">
           <div className="flex items-center gap-2">
             <div className="h-7 w-7 rounded-md bg-amber-500 flex items-center justify-center">
               <Paintbrush className="h-4 w-4 text-slate-900" />
             </div>
-            <span className="text-sm font-semibold tracking-wide text-slate-100 uppercase">Lakiernia</span>
+            <span className="text-sm font-semibold tracking-wide text-zinc-100 uppercase">Lakiernia</span>
           </div>
-          <button onClick={() => setMobileOpen(false)} className="rounded-md p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800">
+          <button onClick={() => setMobileOpen(false)} className="rounded-md p-1.5 text-slate-400 hover:text-slate-200 hover:bg-zinc-800">
             <X className="h-5 w-5" />
           </button>
         </div>
-        <nav className="py-4 px-3 space-y-1">
+        <nav className="flex-1 py-4 px-3 space-y-1">
           {navItems.map((item) => renderNavLink(item, () => setMobileOpen(false)))}
         </nav>
+        <div className="px-3 pb-4">
+          <button onClick={signOut} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300 transition-colors">
+            <LogOut className="h-[18px] w-[18px]" />
+            Wyloguj się
+          </button>
+        </div>
       </aside>
 
       {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        <header className="flex h-14 items-center gap-3 border-b border-slate-800 bg-slate-900 px-4 md:hidden">
-          <button onClick={() => setMobileOpen(true)} className="rounded-md p-1.5 text-slate-400 hover:bg-slate-800">
+        <header className="flex h-14 items-center gap-3 border-b border-zinc-800 bg-zinc-950 px-4 md:hidden">
+          <button onClick={() => setMobileOpen(true)} className="rounded-md p-1.5 text-slate-400 hover:bg-zinc-800">
             <Menu className="h-5 w-5" />
           </button>
-          <span className="text-sm font-semibold tracking-wide text-slate-100 uppercase">Lakiernia</span>
+          <span className="text-sm font-semibold tracking-wide text-zinc-100 uppercase">Lakiernia</span>
         </header>
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
           <Outlet />

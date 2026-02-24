@@ -15,12 +15,12 @@ export default function DashboardStats({ orders }: { orders: Order[] }) {
   return (
     <div className="grid grid-cols-3 gap-3">
       {stats.map((stat) => (
-        <div key={stat.label} className="rounded-lg bg-slate-800 p-4">
+        <div key={stat.label} className="rounded-lg bg-zinc-800 p-4">
           <div className="flex items-center gap-2">
             <stat.icon className={`h-5 w-5 ${stat.color}`} />
-            <span className="text-xs text-slate-400 uppercase tracking-wide">{stat.label}</span>
+            <span className="text-xs text-zinc-400 uppercase tracking-wide">{stat.label}</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-slate-100">{stat.value}</p>
+          <p className="mt-2 text-2xl font-bold text-zinc-100">{stat.value}</p>
         </div>
       ))}
     </div>

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { X } from 'lucide-react'
 
 const workerNames = ['Kasia', 'Lukasz', 'Michal', 'Fabian']
-const operations = ['Przygotowanie', 'Podklad', 'Szlifowanie', 'Lakierowanie', 'Pakowanie', 'Sprzatanie', 'Inne']
+const operations = ['Przygotowanie', 'Podkład', 'Szlifowanie', 'Lakierowanie', 'Pakowanie', 'Sprzątanie', 'Inne']
 const defaultRates: Record<string, number> = { Kasia: 35, Lukasz: 50, Michal: 50, Fabian: 20 }
 
 interface Props {
@@ -42,64 +42,64 @@ export default function WorkLogFormModal({ orderId, onClose, onSave }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
-      <div className="w-full max-w-md rounded-xl bg-slate-800 border border-slate-700 p-6" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-md rounded-xl bg-zinc-800 border border-zinc-700 p-6" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-slate-100">Dodaj etap pracy</h2>
-          <button onClick={onClose} className="rounded-md p-1 text-slate-400 hover:bg-slate-700"><X className="h-5 w-5" /></button>
+          <h2 className="text-lg font-semibold text-zinc-100">Dodaj etap pracy</h2>
+          <button onClick={onClose} className="rounded-md p-1 text-zinc-400 hover:bg-zinc-700"><X className="h-5 w-5" /></button>
         </div>
 
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-400 uppercase mb-1">Pracownik</label>
+              <label className="block text-xs font-medium text-zinc-400 uppercase mb-1">Pracownik</label>
               <select value={workerName} onChange={(e) => handleWorkerChange(e.target.value)}
-                className="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-amber-500/50">
+                className="w-full rounded-lg bg-zinc-900 border border-zinc-700 px-3 py-2 text-sm text-zinc-200 outline-none focus:ring-2 focus:ring-amber-500/50">
                 {workerNames.map((n) => <option key={n} value={n}>{n}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-400 uppercase mb-1">Operacja</label>
+              <label className="block text-xs font-medium text-zinc-400 uppercase mb-1">Operacja</label>
               <select value={operation} onChange={(e) => setOperation(e.target.value)}
-                className="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-amber-500/50">
+                className="w-full rounded-lg bg-zinc-900 border border-zinc-700 px-3 py-2 text-sm text-zinc-200 outline-none focus:ring-2 focus:ring-amber-500/50">
                 {operations.map((o) => <option key={o} value={o}>{o}</option>)}
               </select>
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-400 uppercase mb-1">Data</label>
+            <label className="block text-xs font-medium text-zinc-400 uppercase mb-1">Data</label>
             <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
-              className="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-amber-500/50" />
+              className="w-full rounded-lg bg-zinc-900 border border-zinc-700 px-3 py-2 text-sm text-zinc-200 outline-none focus:ring-2 focus:ring-amber-500/50" />
           </div>
 
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-400 uppercase mb-1">Godziny</label>
+              <label className="block text-xs font-medium text-zinc-400 uppercase mb-1">Godziny</label>
               <input type="number" step="0.5" value={hours || ''} onChange={(e) => setHours(Number(e.target.value))}
-                className="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-amber-500/50" />
+                className="w-full rounded-lg bg-zinc-900 border border-zinc-700 px-3 py-2 text-sm text-zinc-200 outline-none focus:ring-2 focus:ring-amber-500/50" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-400 uppercase mb-1">Stawka (zl/h)</label>
+              <label className="block text-xs font-medium text-zinc-400 uppercase mb-1">Stawka (zl/h)</label>
               <input type="number" value={hourlyRate} onChange={(e) => setHourlyRate(Number(e.target.value))}
-                className="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-amber-500/50" />
+                className="w-full rounded-lg bg-zinc-900 border border-zinc-700 px-3 py-2 text-sm text-zinc-200 outline-none focus:ring-2 focus:ring-amber-500/50" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-400 uppercase mb-1">m2 (opcj.)</label>
+              <label className="block text-xs font-medium text-zinc-400 uppercase mb-1">m2 (opcj.)</label>
               <input type="number" step="0.01" value={m2Painted} onChange={(e) => setM2Painted(e.target.value)}
-                className="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-amber-500/50" />
+                className="w-full rounded-lg bg-zinc-900 border border-zinc-700 px-3 py-2 text-sm text-zinc-200 outline-none focus:ring-2 focus:ring-amber-500/50" />
             </div>
           </div>
 
-          <div className="rounded-lg bg-slate-900 p-3 text-sm">
-            <span className="text-slate-500">Koszt:</span>{' '}
+          <div className="rounded-lg bg-zinc-900 p-3 text-sm">
+            <span className="text-zinc-500">Koszt:</span>{' '}
             <span className="text-amber-400 font-bold">{cost.toFixed(2)} zl</span>
           </div>
         </div>
 
         <div className="mt-4 flex justify-end gap-2">
-          <button onClick={onClose} className="rounded-lg px-4 py-2 text-sm text-slate-400 hover:bg-slate-700">Anuluj</button>
+          <button onClick={onClose} className="rounded-lg px-4 py-2 text-sm text-zinc-400 hover:bg-zinc-700">Anuluj</button>
           <button onClick={handleSave} disabled={!hours}
-            className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-amber-400 disabled:opacity-50">
+            className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-amber-400 disabled:opacity-50">
             Dodaj
           </button>
         </div>

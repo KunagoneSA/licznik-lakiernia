@@ -11,10 +11,10 @@ import WorkLogFormModal from '../components/WorkLogFormModal'
 import type { OrderStatus } from '../types/database'
 
 const statusLabels: Record<OrderStatus, string> = {
-  nowe: 'Nowe', w_trakcie: 'W trakcie', gotowe: 'Gotowe', wydane: 'Wydane', 'zapłacone': 'Zaplacone',
+  nowe: 'Nowe', w_trakcie: 'W trakcie', gotowe: 'Gotowe', wydane: 'Wydane', 'zapłacone': 'Zapłacone',
 }
 const statusColors: Record<OrderStatus, string> = {
-  nowe: 'bg-blue-500', w_trakcie: 'bg-amber-500', gotowe: 'bg-emerald-500', wydane: 'bg-violet-500', 'zapłacone': 'bg-slate-500',
+  nowe: 'bg-blue-500', w_trakcie: 'bg-amber-500', gotowe: 'bg-emerald-500', wydane: 'bg-violet-500', 'zapłacone': 'bg-zinc-500',
 }
 const statusFlow: OrderStatus[] = ['nowe', 'w_trakcie', 'gotowe', 'wydane', 'zapłacone']
 
@@ -36,12 +36,12 @@ export default function OrderDetailPage() {
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-700 border-t-amber-500" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-700 border-t-amber-500" />
       </div>
     )
   }
 
-  if (!order) return <p className="py-8 text-center text-red-400">Zamowienie nie znalezione</p>
+  if (!order) return <p className="py-8 text-center text-red-400">Zamówienie nie znalezione</p>
 
   const totalM2 = items.reduce((s, i) => s + Number(i.m2), 0)
   const totalValue = items.reduce((s, i) => s + Number(i.total_price), 0)
@@ -65,12 +65,12 @@ export default function OrderDetailPage() {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <Link to="/zamowienia" className="rounded-md p-1.5 text-slate-400 hover:bg-slate-800">
+          <Link to="/zamowienia" className="rounded-md p-1.5 text-zinc-400 hover:bg-zinc-800">
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>
-            <h1 className="text-xl font-bold text-slate-100">Zamowienie #{order.number}</h1>
-            <p className="text-sm text-slate-400">{getClientName(order as unknown as Record<string, unknown>)} &middot; {order.description || 'Brak opisu'}</p>
+            <h1 className="text-xl font-bold text-zinc-100">Zamówienie #{order.number}</h1>
+            <p className="text-sm text-zinc-400">{getClientName(order as unknown as Record<string, unknown>)} &middot; {order.description || 'Brak opisu'}</p>
           </div>
         </div>
         <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium text-white ${statusColors[order.status]}`}>
@@ -88,7 +88,7 @@ export default function OrderDetailPage() {
             className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
               order.status === s
                 ? `${statusColors[s]} text-white`
-                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
             }`}
           >
             {statusLabels[s]}
@@ -97,18 +97,18 @@ export default function OrderDetailPage() {
       </div>
 
       {/* Checklist */}
-      <div className="flex flex-wrap gap-4 rounded-lg bg-slate-800 p-4">
+      <div className="flex flex-wrap gap-4 rounded-lg bg-zinc-800 p-4">
         {[
           { field: 'material_provided', label: 'Material dostarczony', value: order.material_provided },
           { field: 'paints_provided', label: 'Lakiery dostarczone', value: order.paints_provided },
           { field: 'dimensions_entered', label: 'Wymiary wpisane', value: order.dimensions_entered },
         ].map(({ field, label, value }) => (
-          <label key={field} className="flex items-center gap-2 text-sm text-slate-300">
+          <label key={field} className="flex items-center gap-2 text-sm text-zinc-300">
             <input
               type="checkbox"
               checked={value}
               onChange={(e) => handleCheckbox(field, e.target.checked)}
-              className="rounded border-slate-600 bg-slate-900 text-amber-500 focus:ring-amber-500/50"
+              className="rounded border-zinc-600 bg-zinc-900 text-amber-500 focus:ring-amber-500/50"
             />
             {label}
           </label>
@@ -118,45 +118,45 @@ export default function OrderDetailPage() {
       {/* Elements table */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">Elementy</h2>
+          <h2 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide">Elementy</h2>
           <button onClick={() => setShowItemForm(true)}
             className="flex items-center gap-1 rounded-lg bg-amber-500/20 px-3 py-1.5 text-xs font-medium text-amber-400 hover:bg-amber-500/30">
             <Plus className="h-3.5 w-3.5" /> Dodaj element
           </button>
         </div>
-        <div className="overflow-x-auto rounded-lg border border-slate-800">
+        <div className="overflow-x-auto rounded-lg border border-zinc-800">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-800 bg-slate-800/50">
-                <th className="px-3 py-2 text-left text-xs font-medium text-slate-400">Dl (mm)</th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-slate-400">Szer (mm)</th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-slate-400">Szt</th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-slate-400">Rodzaj</th>
-                <th className="px-3 py-2 text-right text-xs font-medium text-slate-400">m2</th>
-                <th className="px-3 py-2 text-right text-xs font-medium text-slate-400">Cena/m2</th>
-                <th className="px-3 py-2 text-right text-xs font-medium text-slate-400">Razem</th>
+              <tr className="border-b border-zinc-800 bg-zinc-800/50">
+                <th className="px-3 py-2 text-left text-xs font-medium text-zinc-400">Dl (mm)</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-zinc-400">Szer (mm)</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-zinc-400">Szt</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-zinc-400">Rodzaj</th>
+                <th className="px-3 py-2 text-right text-xs font-medium text-zinc-400">m2</th>
+                <th className="px-3 py-2 text-right text-xs font-medium text-zinc-400">Cena/m2</th>
+                <th className="px-3 py-2 text-right text-xs font-medium text-zinc-400">Razem</th>
                 <th className="px-3 py-2 w-8"></th>
               </tr>
             </thead>
             <tbody>
               {items.map((item) => (
-                <tr key={item.id} className="border-b border-slate-800/50">
-                  <td className="px-3 py-2 text-slate-200">{item.length_mm}</td>
-                  <td className="px-3 py-2 text-slate-200">{item.width_mm}</td>
-                  <td className="px-3 py-2 text-slate-200">{item.quantity}</td>
-                  <td className="px-3 py-2 text-slate-300">{(item.variant as { name: string } | undefined)?.name ?? '—'}</td>
-                  <td className="px-3 py-2 text-right text-slate-300">{Number(item.m2).toFixed(4)}</td>
-                  <td className="px-3 py-2 text-right text-slate-300">{Number(item.price_per_m2).toFixed(0)}</td>
+                <tr key={item.id} className="border-b border-zinc-800/50">
+                  <td className="px-3 py-2 text-zinc-200">{item.length_mm}</td>
+                  <td className="px-3 py-2 text-zinc-200">{item.width_mm}</td>
+                  <td className="px-3 py-2 text-zinc-200">{item.quantity}</td>
+                  <td className="px-3 py-2 text-zinc-300">{(item.variant as { name: string } | undefined)?.name ?? '—'}</td>
+                  <td className="px-3 py-2 text-right text-zinc-300">{Number(item.m2).toFixed(4)}</td>
+                  <td className="px-3 py-2 text-right text-zinc-300">{Number(item.price_per_m2).toFixed(0)}</td>
                   <td className="px-3 py-2 text-right font-medium text-amber-400">{Number(item.total_price).toFixed(2)}</td>
                   <td className="px-3 py-2">
-                    <button onClick={() => deleteItem(item.id)} className="rounded p-1 text-slate-500 hover:text-red-400 hover:bg-slate-700">
+                    <button onClick={() => deleteItem(item.id)} className="rounded p-1 text-zinc-500 hover:text-red-400 hover:bg-zinc-700">
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </td>
                 </tr>
               ))}
               {items.length === 0 && (
-                <tr><td colSpan={8} className="px-3 py-6 text-center text-slate-500">Brak elementow</td></tr>
+                <tr><td colSpan={8} className="px-3 py-6 text-center text-zinc-500">Brak elementów</td></tr>
               )}
             </tbody>
           </table>
@@ -166,15 +166,15 @@ export default function OrderDetailPage() {
       {/* Summary */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {[
-          { label: 'Lakier m2', value: totalM2.toFixed(2), color: 'text-slate-200' },
-          { label: 'Wartosc', value: `${totalValue.toFixed(2)} zl`, color: 'text-amber-400' },
+          { label: 'Lakier m\u00B2', value: totalM2.toFixed(2), color: 'text-zinc-200' },
+          { label: 'Wartość', value: `${totalValue.toFixed(2)} zl`, color: 'text-amber-400' },
           { label: 'Koszty pracy', value: `${totalLaborCost.toFixed(2)} zl`, color: 'text-red-400' },
-          { label: 'Godziny', value: totalHours.toFixed(1), color: 'text-slate-200' },
+          { label: 'Godziny', value: totalHours.toFixed(1), color: 'text-zinc-200' },
           { label: 'Zysk', value: `${profit.toFixed(2)} zl`, color: profit >= 0 ? 'text-emerald-400' : 'text-red-400' },
           { label: 'Zysk/h', value: `${profitPerHour.toFixed(2)} zl`, color: profitPerHour >= 0 ? 'text-emerald-400' : 'text-red-400' },
         ].map((s) => (
-          <div key={s.label} className="rounded-lg bg-slate-800 p-3">
-            <p className="text-xs text-slate-500 uppercase">{s.label}</p>
+          <div key={s.label} className="rounded-lg bg-zinc-800 p-3">
+            <p className="text-xs text-zinc-500 uppercase">{s.label}</p>
             <p className={`mt-1 text-lg font-bold ${s.color}`}>{s.value}</p>
           </div>
         ))}
@@ -183,7 +183,7 @@ export default function OrderDetailPage() {
       {/* Work logs */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">Etapy pracy</h2>
+          <h2 className="text-sm font-semibold text-zinc-300 uppercase tracking-wide">Etapy pracy</h2>
           <button onClick={() => setShowLogForm(true)}
             className="flex items-center gap-1 rounded-lg bg-amber-500/20 px-3 py-1.5 text-xs font-medium text-amber-400 hover:bg-amber-500/30">
             <Plus className="h-3.5 w-3.5" /> Dodaj etap
@@ -191,15 +191,15 @@ export default function OrderDetailPage() {
         </div>
         <div className="space-y-2">
           {logs.map((log) => (
-            <div key={log.id} className="flex items-center gap-4 rounded-lg bg-slate-800 p-3">
-              <span className="text-xs text-slate-500">{new Date(log.date).toLocaleDateString('pl-PL')}</span>
-              <span className="text-sm font-medium text-slate-200">{log.worker_name}</span>
-              <span className="rounded-full bg-slate-700 px-2 py-0.5 text-xs text-slate-300">{log.operation}</span>
-              <span className="ml-auto text-sm text-slate-400">{log.hours}h x {log.hourly_rate} zl</span>
+            <div key={log.id} className="flex items-center gap-4 rounded-lg bg-zinc-800 p-3">
+              <span className="text-xs text-zinc-500">{new Date(log.date).toLocaleDateString('pl-PL')}</span>
+              <span className="text-sm font-medium text-zinc-200">{log.worker_name}</span>
+              <span className="rounded-full bg-zinc-700 px-2 py-0.5 text-xs text-zinc-300">{log.operation}</span>
+              <span className="ml-auto text-sm text-zinc-400">{log.hours}h x {log.hourly_rate} zl</span>
               <span className="text-sm font-medium text-amber-400">{Number(log.cost).toFixed(2)} zl</span>
             </div>
           ))}
-          {logs.length === 0 && <p className="py-4 text-center text-sm text-slate-500">Brak wpisow</p>}
+          {logs.length === 0 && <p className="py-4 text-center text-sm text-zinc-500">Brak wpisów</p>}
         </div>
       </div>
 
