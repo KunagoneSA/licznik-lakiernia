@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Plus, Trash2, Pencil, Check } from 'lucide-react'
 import { useOrder } from '../hooks/useOrder'
 import { useOrderItems } from '../hooks/useOrderItems'
 import { useWorkLogs } from '../hooks/useWorkLogs'
 import { usePaintingVariants } from '../hooks/usePaintingVariants'
 import { useClientPricing } from '../hooks/useClientPricing'
+import { supabase } from '../lib/supabase'
 import OrderItemFormModal from '../components/OrderItemFormModal'
 import WorkLogFormModal from '../components/WorkLogFormModal'
 import type { OrderStatus } from '../types/database'
@@ -25,6 +26,7 @@ function getClientName(order: Record<string, unknown>): string {
 
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const { order, loading, updateOrder } = useOrder(id!)
   const { items, addItem, deleteItem } = useOrderItems(id!)
   const { logs, addLog } = useWorkLogs(id!)
@@ -85,6 +87,12 @@ export default function OrderDetailPage() {
     await deleteItem(itemId)
   }
 
+  const handleDeleteOrder = async () => {
+    if (!confirm(`Usunąć zamówienie #${order.number}? Tej operacji nie można cofnąć.`)) return
+    await supabase.from('orders').delete().eq('id', order.id)
+    navigate('/zamowienia')
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -102,6 +110,10 @@ export default function OrderDetailPage() {
           <button onClick={editing ? saveEdit : startEdit}
             className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800 transition-colors">
             {editing ? <><Check className="h-3.5 w-3.5" /> Zapisz</> : <><Pencil className="h-3.5 w-3.5" /> Edytuj</>}
+          </button>
+          <button onClick={handleDeleteOrder}
+            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors">
+            <Trash2 className="h-3.5 w-3.5" /> Usuń
           </button>
           <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium text-white ${statusColors[order.status]}`}>
             {statusLabels[order.status]}

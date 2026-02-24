@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { X } from 'lucide-react'
 
 const workerNames = ['Kasia', 'Lukasz', 'Michal', 'Fabian']
-const operations = ['Przygotowanie', 'Podklad', 'Szlifowanie', 'Lakierowanie', 'Pakowanie', 'Sprzatanie', 'Inne']
+const operations = ['Przygotowanie', 'Podkład', 'Szlifowanie', 'Lakierowanie', 'Pakowanie', 'Sprzątanie', 'Inne']
 const defaultRates: Record<string, number> = { Kasia: 35, Lukasz: 50, Michal: 50, Fabian: 20 }
 
 interface Props {

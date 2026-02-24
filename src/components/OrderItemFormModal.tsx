@@ -48,17 +48,17 @@ export default function OrderItemFormModal({ variants, getPrice, onClose, onSave
 
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Dlugosc (mm)</label>
+            <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Długość (mm)</label>
             <input type="number" value={lengthMm || ''} onChange={(e) => setLengthMm(Number(e.target.value))}
               className="w-full rounded-lg bg-gray-50 border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Szerokosc (mm)</label>
+            <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Szerokość (mm)</label>
             <input type="number" value={widthMm || ''} onChange={(e) => setWidthMm(Number(e.target.value))}
               className="w-full rounded-lg bg-gray-50 border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Ilosc</label>
+            <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Ilość</label>
             <input type="number" value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} min={1}
               className="w-full rounded-lg bg-gray-50 border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30" />
           </div>

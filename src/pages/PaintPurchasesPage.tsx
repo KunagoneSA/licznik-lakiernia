@@ -1,16 +1,18 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Plus, X } from 'lucide-react'
+import { Plus, Trash2, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { useOrders } from '../hooks/useOrders'
 import type { PaintPurchase } from '../types/database'
 
 export default function PaintPurchasesPage() {
   const [purchases, setPurchases] = useState<PaintPurchase[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
+  const { orders } = useOrders()
 
   const fetch = useCallback(async () => {
     setLoading(true)
-    const { data } = await supabase.from('paint_purchases').select('*').order('date', { ascending: false })
+    const { data } = await supabase.from('paint_purchases').select('*, order:orders(number)').order('date', { ascending: false })
     setPurchases((data as PaintPurchase[]) ?? [])
     setLoading(false)
   }, [])
@@ -42,6 +44,8 @@ export default function PaintPurchasesPage() {
                 <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Ilość</th>
                 <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Cena jedn.</th>
                 <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Suma</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Zamówienie</th>
+                <th className="px-4 py-2 w-8"></th>
               </tr>
             </thead>
             <tbody>
@@ -53,15 +57,28 @@ export default function PaintPurchasesPage() {
                   <td className="px-4 py-2 text-right text-gray-600">{p.quantity} {p.unit}</td>
                   <td className="px-4 py-2 text-right text-gray-500">{Number(p.unit_price).toFixed(2)} zl</td>
                   <td className="px-4 py-2 text-right font-medium text-amber-600">{Number(p.total).toFixed(2)} zl</td>
+                  <td className="px-4 py-2 text-gray-500">
+                    {(p as any).order?.number ? `#${(p as any).order.number}` : '—'}
+                  </td>
+                  <td className="px-4 py-2">
+                    <button onClick={async () => {
+                      if (!confirm('Usunąć ten zakup?')) return
+                      await supabase.from('paint_purchases').delete().eq('id', p.id)
+                      fetch()
+                    }} className="rounded p-1 text-gray-400 hover:text-red-500 hover:bg-red-50">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </td>
                 </tr>
               ))}
               {purchases.length === 0 && (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400">Brak zakupów</td></tr>
+                <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-400">Brak zakupów</td></tr>
               )}
               {purchases.length > 0 && (
                 <tr className="bg-gray-50 font-medium">
                   <td className="px-4 py-2 text-gray-600" colSpan={5}>Razem</td>
                   <td className="px-4 py-2 text-right font-medium text-amber-600">{purchases.reduce((s, p) => s + Number(p.total), 0).toFixed(2)} zł</td>
+                  <td colSpan={2}></td>
                 </tr>
               )}
             </tbody>
@@ -69,18 +86,19 @@ export default function PaintPurchasesPage() {
         </div>
       )}
 
-      {showForm && <PurchaseFormModal onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); fetch() }} />}
+      {showForm && <PurchaseFormModal orders={orders.map(o => ({ id: o.id, number: o.number }))} onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); fetch() }} />}
     </div>
   )
 }
 
-function PurchaseFormModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+function PurchaseFormModal({ orders, onClose, onSaved }: { orders: { id: string; number: number }[]; onClose: () => void; onSaved: () => void }) {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
   const [supplier, setSupplier] = useState('')
   const [product, setProduct] = useState('')
   const [quantity, setQuantity] = useState(0)
   const [unit, setUnit] = useState('kg')
   const [unitPrice, setUnitPrice] = useState(0)
+  const [orderId, setOrderId] = useState<string>('')
   const [saving, setSaving] = useState(false)
 
   const total = quantity * unitPrice
@@ -91,6 +109,7 @@ function PurchaseFormModal({ onClose, onSaved }: { onClose: () => void; onSaved:
     await supabase.from('paint_purchases').insert({
       date, supplier, product, quantity, unit, unit_price: unitPrice,
       total: Math.round(total * 100) / 100,
+      order_id: orderId || null,
     })
     setSaving(false)
     onSaved()
@@ -120,6 +139,14 @@ function PurchaseFormModal({ onClose, onSaved }: { onClose: () => void; onSaved:
               <input type="text" value={product} onChange={(e) => setProduct(e.target.value)}
                 className="w-full rounded-lg bg-gray-50 border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30" />
             </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Zamówienie (opcj.)</label>
+            <select value={orderId} onChange={(e) => setOrderId(e.target.value)}
+              className="w-full rounded-lg bg-gray-50 border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30">
+              <option value="">— brak —</option>
+              {orders.map((o) => <option key={o.id} value={o.id}>#{o.number}</option>)}
+            </select>
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div>
