@@ -15,13 +15,13 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-700 border-t-amber-500" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-amber-500" />
       </div>
     )
   }
 
   if (error) {
-    return <p className="py-8 text-center text-red-400">{error}</p>
+    return <p className="py-8 text-center text-red-600">{error}</p>
   }
 
   return (

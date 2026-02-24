@@ -14,11 +14,11 @@ const statusLabels: Record<OrderStatus, string> = {
 }
 
 const statusColors: Record<OrderStatus, string> = {
-  nowe: 'bg-blue-500/20 text-blue-400',
-  w_trakcie: 'bg-amber-500/20 text-amber-400',
-  gotowe: 'bg-emerald-500/20 text-emerald-400',
-  wydane: 'bg-violet-500/20 text-violet-400',
-  'zapłacone': 'bg-zinc-500/20 text-zinc-400',
+  nowe: 'bg-blue-50 text-blue-600',
+  w_trakcie: 'bg-amber-50 text-amber-600',
+  gotowe: 'bg-emerald-50 text-emerald-600',
+  wydane: 'bg-violet-50 text-violet-600',
+  'zapłacone': 'bg-gray-100 text-gray-500',
 }
 
 const tabs = ['wszystkie', 'nowe', 'w_trakcie', 'gotowe', 'wydane'] as const
@@ -47,10 +47,10 @@ export default function OrdersListPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-zinc-100">Zamówienia</h1>
+        <h1 className="text-xl font-bold text-gray-900">Zamówienia</h1>
         <button
           onClick={() => setShowNew(true)}
-          className="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-amber-400"
+          className="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-400"
         >
           <Plus className="h-4 w-4" />
           Nowe zamówienie
@@ -59,13 +59,13 @@ export default function OrdersListPage() {
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             placeholder="Szukaj klienta, opisu lub numeru..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg bg-zinc-800 py-2 pl-9 pr-3 text-sm text-zinc-200 placeholder-zinc-500 outline-none focus:ring-2 focus:ring-amber-500/50"
+            className="w-full rounded-lg bg-white border border-gray-300 py-2 pl-9 pr-3 text-sm text-gray-800 placeholder-gray-400 outline-none focus:ring-2 focus:ring-amber-500/30"
           />
         </div>
         <div className="flex gap-1">
@@ -74,7 +74,7 @@ export default function OrdersListPage() {
               key={t}
               onClick={() => setTab(t)}
               className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                tab === t ? 'bg-amber-500/20 text-amber-400' : 'text-zinc-400 hover:bg-zinc-800'
+                tab === t ? 'bg-amber-50 text-amber-600' : 'text-gray-500 hover:bg-gray-100'
               }`}
             >
               {t === 'wszystkie' ? 'Wszystkie' : statusLabels[t as OrderStatus]}
@@ -85,43 +85,43 @@ export default function OrdersListPage() {
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-700 border-t-amber-500" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-amber-500" />
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-zinc-800">
+        <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-zinc-800 bg-zinc-800/50">
-                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase">#</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase">Klient</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase">Opis</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase">Termin</th>
+              <tr className="border-b border-gray-200 bg-gray-50">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">#</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Klient</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Opis</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Termin</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((order) => (
-                <tr key={order.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/30">
+                <tr key={order.id} className="border-b border-gray-100 hover:bg-gray-50">
                   <td className="px-4 py-3">
-                    <Link to={`/zamowienia/${order.id}`} className="font-medium text-amber-400 hover:underline">
+                    <Link to={`/zamowienia/${order.id}`} className="font-medium text-amber-600 hover:underline">
                       {order.number}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-zinc-200">{getClientName(order as unknown as Record<string, unknown>)}</td>
-                  <td className="px-4 py-3 text-zinc-300 max-w-xs truncate">{order.description || '—'}</td>
+                  <td className="px-4 py-3 text-gray-800">{getClientName(order as unknown as Record<string, unknown>)}</td>
+                  <td className="px-4 py-3 text-gray-600 max-w-xs truncate">{order.description || '—'}</td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[order.status]}`}>
                       {statusLabels[order.status]}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-zinc-400">
+                  <td className="px-4 py-3 text-gray-500">
                     {order.planned_date ? new Date(order.planned_date).toLocaleDateString('pl-PL') : '—'}
                   </td>
                 </tr>
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-zinc-500">Brak zamówień</td>
+                  <td colSpan={5} className="px-4 py-8 text-center text-gray-400">Brak zamówień</td>
                 </tr>
               )}
             </tbody>

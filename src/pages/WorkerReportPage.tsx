@@ -46,19 +46,19 @@ export default function WorkerReportPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-zinc-100">Raport pracowników</h1>
-        <button onClick={exportCsv} className="flex items-center gap-2 rounded-lg bg-zinc-800 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-700">
+        <h1 className="text-xl font-bold text-gray-900">Raport pracowników</h1>
+        <button onClick={exportCsv} className="flex items-center gap-2 rounded-lg bg-white shadow-sm px-3 py-2 text-sm text-gray-600 hover:bg-gray-100">
           <Download className="h-4 w-4" /> CSV
         </button>
       </div>
 
       <div className="flex flex-wrap gap-3">
         <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
-          className="rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm text-zinc-200 outline-none focus:ring-2 focus:ring-amber-500/50" />
+          className="rounded-lg bg-white border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30" />
         <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
-          className="rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm text-zinc-200 outline-none focus:ring-2 focus:ring-amber-500/50" />
+          className="rounded-lg bg-white border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30" />
         <select value={worker} onChange={(e) => setWorker(e.target.value)}
-          className="rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm text-zinc-200 outline-none focus:ring-2 focus:ring-amber-500/50">
+          className="rounded-lg bg-white border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30">
           <option value="">Wszyscy</option>
           {workerNames.map((n) => <option key={n} value={n}>{n}</option>)}
         </select>
@@ -67,50 +67,50 @@ export default function WorkerReportPage() {
       {/* Summary per worker */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {Array.from(summary.entries()).map(([name, s]) => (
-          <div key={name} className="rounded-lg bg-zinc-800 p-3">
-            <p className="text-sm font-medium text-zinc-200">{name}</p>
-            <p className="text-xs text-zinc-400">{s.hours.toFixed(1)}h &middot; {s.cost.toFixed(0)} zl{s.m2 > 0 ? ` · ${s.m2.toFixed(2)} m2` : ''}</p>
+          <div key={name} className="rounded-lg bg-white shadow-sm p-3">
+            <p className="text-sm font-medium text-gray-800">{name}</p>
+            <p className="text-xs text-gray-500">{s.hours.toFixed(1)}h &middot; {s.cost.toFixed(0)} zl{s.m2 > 0 ? ` · ${s.m2.toFixed(2)} m2` : ''}</p>
           </div>
         ))}
       </div>
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-700 border-t-amber-500" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-amber-500" />
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-zinc-800">
+        <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-zinc-800 bg-zinc-800/50">
-                <th className="px-4 py-2 text-left text-xs font-medium text-zinc-400">Data</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-zinc-400">Pracownik</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-zinc-400">Operacja</th>
-                <th className="px-4 py-2 text-right text-xs font-medium text-zinc-400">Godziny</th>
-                <th className="px-4 py-2 text-right text-xs font-medium text-zinc-400">Stawka</th>
-                <th className="px-4 py-2 text-right text-xs font-medium text-zinc-400">Koszt</th>
+              <tr className="border-b border-gray-200 bg-gray-50">
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Data</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Pracownik</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Operacja</th>
+                <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Godziny</th>
+                <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Stawka</th>
+                <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Koszt</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((l) => (
-                <tr key={l.id} className="border-b border-zinc-800/50">
-                  <td className="px-4 py-2 text-zinc-400">{new Date(l.date).toLocaleDateString('pl-PL')}</td>
-                  <td className="px-4 py-2 text-zinc-200">{l.worker_name}</td>
-                  <td className="px-4 py-2 text-zinc-300">{l.operation}</td>
-                  <td className="px-4 py-2 text-right text-zinc-300">{l.hours}</td>
-                  <td className="px-4 py-2 text-right text-zinc-400">{l.hourly_rate} zl</td>
-                  <td className="px-4 py-2 text-right font-medium text-amber-400">{Number(l.cost).toFixed(2)} zl</td>
+                <tr key={l.id} className="border-b border-gray-100">
+                  <td className="px-4 py-2 text-gray-500">{new Date(l.date).toLocaleDateString('pl-PL')}</td>
+                  <td className="px-4 py-2 text-gray-800">{l.worker_name}</td>
+                  <td className="px-4 py-2 text-gray-600">{l.operation}</td>
+                  <td className="px-4 py-2 text-right text-gray-600">{l.hours}</td>
+                  <td className="px-4 py-2 text-right text-gray-500">{l.hourly_rate} zl</td>
+                  <td className="px-4 py-2 text-right font-medium text-amber-600">{Number(l.cost).toFixed(2)} zl</td>
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-zinc-500">Brak wpisów</td></tr>
+                <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400">Brak wpisów</td></tr>
               )}
               {filtered.length > 0 && (
-                <tr className="bg-zinc-800/30 font-medium">
-                  <td className="px-4 py-2 text-zinc-300" colSpan={3}>Razem</td>
-                  <td className="px-4 py-2 text-right text-zinc-300">{filtered.reduce((s, l) => s + Number(l.hours), 0).toFixed(1)}</td>
-                  <td className="px-4 py-2 text-right text-zinc-400">—</td>
-                  <td className="px-4 py-2 text-right font-medium text-amber-400">{filtered.reduce((s, l) => s + Number(l.cost), 0).toFixed(2)} zł</td>
+                <tr className="bg-gray-50 font-medium">
+                  <td className="px-4 py-2 text-gray-600" colSpan={3}>Razem</td>
+                  <td className="px-4 py-2 text-right text-gray-600">{filtered.reduce((s, l) => s + Number(l.hours), 0).toFixed(1)}</td>
+                  <td className="px-4 py-2 text-right text-gray-500">—</td>
+                  <td className="px-4 py-2 text-right font-medium text-amber-600">{filtered.reduce((s, l) => s + Number(l.cost), 0).toFixed(2)} zł</td>
                 </tr>
               )}
             </tbody>

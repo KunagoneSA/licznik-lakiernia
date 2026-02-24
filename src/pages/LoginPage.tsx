@@ -7,8 +7,8 @@ export default function LoginPage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-zinc-900">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-600 border-t-amber-500" />
+      <div className="flex h-screen items-center justify-center bg-gray-50">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-amber-500" />
       </div>
     )
   }
@@ -16,19 +16,19 @@ export default function LoginPage() {
   if (user) return <Navigate to="/" replace />
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-900 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center">
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-amber-500">
-            <Paintbrush className="h-7 w-7 text-zinc-900" />
+            <Paintbrush className="h-7 w-7 text-white" />
           </div>
-          <h1 className="text-xl font-bold tracking-wide text-zinc-100 uppercase">Licznik Lakiernia</h1>
-          <p className="mt-1 text-sm text-zinc-500">System zarządzania zamówieniami</p>
+          <h1 className="text-xl font-bold tracking-wide text-gray-900 uppercase">Licznik Lakiernia</h1>
+          <p className="mt-1 text-sm text-gray-400">System zarządzania zamówieniami</p>
         </div>
-        <div className="rounded-xl border border-zinc-800 p-6">
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
           <button
             onClick={signInWithGoogle}
-            className="flex w-full items-center justify-center gap-3 rounded-lg bg-white px-4 py-3 text-sm font-medium text-zinc-800 transition-colors hover:bg-zinc-100 active:bg-zinc-200"
+            className="flex w-full items-center justify-center gap-3 rounded-lg bg-white px-4 py-3 text-sm font-medium text-gray-800 border border-gray-200 transition-colors hover:bg-gray-50 active:bg-gray-100"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>

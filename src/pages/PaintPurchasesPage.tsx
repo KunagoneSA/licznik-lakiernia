@@ -20,48 +20,48 @@ export default function PaintPurchasesPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-zinc-100">Zakupy lakierów</h1>
+        <h1 className="text-xl font-bold text-gray-900">Zakupy lakierów</h1>
         <button onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-amber-400">
+          className="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-400">
           <Plus className="h-4 w-4" /> Dodaj zakup
         </button>
       </div>
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-700 border-t-amber-500" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-amber-500" />
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-zinc-800">
+        <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-zinc-800 bg-zinc-800/50">
-                <th className="px-4 py-2 text-left text-xs font-medium text-zinc-400">Data</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-zinc-400">Dostawca</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-zinc-400">Produkt</th>
-                <th className="px-4 py-2 text-right text-xs font-medium text-zinc-400">Ilość</th>
-                <th className="px-4 py-2 text-right text-xs font-medium text-zinc-400">Cena jedn.</th>
-                <th className="px-4 py-2 text-right text-xs font-medium text-zinc-400">Suma</th>
+              <tr className="border-b border-gray-200 bg-gray-50">
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Data</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Dostawca</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Produkt</th>
+                <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Ilość</th>
+                <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Cena jedn.</th>
+                <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Suma</th>
               </tr>
             </thead>
             <tbody>
               {purchases.map((p) => (
-                <tr key={p.id} className="border-b border-zinc-800/50">
-                  <td className="px-4 py-2 text-zinc-400">{new Date(p.date).toLocaleDateString('pl-PL')}</td>
-                  <td className="px-4 py-2 text-zinc-200">{p.supplier}</td>
-                  <td className="px-4 py-2 text-zinc-300">{p.product}</td>
-                  <td className="px-4 py-2 text-right text-zinc-300">{p.quantity} {p.unit}</td>
-                  <td className="px-4 py-2 text-right text-zinc-400">{Number(p.unit_price).toFixed(2)} zl</td>
-                  <td className="px-4 py-2 text-right font-medium text-amber-400">{Number(p.total).toFixed(2)} zl</td>
+                <tr key={p.id} className="border-b border-gray-100">
+                  <td className="px-4 py-2 text-gray-500">{new Date(p.date).toLocaleDateString('pl-PL')}</td>
+                  <td className="px-4 py-2 text-gray-800">{p.supplier}</td>
+                  <td className="px-4 py-2 text-gray-600">{p.product}</td>
+                  <td className="px-4 py-2 text-right text-gray-600">{p.quantity} {p.unit}</td>
+                  <td className="px-4 py-2 text-right text-gray-500">{Number(p.unit_price).toFixed(2)} zl</td>
+                  <td className="px-4 py-2 text-right font-medium text-amber-600">{Number(p.total).toFixed(2)} zl</td>
                 </tr>
               ))}
               {purchases.length === 0 && (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-zinc-500">Brak zakupów</td></tr>
+                <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400">Brak zakupów</td></tr>
               )}
               {purchases.length > 0 && (
-                <tr className="bg-zinc-800/30 font-medium">
-                  <td className="px-4 py-2 text-zinc-300" colSpan={5}>Razem</td>
-                  <td className="px-4 py-2 text-right font-medium text-amber-400">{purchases.reduce((s, p) => s + Number(p.total), 0).toFixed(2)} zł</td>
+                <tr className="bg-gray-50 font-medium">
+                  <td className="px-4 py-2 text-gray-600" colSpan={5}>Razem</td>
+                  <td className="px-4 py-2 text-right font-medium text-amber-600">{purchases.reduce((s, p) => s + Number(p.total), 0).toFixed(2)} zł</td>
                 </tr>
               )}
             </tbody>
@@ -97,57 +97,57 @@ function PurchaseFormModal({ onClose, onSaved }: { onClose: () => void; onSaved:
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
-      <div className="w-full max-w-md rounded-xl bg-zinc-800 border border-zinc-700 p-6" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onClick={onClose}>
+      <div className="w-full max-w-md rounded-xl bg-white border border-gray-200 shadow-lg p-6" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-zinc-100">Nowy zakup</h2>
-          <button onClick={onClose} className="rounded-md p-1 text-zinc-400 hover:bg-zinc-700"><X className="h-5 w-5" /></button>
+          <h2 className="text-lg font-semibold text-gray-900">Nowy zakup</h2>
+          <button onClick={onClose} className="rounded-md p-1 text-gray-500 hover:bg-gray-100"><X className="h-5 w-5" /></button>
         </div>
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-zinc-400 uppercase mb-1">Data</label>
+            <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Data</label>
             <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
-              className="w-full rounded-lg bg-zinc-900 border border-zinc-700 px-3 py-2 text-sm text-zinc-200 outline-none focus:ring-2 focus:ring-amber-500/50" />
+              className="w-full rounded-lg bg-gray-50 border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-zinc-400 uppercase mb-1">Dostawca</label>
+              <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Dostawca</label>
               <input type="text" value={supplier} onChange={(e) => setSupplier(e.target.value)}
-                className="w-full rounded-lg bg-zinc-900 border border-zinc-700 px-3 py-2 text-sm text-zinc-200 outline-none focus:ring-2 focus:ring-amber-500/50" />
+                className="w-full rounded-lg bg-gray-50 border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-400 uppercase mb-1">Produkt</label>
+              <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Produkt</label>
               <input type="text" value={product} onChange={(e) => setProduct(e.target.value)}
-                className="w-full rounded-lg bg-zinc-900 border border-zinc-700 px-3 py-2 text-sm text-zinc-200 outline-none focus:ring-2 focus:ring-amber-500/50" />
+                className="w-full rounded-lg bg-gray-50 border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30" />
             </div>
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-medium text-zinc-400 uppercase mb-1">Ilość</label>
+              <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Ilość</label>
               <input type="number" value={quantity || ''} onChange={(e) => setQuantity(Number(e.target.value))}
-                className="w-full rounded-lg bg-zinc-900 border border-zinc-700 px-3 py-2 text-sm text-zinc-200 outline-none focus:ring-2 focus:ring-amber-500/50" />
+                className="w-full rounded-lg bg-gray-50 border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-400 uppercase mb-1">Jednostka</label>
+              <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Jednostka</label>
               <select value={unit} onChange={(e) => setUnit(e.target.value)}
-                className="w-full rounded-lg bg-zinc-900 border border-zinc-700 px-3 py-2 text-sm text-zinc-200 outline-none focus:ring-2 focus:ring-amber-500/50">
+                className="w-full rounded-lg bg-gray-50 border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30">
                 <option value="kg">kg</option><option value="l">l</option><option value="szt">szt</option>
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-400 uppercase mb-1">Cena jedn.</label>
+              <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Cena jedn.</label>
               <input type="number" step="0.01" value={unitPrice || ''} onChange={(e) => setUnitPrice(Number(e.target.value))}
-                className="w-full rounded-lg bg-zinc-900 border border-zinc-700 px-3 py-2 text-sm text-zinc-200 outline-none focus:ring-2 focus:ring-amber-500/50" />
+                className="w-full rounded-lg bg-gray-50 border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30" />
             </div>
           </div>
-          <div className="rounded-lg bg-zinc-900 p-3 text-sm">
-            <span className="text-zinc-500">Suma:</span> <span className="text-amber-400 font-bold">{total.toFixed(2)} zl</span>
+          <div className="rounded-lg bg-gray-50 p-3 text-sm">
+            <span className="text-gray-400">Suma:</span> <span className="text-amber-600 font-bold">{total.toFixed(2)} zl</span>
           </div>
         </div>
         <div className="mt-4 flex justify-end gap-2">
-          <button onClick={onClose} className="rounded-lg px-4 py-2 text-sm text-zinc-400 hover:bg-zinc-700">Anuluj</button>
+          <button onClick={onClose} className="rounded-lg px-4 py-2 text-sm text-gray-500 hover:bg-gray-100">Anuluj</button>
           <button onClick={handleSave} disabled={!supplier || !product || !quantity || saving}
-            className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-amber-400 disabled:opacity-50">
+            className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-400 disabled:opacity-50">
             {saving ? 'Zapisywanie...' : 'Dodaj'}
           </button>
         </div>

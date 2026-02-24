@@ -107,7 +107,7 @@ export default function FinancePage() {
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-700 border-t-amber-500" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-amber-500" />
       </div>
     )
   }
@@ -115,43 +115,43 @@ export default function FinancePage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl font-bold text-zinc-100">Podsumowanie finansowe</h1>
+        <h1 className="text-xl font-bold text-gray-900">Podsumowanie finansowe</h1>
         <div className="flex gap-2">
           <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
-            className="rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm text-zinc-200 outline-none focus:ring-2 focus:ring-amber-500/50" />
-          <span className="self-center text-zinc-500">—</span>
+            className="rounded-lg bg-white border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30" />
+          <span className="self-center text-gray-400">—</span>
           <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
-            className="rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm text-zinc-200 outline-none focus:ring-2 focus:ring-amber-500/50" />
+            className="rounded-lg bg-white border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30" />
         </div>
       </div>
 
       {/* Main KPIs */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard icon={DollarSign} label="Przychody" value={`${revenue.toFixed(0)} zł`} color="text-amber-400" />
-        <StatCard icon={Paintbrush} label="Koszty pracy" value={`${laborCost.toFixed(0)} zł`} color="text-red-400" sub={`${totalHours.toFixed(1)}h`} />
-        <StatCard icon={Package} label="Koszty materiałów" value={`${materialCost.toFixed(0)} zł`} color="text-orange-400" sub={`${filteredPurchases.length} zakupów`} />
+        <StatCard icon={DollarSign} label="Przychody" value={`${revenue.toFixed(0)} zł`} color="text-amber-600" />
+        <StatCard icon={Paintbrush} label="Koszty pracy" value={`${laborCost.toFixed(0)} zł`} color="text-red-600" sub={`${totalHours.toFixed(1)}h`} />
+        <StatCard icon={Package} label="Koszty materiałów" value={`${materialCost.toFixed(0)} zł`} color="text-orange-600" sub={`${filteredPurchases.length} zakupów`} />
         <StatCard
           icon={profit >= 0 ? TrendingUp : TrendingDown}
           label="Zysk netto"
           value={`${profit.toFixed(0)} zł`}
-          color={profit >= 0 ? 'text-emerald-400' : 'text-red-400'}
+          color={profit >= 0 ? 'text-emerald-600' : 'text-red-600'}
           sub={`marża ${margin.toFixed(1)}%`}
         />
       </div>
 
       {/* Secondary KPIs */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-lg bg-zinc-800 p-4">
-          <p className="text-xs text-zinc-500 uppercase">Zamówień w okresie</p>
-          <p className="mt-1 text-2xl font-bold text-zinc-200">{filteredOrders.length}</p>
+        <div className="rounded-lg bg-white shadow-sm p-4">
+          <p className="text-xs text-gray-400 uppercase">Zamówień w okresie</p>
+          <p className="mt-1 text-2xl font-bold text-gray-800">{filteredOrders.length}</p>
         </div>
-        <div className="rounded-lg bg-zinc-800 p-4">
-          <p className="text-xs text-zinc-500 uppercase">Łącznie m²</p>
-          <p className="mt-1 text-2xl font-bold text-zinc-200">{totalM2.toFixed(2)}</p>
+        <div className="rounded-lg bg-white shadow-sm p-4">
+          <p className="text-xs text-gray-400 uppercase">Łącznie m²</p>
+          <p className="mt-1 text-2xl font-bold text-gray-800">{totalM2.toFixed(2)}</p>
         </div>
-        <div className="rounded-lg bg-zinc-800 p-4">
-          <p className="text-xs text-zinc-500 uppercase">Zysk / m²</p>
-          <p className={`mt-1 text-2xl font-bold ${profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+        <div className="rounded-lg bg-white shadow-sm p-4">
+          <p className="text-xs text-gray-400 uppercase">Zysk / m²</p>
+          <p className={`mt-1 text-2xl font-bold ${profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
             {totalM2 > 0 ? (profit / totalM2).toFixed(2) : '—'} zł
           </p>
         </div>
@@ -160,38 +160,38 @@ export default function FinancePage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Per-worker breakdown */}
         <div>
-          <h2 className="mb-3 text-sm font-semibold text-zinc-300 uppercase tracking-wide">Koszty pracy wg pracownika</h2>
-          <div className="rounded-lg border border-zinc-800 overflow-hidden">
+          <h2 className="mb-3 text-sm font-semibold text-gray-600 uppercase tracking-wide">Koszty pracy wg pracownika</h2>
+          <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-zinc-800 bg-zinc-800/50">
-                  <th className="px-4 py-2 text-left text-xs font-medium text-zinc-400">Pracownik</th>
-                  <th className="px-4 py-2 text-right text-xs font-medium text-zinc-400">Godziny</th>
-                  <th className="px-4 py-2 text-right text-xs font-medium text-zinc-400">Koszt</th>
-                  <th className="px-4 py-2 text-right text-xs font-medium text-zinc-400">Udział</th>
+                <tr className="border-b border-gray-200 bg-gray-50">
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Pracownik</th>
+                  <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Godziny</th>
+                  <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Koszt</th>
+                  <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Udział</th>
                 </tr>
               </thead>
               <tbody>
                 {workerStats.map(([name, s]) => (
-                  <tr key={name} className="border-b border-zinc-800/50">
-                    <td className="px-4 py-2 text-zinc-200 font-medium">{name}</td>
-                    <td className="px-4 py-2 text-right text-zinc-300">{s.hours.toFixed(1)}h</td>
-                    <td className="px-4 py-2 text-right text-amber-400">{s.cost.toFixed(0)} zł</td>
-                    <td className="px-4 py-2 text-right text-zinc-400">
+                  <tr key={name} className="border-b border-gray-100">
+                    <td className="px-4 py-2 text-gray-800 font-medium">{name}</td>
+                    <td className="px-4 py-2 text-right text-gray-600">{s.hours.toFixed(1)}h</td>
+                    <td className="px-4 py-2 text-right text-amber-600">{s.cost.toFixed(0)} zł</td>
+                    <td className="px-4 py-2 text-right text-gray-500">
                       {laborCost > 0 ? ((s.cost / laborCost) * 100).toFixed(0) : 0}%
                     </td>
                   </tr>
                 ))}
                 {workerStats.length > 0 && (
-                  <tr className="bg-zinc-800/30 font-medium">
-                    <td className="px-4 py-2 text-zinc-300">Razem</td>
-                    <td className="px-4 py-2 text-right text-zinc-300">{totalHours.toFixed(1)}h</td>
-                    <td className="px-4 py-2 text-right text-amber-400">{laborCost.toFixed(0)} zł</td>
-                    <td className="px-4 py-2 text-right text-zinc-400">100%</td>
+                  <tr className="bg-gray-50 font-medium">
+                    <td className="px-4 py-2 text-gray-600">Razem</td>
+                    <td className="px-4 py-2 text-right text-gray-600">{totalHours.toFixed(1)}h</td>
+                    <td className="px-4 py-2 text-right text-amber-600">{laborCost.toFixed(0)} zł</td>
+                    <td className="px-4 py-2 text-right text-gray-500">100%</td>
                   </tr>
                 )}
                 {workerStats.length === 0 && (
-                  <tr><td colSpan={4} className="px-4 py-6 text-center text-zinc-500">Brak danych</td></tr>
+                  <tr><td colSpan={4} className="px-4 py-6 text-center text-gray-400">Brak danych</td></tr>
                 )}
               </tbody>
             </table>
@@ -200,35 +200,35 @@ export default function FinancePage() {
 
         {/* Per-order ranking */}
         <div>
-          <h2 className="mb-3 text-sm font-semibold text-zinc-300 uppercase tracking-wide">Zamówienia wg przychodu</h2>
-          <div className="rounded-lg border border-zinc-800 overflow-hidden">
+          <h2 className="mb-3 text-sm font-semibold text-gray-600 uppercase tracking-wide">Zamówienia wg przychodu</h2>
+          <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-zinc-800 bg-zinc-800/50">
-                  <th className="px-4 py-2 text-left text-xs font-medium text-zinc-400">#</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-zinc-400">Klient</th>
-                  <th className="px-4 py-2 text-right text-xs font-medium text-zinc-400">m²</th>
-                  <th className="px-4 py-2 text-right text-xs font-medium text-zinc-400">Przychód</th>
+                <tr className="border-b border-gray-200 bg-gray-50">
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">#</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Klient</th>
+                  <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">m²</th>
+                  <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Przychód</th>
                 </tr>
               </thead>
               <tbody>
                 {orderRanking.map((o) => (
-                  <tr key={o.number} className="border-b border-zinc-800/50">
-                    <td className="px-4 py-2 text-amber-400 font-medium">{o.number}</td>
-                    <td className="px-4 py-2 text-zinc-200">{o.client}</td>
-                    <td className="px-4 py-2 text-right text-zinc-300">{o.m2.toFixed(2)}</td>
-                    <td className="px-4 py-2 text-right text-amber-400 font-medium">{o.revenue.toFixed(0)} zł</td>
+                  <tr key={o.number} className="border-b border-gray-100">
+                    <td className="px-4 py-2 text-amber-600 font-medium">{o.number}</td>
+                    <td className="px-4 py-2 text-gray-800">{o.client}</td>
+                    <td className="px-4 py-2 text-right text-gray-600">{o.m2.toFixed(2)}</td>
+                    <td className="px-4 py-2 text-right text-amber-600 font-medium">{o.revenue.toFixed(0)} zł</td>
                   </tr>
                 ))}
                 {orderRanking.length > 0 && (
-                  <tr className="bg-zinc-800/30 font-medium">
-                    <td className="px-4 py-2 text-zinc-300" colSpan={2}>Razem</td>
-                    <td className="px-4 py-2 text-right text-zinc-300">{totalM2.toFixed(2)}</td>
-                    <td className="px-4 py-2 text-right text-amber-400">{revenue.toFixed(0)} zł</td>
+                  <tr className="bg-gray-50 font-medium">
+                    <td className="px-4 py-2 text-gray-600" colSpan={2}>Razem</td>
+                    <td className="px-4 py-2 text-right text-gray-600">{totalM2.toFixed(2)}</td>
+                    <td className="px-4 py-2 text-right text-amber-600">{revenue.toFixed(0)} zł</td>
                   </tr>
                 )}
                 {orderRanking.length === 0 && (
-                  <tr><td colSpan={4} className="px-4 py-6 text-center text-zinc-500">Brak zamówień z elementami</td></tr>
+                  <tr><td colSpan={4} className="px-4 py-6 text-center text-gray-400">Brak zamówień z elementami</td></tr>
                 )}
               </tbody>
             </table>
@@ -239,9 +239,9 @@ export default function FinancePage() {
       {/* Cost structure bar */}
       {revenue > 0 && (
         <div>
-          <h2 className="mb-3 text-sm font-semibold text-zinc-300 uppercase tracking-wide">Struktura kosztów</h2>
-          <div className="rounded-lg bg-zinc-800 p-4">
-            <div className="flex h-6 w-full overflow-hidden rounded-full bg-zinc-700">
+          <h2 className="mb-3 text-sm font-semibold text-gray-600 uppercase tracking-wide">Struktura kosztów</h2>
+          <div className="rounded-lg bg-white shadow-sm p-4">
+            <div className="flex h-6 w-full overflow-hidden rounded-full bg-gray-200">
               {laborCost > 0 && (
                 <div
                   className="bg-red-500 transition-all"
@@ -284,13 +284,13 @@ function StatCard({ icon: Icon, label, value, color, sub }: {
   sub?: string
 }) {
   return (
-    <div className="rounded-lg bg-zinc-800 p-4">
+    <div className="rounded-lg bg-white shadow-sm p-4">
       <div className="flex items-center gap-2">
         <Icon className={`h-5 w-5 ${color}`} />
-        <span className="text-xs text-zinc-500 uppercase tracking-wide">{label}</span>
+        <span className="text-xs text-gray-400 uppercase tracking-wide">{label}</span>
       </div>
       <p className={`mt-2 text-2xl font-bold ${color}`}>{value}</p>
-      {sub && <p className="mt-0.5 text-xs text-zinc-500">{sub}</p>}
+      {sub && <p className="mt-0.5 text-xs text-gray-400">{sub}</p>}
     </div>
   )
 }
