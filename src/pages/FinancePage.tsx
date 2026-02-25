@@ -49,13 +49,9 @@ export default function FinancePage() {
     purchases.filter((p) => p.date >= dateFrom && p.date <= dateTo),
     [purchases, dateFrom, dateTo])
 
-  // Filter orders by created_at date range
-  const filteredOrders = useMemo(() =>
-    orders.filter((o) => {
-      const d = o.created_at.slice(0, 10)
-      return d >= dateFrom && d <= dateTo
-    }),
-    [orders, dateFrom, dateTo])
+  // Show all orders (not filtered by date) — revenue comes from all active orders
+  // Date filter applies to costs (work logs, purchases, fixed costs)
+  const filteredOrders = orders
 
   // Calculate totals
   const revenue = useMemo(() =>

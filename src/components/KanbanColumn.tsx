@@ -17,7 +17,7 @@ export default function KanbanColumn({ title, orders, color }: Props) {
       </div>
       <div className="flex-1 space-y-2 rounded-lg bg-gray-100 p-2 min-h-[200px]">
         {orders.length === 0 && (
-          <p className="py-8 text-center text-xs text-gray-300">Brak zamowien</p>
+          <p className="py-8 text-center text-xs text-gray-300">Brak zamówień</p>
         )}
         {orders.map((order) => (
           <OrderCard key={order.id} order={order} />

@@ -33,7 +33,7 @@ export default function NewOrderModal({ onClose, onSaved }: Props) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onClick={onClose}>
       <div className="w-full max-w-md rounded-xl bg-white border border-gray-200 shadow-xl p-6" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Nowe zamowienie</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Nowe zamówienie</h2>
           <button onClick={onClose} className="rounded-md p-1 text-gray-500 hover:bg-gray-100">
             <X className="h-5 w-5" />
           </button>
@@ -95,7 +95,7 @@ export default function NewOrderModal({ onClose, onSaved }: Props) {
             disabled={!clientId || saving}
             className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-400 disabled:opacity-50"
           >
-            {saving ? 'Zapisywanie...' : 'Utworz'}
+            {saving ? 'Zapisywanie...' : 'Utwórz'}
           </button>
         </div>
       </div>
