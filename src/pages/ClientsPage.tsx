@@ -4,6 +4,7 @@ import { useClients } from '../hooks/useClients'
 import { usePaintingVariants } from '../hooks/usePaintingVariants'
 import { useClientPricing } from '../hooks/useClientPricing'
 import { supabase } from '../lib/supabase'
+import { useToast } from '../contexts/ToastContext'
 
 export default function ClientsPage() {
   const { clients, refetch: refetchClients } = useClients()
@@ -15,6 +16,7 @@ export default function ClientsPage() {
   const [editingClient, setEditingClient] = useState(false)
   const [editName, setEditName] = useState('')
   const [editContact, setEditContact] = useState('')
+  const { toast } = useToast()
 
   const startEditClient = () => {
     const c = clients.find(cl => cl.id === selectedId)
@@ -31,6 +33,7 @@ export default function ClientsPage() {
       contact_info: editContact.trim() || null,
     }).eq('id', selectedId)
     setEditingClient(false)
+    toast('Klient zaktualizowany')
     refetchClients()
   }
 
@@ -40,6 +43,7 @@ export default function ClientsPage() {
     await supabase.from('clients').insert({ name: newName.trim(), access_code: code })
     setNewName('')
     setShowAdd(false)
+    toast('Klient dodany')
     refetchClients()
   }
 
@@ -47,6 +51,7 @@ export default function ClientsPage() {
     const price = Number(value)
     if (!price || price <= 0) return
     await upsertPricing(variantId, price)
+    toast('Cennik zapisany')
   }
 
   return (
@@ -78,12 +83,13 @@ export default function ClientsPage() {
                   selectedId === c.id ? 'bg-amber-50 text-amber-700' : 'bg-white text-gray-700 hover:bg-gray-50'
                 }`}>
                 <span className="font-medium">{c.name}</span>
-                {c.access_code && <span className="ml-2 text-xs text-gray-400">PIN: {c.access_code}</span>}
+                {c.access_code && <span className="ml-2 text-xs text-gray-500">PIN: {c.access_code}</span>}
               </button>
               <button onClick={async () => {
                 if (!confirm(`Usunąć klienta ${c.name}?`)) return
                 await supabase.from('clients').delete().eq('id', c.id)
                 if (selectedId === c.id) setSelectedId(null)
+                toast('Klient usunięty')
                 refetchClients()
               }} className="rounded-md p-2 text-gray-400 hover:text-red-500 hover:bg-red-50">
                 <Trash2 className="h-4 w-4" />
@@ -140,7 +146,7 @@ export default function ClientsPage() {
                       return (
                         <tr key={v.id} className="border-b border-gray-100">
                           <td className="px-4 py-2 text-gray-800">{v.name}</td>
-                          <td className="px-4 py-2 text-right text-gray-500">{v.default_price_per_m2} zl/m2</td>
+                          <td className="px-4 py-2 text-right text-gray-500">{v.default_price_per_m2} zł/m²</td>
                           <td className="px-4 py-2 text-right">
                             <input
                               type="number"

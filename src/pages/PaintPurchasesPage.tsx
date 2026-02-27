@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { Plus, Trash2, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useOrders } from '../hooks/useOrders'
+import { useToast } from '../contexts/ToastContext'
+import { useModalKeys } from '../hooks/useModalKeys'
 import type { PaintPurchase } from '../types/database'
 
 export default function PaintPurchasesPage() {
@@ -9,6 +11,7 @@ export default function PaintPurchasesPage() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const { orders } = useOrders()
+  const { toast } = useToast()
 
   const fetch = useCallback(async () => {
     setLoading(true)
@@ -55,8 +58,8 @@ export default function PaintPurchasesPage() {
                   <td className="px-4 py-2 text-gray-800">{p.supplier}</td>
                   <td className="px-4 py-2 text-gray-600">{p.product}</td>
                   <td className="px-4 py-2 text-right text-gray-600">{p.quantity} {p.unit}</td>
-                  <td className="px-4 py-2 text-right text-gray-500">{Number(p.unit_price).toFixed(2)} zl</td>
-                  <td className="px-4 py-2 text-right font-medium text-amber-600">{Number(p.total).toFixed(2)} zl</td>
+                  <td className="px-4 py-2 text-right text-gray-500">{Number(p.unit_price).toFixed(2)} zł</td>
+                  <td className="px-4 py-2 text-right font-medium text-amber-600">{Number(p.total).toFixed(2)} zł</td>
                   <td className="px-4 py-2 text-gray-500">
                     {(p as any).order?.number ? `#${(p as any).order.number}` : '—'}
                   </td>
@@ -64,6 +67,7 @@ export default function PaintPurchasesPage() {
                     <button onClick={async () => {
                       if (!confirm('Usunąć ten zakup?')) return
                       await supabase.from('paint_purchases').delete().eq('id', p.id)
+                      toast('Zakup usunięty')
                       fetch()
                     }} className="rounded p-1 text-gray-400 hover:text-red-500 hover:bg-red-50">
                       <Trash2 className="h-3.5 w-3.5" />
@@ -86,7 +90,7 @@ export default function PaintPurchasesPage() {
         </div>
       )}
 
-      {showForm && <PurchaseFormModal orders={orders.map(o => ({ id: o.id, number: o.number }))} onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); fetch() }} />}
+      {showForm && <PurchaseFormModal orders={orders.map(o => ({ id: o.id, number: o.number }))} onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); toast('Zakup dodany'); fetch() }} />}
     </div>
   )
 }
@@ -100,6 +104,7 @@ function PurchaseFormModal({ orders, onClose, onSaved }: { orders: { id: string;
   const [unitPrice, setUnitPrice] = useState(0)
   const [orderId, setOrderId] = useState<string>('')
   const [saving, setSaving] = useState(false)
+  useModalKeys(onClose)
 
   const total = quantity * unitPrice
 
@@ -148,7 +153,7 @@ function PurchaseFormModal({ orders, onClose, onSaved }: { orders: { id: string;
               {orders.map((o) => <option key={o.id} value={o.id}>#{o.number}</option>)}
             </select>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div>
               <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Ilość</label>
               <input type="number" value={quantity || ''} onChange={(e) => setQuantity(Number(e.target.value))}
@@ -168,7 +173,7 @@ function PurchaseFormModal({ orders, onClose, onSaved }: { orders: { id: string;
             </div>
           </div>
           <div className="rounded-lg bg-gray-50 p-3 text-sm">
-            <span className="text-gray-400">Suma:</span> <span className="text-amber-600 font-bold">{total.toFixed(2)} zl</span>
+            <span className="text-gray-500">Suma:</span> <span className="text-amber-600 font-bold">{total.toFixed(2)} zł</span>
           </div>
         </div>
         <div className="mt-4 flex justify-end gap-2">

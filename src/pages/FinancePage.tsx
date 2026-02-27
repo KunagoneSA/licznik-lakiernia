@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { TrendingUp, TrendingDown, DollarSign, Paintbrush, Package, Building2, Plus, Trash2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useWorkLogs } from '../hooks/useWorkLogs'
+import { useToast } from '../contexts/ToastContext'
 import type { PaintPurchase } from '../types/database'
 
 interface OrderWithItems {
@@ -24,6 +25,7 @@ export default function FinancePage() {
   const [loading, setLoading] = useState(true)
   const [monthlyCosts, setMonthlyCosts] = useState<{ id: string; month: string; rent: number; waste: number; other: number; total: number }[]>([])
   const [showCostForm, setShowCostForm] = useState(false)
+  const { toast } = useToast()
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -155,17 +157,17 @@ export default function FinancePage() {
       </div>
 
       {/* Secondary KPIs */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="rounded-lg bg-white shadow-sm p-4">
-          <p className="text-xs text-gray-400 uppercase">Zamówień w okresie</p>
+          <p className="text-xs text-gray-500 uppercase">Zamówień w okresie</p>
           <p className="mt-1 text-2xl font-bold text-gray-800">{filteredOrders.length}</p>
         </div>
         <div className="rounded-lg bg-white shadow-sm p-4">
-          <p className="text-xs text-gray-400 uppercase">Łącznie m²</p>
+          <p className="text-xs text-gray-500 uppercase">Łącznie m²</p>
           <p className="mt-1 text-2xl font-bold text-gray-800">{totalM2.toFixed(2)}</p>
         </div>
         <div className="rounded-lg bg-white shadow-sm p-4">
-          <p className="text-xs text-gray-400 uppercase">Zysk / m²</p>
+          <p className="text-xs text-gray-500 uppercase">Zysk / m²</p>
           <p className={`mt-1 text-2xl font-bold ${profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
             {totalM2 > 0 ? (profit / totalM2).toFixed(2) : '—'} zł
           </p>
@@ -306,7 +308,7 @@ export default function FinancePage() {
           </button>
         </div>
 
-        {showCostForm && <MonthlyCostForm onSaved={() => { setShowCostForm(false); fetchData() }} onCancel={() => setShowCostForm(false)} />}
+        {showCostForm && <MonthlyCostForm onSaved={() => { setShowCostForm(false); toast('Koszty zapisane'); fetchData() }} onCancel={() => setShowCostForm(false)} />}
 
         <div className="rounded-lg border border-gray-200 overflow-hidden">
           <table className="w-full text-sm">
@@ -332,6 +334,7 @@ export default function FinancePage() {
                     <button onClick={async () => {
                       if (!confirm('Usunąć ten miesiąc?')) return
                       await supabase.from('monthly_costs').delete().eq('id', c.id)
+                      toast('Koszt usunięty')
                       fetchData()
                     }} className="rounded p-1 text-gray-400 hover:text-red-500 hover:bg-red-50">
                       <Trash2 className="h-3.5 w-3.5" />
@@ -361,10 +364,10 @@ function StatCard({ icon: Icon, label, value, color, sub }: {
     <div className="rounded-lg bg-white shadow-sm p-4">
       <div className="flex items-center gap-2">
         <Icon className={`h-5 w-5 ${color}`} />
-        <span className="text-xs text-gray-400 uppercase tracking-wide">{label}</span>
+        <span className="text-xs text-gray-500 uppercase tracking-wide">{label}</span>
       </div>
       <p className={`mt-2 text-2xl font-bold ${color}`}>{value}</p>
-      {sub && <p className="mt-0.5 text-xs text-gray-400">{sub}</p>}
+      {sub && <p className="mt-0.5 text-xs text-gray-500">{sub}</p>}
     </div>
   )
 }
@@ -390,7 +393,7 @@ function MonthlyCostForm({ onSaved, onCancel }: { onSaved: () => void; onCancel:
 
   return (
     <div className="mb-4 rounded-lg bg-gray-50 p-4 space-y-3">
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Miesiąc</label>
           <input type="month" value={month} onChange={(e) => setMonth(e.target.value)}

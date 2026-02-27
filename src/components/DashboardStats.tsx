@@ -13,7 +13,7 @@ export default function DashboardStats({ orders }: { orders: Order[] }) {
   ]
 
   return (
-    <div className="grid grid-cols-3 gap-3">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
       {stats.map((stat) => (
         <div key={stat.label} className="rounded-lg bg-white shadow-sm p-4">
           <div className="flex items-center gap-2">

@@ -9,6 +9,7 @@ import { useClientPricing } from '../hooks/useClientPricing'
 import { supabase } from '../lib/supabase'
 import OrderItemFormModal from '../components/OrderItemFormModal'
 import WorkLogFormModal from '../components/WorkLogFormModal'
+import { useToast } from '../contexts/ToastContext'
 import type { OrderStatus } from '../types/database'
 
 const statusLabels: Record<OrderStatus, string> = {
@@ -32,6 +33,7 @@ export default function OrderDetailPage() {
   const { logs, addLog } = useWorkLogs(id!)
   const { variants } = usePaintingVariants()
   const { getPriceForVariant } = useClientPricing(order?.client_id ?? null)
+  const { toast } = useToast()
   const [showItemForm, setShowItemForm] = useState(false)
   const [showLogForm, setShowLogForm] = useState(false)
   const [editing, setEditing] = useState(false)
@@ -60,6 +62,7 @@ export default function OrderDetailPage() {
     const updates: Record<string, unknown> = { status: newStatus }
     if (newStatus === 'gotowe') updates.ready_date = new Date().toISOString().slice(0, 10)
     await updateOrder(updates)
+    toast(`Status zmieniony na: ${statusLabels[newStatus]}`)
   }
 
   const handleCheckbox = async (field: string, value: boolean) => {
@@ -80,16 +83,19 @@ export default function OrderDetailPage() {
       notes: editNotes || null,
     })
     setEditing(false)
+    toast('Zamówienie zaktualizowane')
   }
 
   const handleDeleteItem = async (itemId: string) => {
     if (!confirm('Usunąć ten element?')) return
     await deleteItem(itemId)
+    toast('Element usunięty')
   }
 
   const handleDeleteOrder = async () => {
     if (!confirm(`Usunąć zamówienie #${order.number}? Tej operacji nie można cofnąć.`)) return
     await supabase.from('orders').delete().eq('id', order.id)
+    toast('Zamówienie usunięte')
     navigate('/zamowienia')
   }
 
@@ -163,7 +169,7 @@ export default function OrderDetailPage() {
       {/* Checklist */}
       <div className="flex flex-wrap gap-4 rounded-lg bg-white shadow-sm p-4">
         {[
-          { field: 'material_provided', label: 'Material dostarczony', value: order.material_provided },
+          { field: 'material_provided', label: 'Materiał dostarczony', value: order.material_provided },
           { field: 'paints_provided', label: 'Lakiery dostarczone', value: order.paints_provided },
           { field: 'dimensions_entered', label: 'Wymiary wpisane', value: order.dimensions_entered },
         ].map(({ field, label, value }) => (
@@ -220,7 +226,10 @@ export default function OrderDetailPage() {
                 </tr>
               ))}
               {items.length === 0 && (
-                <tr><td colSpan={8} className="px-3 py-6 text-center text-gray-400">Brak elementów</td></tr>
+                <tr><td colSpan={8} className="px-3 py-8 text-center">
+                  <p className="text-gray-500">Brak elementów</p>
+                  <p className="mt-1 text-xs text-gray-400">Kliknij "Dodaj element" żeby dodać wymiary do zamówienia</p>
+                </td></tr>
               )}
             </tbody>
           </table>
@@ -228,17 +237,17 @@ export default function OrderDetailPage() {
       </div>
 
       {/* Summary */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         {[
           { label: 'Lakier m\u00B2', value: totalM2.toFixed(2), color: 'text-gray-800' },
-          { label: 'Wartość', value: `${totalValue.toFixed(2)} zl`, color: 'text-amber-600' },
-          { label: 'Koszty pracy', value: `${totalLaborCost.toFixed(2)} zl`, color: 'text-red-600' },
+          { label: 'Wartość', value: `${totalValue.toFixed(2)} zł`, color: 'text-amber-600' },
+          { label: 'Koszty pracy', value: `${totalLaborCost.toFixed(2)} zł`, color: 'text-red-600' },
           { label: 'Godziny', value: totalHours.toFixed(1), color: 'text-gray-800' },
-          { label: 'Zysk', value: `${profit.toFixed(2)} zl`, color: profit >= 0 ? 'text-emerald-600' : 'text-red-600' },
-          { label: 'Zysk/h', value: `${profitPerHour.toFixed(2)} zl`, color: profitPerHour >= 0 ? 'text-emerald-600' : 'text-red-600' },
+          { label: 'Zysk', value: `${profit.toFixed(2)} zł`, color: profit >= 0 ? 'text-emerald-600' : 'text-red-600' },
+          { label: 'Zysk/h', value: `${profitPerHour.toFixed(2)} zł`, color: profitPerHour >= 0 ? 'text-emerald-600' : 'text-red-600' },
         ].map((s) => (
           <div key={s.label} className="rounded-lg bg-white shadow-sm p-3">
-            <p className="text-xs text-gray-400 uppercase">{s.label}</p>
+            <p className="text-xs text-gray-500 uppercase">{s.label}</p>
             <p className={`mt-1 text-lg font-bold ${s.color}`}>{s.value}</p>
           </div>
         ))}
@@ -255,15 +264,20 @@ export default function OrderDetailPage() {
         </div>
         <div className="space-y-2">
           {logs.map((log) => (
-            <div key={log.id} className="flex items-center gap-4 rounded-lg bg-white shadow-sm p-3">
-              <span className="text-xs text-gray-400">{new Date(log.date).toLocaleDateString('pl-PL')}</span>
+            <div key={log.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg bg-white shadow-sm p-3">
+              <span className="text-xs text-gray-500">{new Date(log.date).toLocaleDateString('pl-PL')}</span>
               <span className="text-sm font-medium text-gray-800">{log.worker_name}</span>
               <span className="rounded-full bg-gray-200 px-2 py-0.5 text-xs text-gray-600">{log.operation}</span>
-              <span className="ml-auto text-sm text-gray-500">{log.hours}h x {log.hourly_rate} zl</span>
-              <span className="text-sm font-medium text-amber-600">{Number(log.cost).toFixed(2)} zl</span>
+              <span className="ml-auto text-sm text-gray-500">{log.hours}h x {log.hourly_rate} zł</span>
+              <span className="text-sm font-medium text-amber-600">{Number(log.cost).toFixed(2)} zł</span>
             </div>
           ))}
-          {logs.length === 0 && <p className="py-4 text-center text-sm text-gray-400">Brak wpisów</p>}
+          {logs.length === 0 && (
+            <div className="py-8 text-center">
+              <p className="text-sm text-gray-500">Brak etapów pracy</p>
+              <p className="mt-1 text-xs text-gray-400">Zapisuj godziny pracy pracowników przy tym zamówieniu</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -272,14 +286,14 @@ export default function OrderDetailPage() {
           variants={variants}
           getPrice={(vid) => getPriceForVariant(vid, variants)}
           onClose={() => setShowItemForm(false)}
-          onSave={async (item) => { await addItem(item); setShowItemForm(false) }}
+          onSave={async (item) => { await addItem(item); setShowItemForm(false); toast('Element dodany') }}
         />
       )}
       {showLogForm && (
         <WorkLogFormModal
           orderId={id!}
           onClose={() => setShowLogForm(false)}
-          onSave={async (log) => { await addLog(log); setShowLogForm(false) }}
+          onSave={async (log) => { await addLog(log); setShowLogForm(false); toast('Etap pracy dodany') }}
         />
       )}
     </div>

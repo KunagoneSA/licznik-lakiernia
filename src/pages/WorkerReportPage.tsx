@@ -69,7 +69,7 @@ export default function WorkerReportPage() {
         {Array.from(summary.entries()).map(([name, s]) => (
           <div key={name} className="rounded-lg bg-white shadow-sm p-3">
             <p className="text-sm font-medium text-gray-800">{name}</p>
-            <p className="text-xs text-gray-500">{s.hours.toFixed(1)}h &middot; {s.cost.toFixed(0)} zl{s.m2 > 0 ? ` · ${s.m2.toFixed(2)} m2` : ''}</p>
+            <p className="text-xs text-gray-500">{s.hours.toFixed(1)}h &middot; {s.cost.toFixed(0)} zł{s.m2 > 0 ? ` · ${s.m2.toFixed(2)} m2` : ''}</p>
           </div>
         ))}
       </div>
@@ -98,8 +98,8 @@ export default function WorkerReportPage() {
                   <td className="px-4 py-2 text-gray-800">{l.worker_name}</td>
                   <td className="px-4 py-2 text-gray-600">{l.operation}</td>
                   <td className="px-4 py-2 text-right text-gray-600">{l.hours}</td>
-                  <td className="px-4 py-2 text-right text-gray-500">{l.hourly_rate} zl</td>
-                  <td className="px-4 py-2 text-right font-medium text-amber-600">{Number(l.cost).toFixed(2)} zl</td>
+                  <td className="px-4 py-2 text-right text-gray-500">{l.hourly_rate} zł</td>
+                  <td className="px-4 py-2 text-right font-medium text-amber-600">{Number(l.cost).toFixed(2)} zł</td>
                 </tr>
               ))}
               {filtered.length === 0 && (

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
 import type { PaintingVariant } from '../types/database'
+import { useModalKeys } from '../hooks/useModalKeys'
 
 interface Props {
   variants: PaintingVariant[]
@@ -16,6 +17,7 @@ export default function OrderItemFormModal({ variants, getPrice, onClose, onSave
   const [variantId, setVariantId] = useState(variants[0]?.id ?? '')
   const [hasHandle, setHasHandle] = useState(false)
   const [notes, setNotes] = useState('')
+  useModalKeys(onClose)
 
   const variant = variants.find((v) => v.id === variantId)
   const sides = variant?.sides ?? 2
@@ -46,7 +48,7 @@ export default function OrderItemFormModal({ variants, getPrice, onClose, onSave
           <button onClick={onClose} className="rounded-md p-1 text-gray-500 hover:bg-gray-100"><X className="h-5 w-5" /></button>
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div>
             <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Długość (mm)</label>
             <input type="number" value={lengthMm || ''} onChange={(e) => setLengthMm(Number(e.target.value))}
@@ -87,10 +89,10 @@ export default function OrderItemFormModal({ variants, getPrice, onClose, onSave
             className="w-full rounded-lg bg-gray-50 border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30" />
         </div>
 
-        <div className="mt-4 rounded-lg bg-gray-50 p-3 grid grid-cols-3 gap-2 text-sm">
-          <div><span className="text-gray-400">m2:</span> <span className="text-gray-800 font-medium">{m2.toFixed(4)}</span></div>
-          <div><span className="text-gray-400">Cena/m2:</span> <span className="text-gray-800 font-medium">{pricePerM2} zl</span></div>
-          <div><span className="text-gray-400">Razem:</span> <span className="text-amber-600 font-bold">{totalPrice.toFixed(2)} zl</span></div>
+        <div className="mt-4 rounded-lg bg-gray-50 p-3 grid grid-cols-1 gap-2 text-sm sm:grid-cols-3">
+          <div><span className="text-gray-500">m2:</span> <span className="text-gray-800 font-medium">{m2.toFixed(4)}</span></div>
+          <div><span className="text-gray-500">Cena/m2:</span> <span className="text-gray-800 font-medium">{pricePerM2} zł</span></div>
+          <div><span className="text-gray-500">Razem:</span> <span className="text-amber-600 font-bold">{totalPrice.toFixed(2)} zł</span></div>
         </div>
 
         <div className="mt-4 flex justify-end gap-2">

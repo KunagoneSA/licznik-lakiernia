@@ -43,7 +43,7 @@ export default function OrderCard({ order }: { order: Order }) {
           <User className="h-3 w-3" />
           {getClientName(order)}
         </span>
-        {value > 0 && <span className="text-xs font-medium text-emerald-600">{value.toFixed(0)} zl</span>}
+        {value > 0 && <span className="text-xs font-medium text-emerald-600">{value.toFixed(0)} zł</span>}
       </div>
     </Link>
   )

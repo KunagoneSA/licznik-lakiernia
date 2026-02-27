@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useClients } from '../hooks/useClients'
+import { useToast } from '../contexts/ToastContext'
+import { useModalKeys } from '../hooks/useModalKeys'
 
 interface Props {
   onClose: () => void
@@ -10,11 +12,13 @@ interface Props {
 
 export default function NewOrderModal({ onClose, onSaved }: Props) {
   const { clients } = useClients()
+  const { toast } = useToast()
   const [clientId, setClientId] = useState('')
   const [description, setDescription] = useState('')
   const [plannedDate, setPlannedDate] = useState('')
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
+  useModalKeys(onClose)
 
   const handleSave = async () => {
     if (!clientId) return
@@ -26,7 +30,12 @@ export default function NewOrderModal({ onClose, onSaved }: Props) {
       notes: notes || null,
     })
     setSaving(false)
-    if (!error) onSaved()
+    if (!error) {
+      toast('Zamówienie utworzone')
+      onSaved()
+    } else {
+      toast('Błąd zapisu zamówienia', 'error')
+    }
   }
 
   return (

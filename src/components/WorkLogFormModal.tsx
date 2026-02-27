@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
+import { useModalKeys } from '../hooks/useModalKeys'
 
 const workerNames = ['Kasia', 'Lukasz', 'Michal', 'Fabian']
 const operations = ['Przygotowanie', 'Podkład', 'Szlifowanie', 'Lakierowanie', 'Pakowanie', 'Sprzątanie', 'Inne']
@@ -18,6 +19,7 @@ export default function WorkLogFormModal({ orderId, onClose, onSave }: Props) {
   const [hours, setHours] = useState(0)
   const [hourlyRate, setHourlyRate] = useState(defaultRates[workerNames[0]] ?? 35)
   const [m2Painted, setM2Painted] = useState<string>('')
+  useModalKeys(onClose)
 
   const cost = hours * hourlyRate
 
@@ -72,14 +74,14 @@ export default function WorkLogFormModal({ orderId, onClose, onSave }: Props) {
               className="w-full rounded-lg bg-gray-50 border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30" />
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div>
               <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Godziny</label>
               <input type="number" step="0.5" value={hours || ''} onChange={(e) => setHours(Number(e.target.value))}
                 className="w-full rounded-lg bg-gray-50 border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Stawka (zl/h)</label>
+              <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Stawka (zł/h)</label>
               <input type="number" value={hourlyRate} onChange={(e) => setHourlyRate(Number(e.target.value))}
                 className="w-full rounded-lg bg-gray-50 border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30" />
             </div>
@@ -91,8 +93,8 @@ export default function WorkLogFormModal({ orderId, onClose, onSave }: Props) {
           </div>
 
           <div className="rounded-lg bg-gray-50 p-3 text-sm">
-            <span className="text-gray-400">Koszt:</span>{' '}
-            <span className="text-amber-600 font-bold">{cost.toFixed(2)} zl</span>
+            <span className="text-gray-500">Koszt:</span>{' '}
+            <span className="text-amber-600 font-bold">{cost.toFixed(2)} zł</span>
           </div>
         </div>
 

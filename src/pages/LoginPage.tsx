@@ -23,7 +23,7 @@ export default function LoginPage() {
             <Paintbrush className="h-7 w-7 text-white" />
           </div>
           <h1 className="text-xl font-bold tracking-wide text-gray-900 uppercase">Licznik Lakiernia</h1>
-          <p className="mt-1 text-sm text-gray-400">System zarządzania zamówieniami</p>
+          <p className="mt-1 text-sm text-gray-500">System zarządzania zamówieniami</p>
         </div>
         <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
           <button
