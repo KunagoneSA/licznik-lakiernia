@@ -95,9 +95,9 @@ export default function ProductsPage() {
               <tr className="bg-gray-50 border-b border-gray-200">
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Nazwa</th>
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 w-20">Jednostka</th>
-                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 w-24">Cena domyślna</th>
+                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 w-32">Cena domyślna</th>
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Domyślny dostawca</th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Częstotliwość</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 w-36">Częstotliwość</th>
                 <th className="px-1 py-2 w-16"></th>
               </tr>
             </thead>
