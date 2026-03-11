@@ -99,6 +99,7 @@ export default function SuppliersPage() {
                           <option value="co tydzień">co tydzień</option>
                           <option value="co 2 tygodnie">co 2 tygodnie</option>
                           <option value="co 4 tygodnie">co 4 tygodnie</option>
+                          <option value="rzadziej">rzadziej</option>
                         </select>
                       </td>
                       <td className="px-1 py-1.5 flex gap-1">
