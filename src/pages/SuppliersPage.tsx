@@ -98,7 +98,7 @@ export default function SuppliersPage() {
                 if (isEd) {
                   const kd = (e: React.KeyboardEvent) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setEditingId(null) }
                   return (
-                    <tr key={s.id} ref={editRowRef} className="border-b border-gray-100 bg-amber-50/30" onBlur={handleRowBlur}
+                    <tr key={s.id} ref={editRowRef} className="border-b border-gray-100 bg-amber-50/30" onBlur={handleRowBlur}>
                       <td className="px-3 py-1.5"><input value={sName} onChange={e => setSName(e.target.value)} className={ic} onKeyDown={kd} autoFocus /></td>
                       <td className="px-3 py-1.5"><input value={sPhone} onChange={e => setSPhone(e.target.value)} className={ic} onKeyDown={kd} placeholder="nr telefonu" /></td>
                       <td className="px-3 py-1.5"><input value={sEmail} onChange={e => setSEmail(e.target.value)} className={ic} onKeyDown={kd} placeholder="email" /></td>

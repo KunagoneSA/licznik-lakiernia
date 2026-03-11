@@ -107,7 +107,7 @@ export default function ProductsPage() {
                 if (isEd) {
                   const kd = (e: React.KeyboardEvent) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setEditingId(null) }
                   return (
-                    <tr key={p.id} ref={editRowRef} className="border-b border-gray-100 bg-amber-50/30" onBlur={handleRowBlur}
+                    <tr key={p.id} ref={editRowRef} className="border-b border-gray-100 bg-amber-50/30" onBlur={handleRowBlur}>
                       <td className="px-3 py-1.5"><input value={pName} onChange={e => setPName(e.target.value)} className={ic} onKeyDown={kd} autoFocus /></td>
                       <td className="px-3 py-1.5">
                         <select value={pUnit} onChange={e => setPUnit(e.target.value)} className={ic} onKeyDown={kd}>
