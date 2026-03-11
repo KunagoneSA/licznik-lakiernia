@@ -1,15 +1,15 @@
-import { useState } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Plus, Trash2, Pencil, Check } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Pencil, Check, X } from 'lucide-react'
 import { useOrder } from '../hooks/useOrder'
 import { useOrderItems } from '../hooks/useOrderItems'
 import { useWorkLogs } from '../hooks/useWorkLogs'
 import { usePaintingVariants } from '../hooks/usePaintingVariants'
 import { useClientPricing } from '../hooks/useClientPricing'
 import { supabase } from '../lib/supabase'
-import OrderItemFormModal from '../components/OrderItemFormModal'
-import WorkLogFormModal from '../components/WorkLogFormModal'
+import type _WorkLogFormModal from '../components/WorkLogFormModal'
 import { useToast } from '../contexts/ToastContext'
+import { useWorkers } from '../hooks/useWorkers'
 import type { OrderStatus } from '../types/database'
 
 const statusLabels: Record<OrderStatus, string> = {
@@ -29,16 +29,129 @@ export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { order, loading, updateOrder } = useOrder(id!)
-  const { items, addItem, deleteItem } = useOrderItems(id!)
-  const { logs, addLog } = useWorkLogs(id!)
+  const { items, addItem, updateItem, deleteItem } = useOrderItems(id!)
+  const { logs, addLog, updateLog, deleteLog } = useWorkLogs(id!)
   const { variants } = usePaintingVariants()
   const { getPriceForVariant } = useClientPricing(order?.client_id ?? null)
   const { toast } = useToast()
-  const [showItemForm, setShowItemForm] = useState(false)
+  const { workers } = useWorkers()
+  const activeWorkers = workers.filter((w) => w.active)
+  const [showInlineAdd, setShowInlineAdd] = useState(false)
+  const [newLength, setNewLength] = useState('')
+  const [newWidth, setNewWidth] = useState('')
+  const [newQty, setNewQty] = useState('1')
+  const [newVariantId, setNewVariantId] = useState('')
+  const [newPrice, setNewPrice] = useState('')
+  const [newHandle, setNewHandle] = useState(false)
+  const [newNotes, setNewNotes] = useState('')
+  const [lastAddedId, setLastAddedId] = useState<string | null>(null)
+  const lengthRef = useRef<HTMLInputElement>(null)
   const [showLogForm, setShowLogForm] = useState(false)
+  const [logWorker, setLogWorker] = useState('Kasia')
+  const [logOp, setLogOp] = useState('Przygotowanie')
+  const [logDate, setLogDate] = useState(new Date().toISOString().slice(0, 10))
+  const [logHours, setLogHours] = useState('')
+  const [logRate, setLogRate] = useState('35')
+  const [logNotes, setLogNotes] = useState('')
+  const logDateRef = useRef<HTMLInputElement>(null)
+
+  const operations = ['Przygotowanie', 'Podkład', 'Szlifowanie', 'Lakierowanie', 'Pakowanie', 'Sprzątanie', 'Inne']
+  const getWorkerRate = (name: string) => activeWorkers.find((w) => w.name === name)?.hourly_rate ?? 35
+
+  const resetLogForm = useCallback(() => {
+    setLogWorker(activeWorkers[0]?.name ?? '')
+    setLogOp('Przygotowanie')
+    setLogDate(new Date().toISOString().slice(0, 10))
+    setLogHours('')
+    setLogRate(String(activeWorkers[0]?.hourly_rate ?? 35))
+    setLogNotes('')
+    setTimeout(() => logDateRef.current?.focus(), 0)
+  }, [activeWorkers])
+
+  const handleInlineLogAdd = useCallback(async () => {
+    const h = Number(logHours)
+    const r = Number(logRate)
+    if (!h) return
+    await addLog({
+      order_id: id!,
+      worker_name: logWorker,
+      operation: logOp,
+      date: logDate,
+      hours: h,
+      hourly_rate: r,
+      cost: Math.round(h * r * 100) / 100,
+      m2_painted: null,
+      notes: logNotes || null,
+    })
+    toast('Etap dodany')
+    resetLogForm()
+  }, [logWorker, logOp, logDate, logHours, logRate, logNotes, id, addLog, toast, resetLogForm])
+
+  const getDefaultPrice = useCallback((vid: string) => {
+    return vid ? getPriceForVariant(vid, variants) : 0
+  }, [getPriceForVariant, variants])
+
+  const resetInlineForm = useCallback(() => {
+    setNewLength('')
+    setNewWidth('')
+    setNewQty('1')
+    setNewVariantId(variants[0]?.id ?? '')
+    setNewPrice('')
+    setNewHandle(false)
+    setNewNotes('')
+    setTimeout(() => lengthRef.current?.focus(), 0)
+  }, [variants])
+
+  const handleInlineAdd = useCallback(async () => {
+    const l = Number(newLength)
+    const w = Number(newWidth)
+    const q = Number(newQty) || 1
+    const vid = newVariantId || variants[0]?.id
+    if (!l || !w || !vid) return
+    const variant = variants.find((v) => v.id === vid)
+    const sides = variant?.sides ?? 2
+    const pricePerM2 = Number(newPrice) || getDefaultPrice(vid)
+    const m2 = (l * w * q * sides) / 1_000_000
+    const totalPrice = m2 * pricePerM2
+    const err = await addItem({
+      length_mm: l,
+      width_mm: w,
+      quantity: q,
+      variant_id: vid,
+      has_handle: newHandle,
+      notes: newNotes || null,
+      m2: Math.round(m2 * 10000) / 10000,
+      price_per_m2: pricePerM2,
+      total_price: Math.round(totalPrice * 100) / 100,
+    })
+    if (!err) {
+      setLastAddedId(String(Date.now()))
+      setTimeout(() => setLastAddedId(null), 1500)
+    }
+    resetInlineForm()
+  }, [newLength, newWidth, newQty, newVariantId, newPrice, newHandle, variants, getDefaultPrice, addItem, toast, resetInlineForm])
+  // Item inline edit
+  const [editingItemId, setEditingItemId] = useState<string | null>(null)
+  const [eiLength, setEiLength] = useState('')
+  const [eiWidth, setEiWidth] = useState('')
+  const [eiQty, setEiQty] = useState('')
+  const [eiVariantId, setEiVariantId] = useState('')
+  const [eiPrice, setEiPrice] = useState('')
+  const [eiHandle, setEiHandle] = useState(false)
+  const [eiNotes, setEiNotes] = useState('')
+
+  // Log inline edit
+  const [editingLogId, setEditingLogId] = useState<string | null>(null)
+  const [elDate, setElDate] = useState('')
+  const [elWorker, setElWorker] = useState('')
+  const [elOp, setElOp] = useState('')
+  const [elHours, setElHours] = useState('')
+  const [elNotes, setElNotes] = useState('')
+
   const [editing, setEditing] = useState(false)
   const [editDesc, setEditDesc] = useState('')
   const [editDate, setEditDate] = useState('')
+  const [editColor, setEditColor] = useState('')
   const [editNotes, setEditNotes] = useState('')
 
   if (loading) {
@@ -51,13 +164,10 @@ export default function OrderDetailPage() {
 
   if (!order) return <p className="py-8 text-center text-red-600">Zamówienie nie znalezione</p>
 
-  const totalM2 = items.reduce((s, i) => s + Number(i.m2), 0)
-  const totalValue = items.reduce((s, i) => s + Number(i.total_price), 0)
-  const totalLaborCost = logs.reduce((s, l) => s + Number(l.cost), 0)
-  const totalHours = logs.reduce((s, l) => s + Number(l.hours), 0)
-  const profit = totalValue - totalLaborCost
-  const profitPerHour = totalHours > 0 ? profit / totalHours : 0
-
+  const totalM2 = items.filter((i) => (i.variant as { name: string } | undefined)?.name !== 'Bejca').reduce((s, i) => s + Number(i.m2), 0)
+  const handleVariant = variants.find((v) => v.name === 'Uchwyt frezowany')
+  const totalHandleCost = handleVariant ? items.filter((i) => i.has_handle).reduce((s, i) => s + handleVariant.default_price_per_m2 * i.quantity, 0) : 0
+  const totalValue = items.reduce((s, i) => s + Number(i.total_price), 0) + totalHandleCost
   const handleStatusChange = async (newStatus: OrderStatus) => {
     const updates: Record<string, unknown> = { status: newStatus }
     if (newStatus === 'gotowe') updates.ready_date = new Date().toISOString().slice(0, 10)
@@ -71,6 +181,7 @@ export default function OrderDetailPage() {
 
   const startEdit = () => {
     setEditDesc(order.description ?? '')
+    setEditColor(order.color ?? '')
     setEditDate(order.planned_date ?? '')
     setEditNotes(order.notes ?? '')
     setEditing(true)
@@ -79,11 +190,81 @@ export default function OrderDetailPage() {
   const saveEdit = async () => {
     await updateOrder({
       description: editDesc || null,
+      color: editColor || null,
       planned_date: editDate || null,
       notes: editNotes || null,
     })
     setEditing(false)
     toast('Zamówienie zaktualizowane')
+  }
+
+  const startEditItem = (item: typeof items[0]) => {
+    setEditingItemId(item.id)
+    setEiLength(String(item.length_mm))
+    setEiWidth(String(item.width_mm))
+    setEiQty(String(item.quantity))
+    setEiVariantId(item.variant_id)
+    setEiPrice(String(item.price_per_m2))
+    setEiHandle(item.has_handle)
+    setEiNotes(item.notes ?? '')
+  }
+
+  const saveEditItem = async () => {
+    if (!editingItemId) return
+    const l = Number(eiLength)
+    const w = Number(eiWidth)
+    const q = Number(eiQty) || 1
+    const vid = eiVariantId
+    const variant = variants.find((v) => v.id === vid)
+    const sides = variant?.sides ?? 2
+    const pricePerM2 = Number(eiPrice) || getDefaultPrice(vid)
+    const m2 = (l * w * q * sides) / 1_000_000
+    const totalPrice = m2 * pricePerM2
+    await updateItem(editingItemId, {
+      length_mm: l,
+      width_mm: w,
+      quantity: q,
+      variant_id: vid,
+      has_handle: eiHandle,
+      notes: eiNotes || null,
+      m2: Math.round(m2 * 10000) / 10000,
+      price_per_m2: pricePerM2,
+      total_price: Math.round(totalPrice * 100) / 100,
+    })
+    setEditingItemId(null)
+    toast('Element zaktualizowany')
+  }
+
+  const startEditLog = (log: typeof logs[0]) => {
+    setEditingLogId(log.id)
+    setElDate(log.date)
+    setElWorker(log.worker_name)
+    setElOp(log.operation)
+    setElHours(String(log.hours))
+    setElNotes(log.notes ?? '')
+  }
+
+  const saveEditLog = async () => {
+    if (!editingLogId) return
+    const h = Number(elHours)
+    const r = getWorkerRate(elWorker)
+    await updateLog(editingLogId, {
+      date: elDate,
+      worker_name: elWorker,
+      operation: elOp,
+      hours: h,
+      hourly_rate: r,
+      cost: Math.round(h * r * 100) / 100,
+      notes: elNotes || null,
+    })
+    setEditingLogId(null)
+    toast('Etap zaktualizowany')
+  }
+
+  const handleDeleteLog = async (logId: string) => {
+    if (!confirm('Usunąć ten etap?')) return
+    await deleteLog(logId)
+    toast('Etap usunięty')
   }
 
   const handleDeleteItem = async (itemId: string) => {
@@ -93,209 +274,431 @@ export default function OrderDetailPage() {
   }
 
   const handleDeleteOrder = async () => {
-    if (!confirm(`Usunąć zamówienie #${order.number}? Tej operacji nie można cofnąć.`)) return
+    if (!confirm(`Usunąć zamówienie ${order.number}/${new Date(order.created_at).getFullYear() % 100}? Tej operacji nie można cofnąć.`)) return
     await supabase.from('orders').delete().eq('id', order.id)
     toast('Zamówienie usunięte')
     navigate('/zamowienia')
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 max-w-3xl">
       {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <Link to="/zamowienia" className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100">
-            <ArrowLeft className="h-5 w-5" />
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Link to="/zamowienia" className="rounded-md p-1 text-gray-500 hover:bg-gray-100">
+            <ArrowLeft className="h-4 w-4" />
           </Link>
           <div>
-            <h1 className="text-xl font-bold text-gray-900">Zamówienie #{order.number}</h1>
-            <p className="text-sm text-gray-500">{getClientName(order as unknown as Record<string, unknown>)} &middot; {order.description || 'Brak opisu'}</p>
+            <div className="flex items-center gap-2">
+              <h1 className="text-base font-bold text-gray-900">Zamówienie {order.number}/{new Date(order.created_at).getFullYear() % 100}</h1>
+              <div className={`rounded-full px-2 py-0.5 text-[10px] font-medium text-white ${statusColors[order.status]}`}>
+                {statusLabels[order.status]}
+              </div>
+            </div>
+            <p className="text-xs text-gray-500">
+              {getClientName(order as unknown as Record<string, unknown>)} · {order.description || 'Brak opisu'}
+              {order.planned_date && <> · {new Date(order.planned_date).toLocaleDateString('pl-PL')}</>}
+            </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <button onClick={editing ? saveEdit : startEdit}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800 transition-colors">
-            {editing ? <><Check className="h-3.5 w-3.5" /> Zapisz</> : <><Pencil className="h-3.5 w-3.5" /> Edytuj</>}
+            className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800">
+            {editing ? <><Check className="h-3 w-3" /> Zapisz</> : <><Pencil className="h-3 w-3" /> Edytuj</>}
           </button>
           <button onClick={handleDeleteOrder}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors">
-            <Trash2 className="h-3.5 w-3.5" /> Usuń
+            className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-red-500 hover:bg-red-50">
+            <Trash2 className="h-3 w-3" /> Usuń
           </button>
-          <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium text-white ${statusColors[order.status]}`}>
-            {statusLabels[order.status]}
-          </div>
         </div>
       </div>
 
+      {/* Color */}
+      {order.color && !editing && (
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] font-medium text-gray-400 uppercase">Kolor:</span>
+          <span className="text-xs font-semibold text-gray-800">{order.color}</span>
+        </div>
+      )}
+
       {/* Editable fields */}
       {editing && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 rounded-lg bg-gray-50 p-4">
+        <div className="grid grid-cols-4 gap-2 rounded-lg bg-gray-50 p-3">
           <div>
-            <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Opis</label>
+            <label className="block text-[10px] font-medium text-gray-500 uppercase mb-0.5">Opis</label>
             <input type="text" value={editDesc} onChange={(e) => setEditDesc(e.target.value)}
-              className="w-full rounded-lg bg-white border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30" />
+              className="w-full rounded bg-white border border-gray-300 px-2 py-1 text-xs text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Planowana data</label>
+            <label className="block text-[10px] font-medium text-gray-500 uppercase mb-0.5">Kolor</label>
+            <input type="text" value={editColor} onChange={(e) => setEditColor(e.target.value)} placeholder="np. RAL 9016 MAT"
+              className="w-full rounded bg-white border border-gray-300 px-2 py-1 text-xs text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30" />
+          </div>
+          <div>
+            <label className="block text-[10px] font-medium text-gray-500 uppercase mb-0.5">Planowana data</label>
             <input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)}
-              className="w-full rounded-lg bg-white border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30" />
+              className="w-full rounded bg-white border border-gray-300 px-2 py-1 text-xs text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Notatki</label>
+            <label className="block text-[10px] font-medium text-gray-500 uppercase mb-0.5">Notatki</label>
             <input type="text" value={editNotes} onChange={(e) => setEditNotes(e.target.value)}
-              className="w-full rounded-lg bg-white border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30" />
+              className="w-full rounded bg-white border border-gray-300 px-2 py-1 text-xs text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30" />
           </div>
         </div>
       )}
 
-      {/* Status flow */}
-      <div className="flex flex-wrap gap-2">
-        {statusFlow.map((s) => (
-          <button
-            key={s}
-            onClick={() => handleStatusChange(s)}
-            disabled={order.status === s}
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-              order.status === s
-                ? `${statusColors[s]} text-white`
-                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-            }`}
-          >
-            {statusLabels[s]}
-          </button>
-        ))}
-      </div>
-
-      {/* Checklist */}
-      <div className="flex flex-wrap gap-4 rounded-lg bg-white shadow-sm p-4">
-        {[
-          { field: 'material_provided', label: 'Materiał dostarczony', value: order.material_provided },
-          { field: 'paints_provided', label: 'Lakiery dostarczone', value: order.paints_provided },
-          { field: 'dimensions_entered', label: 'Wymiary wpisane', value: order.dimensions_entered },
-        ].map(({ field, label, value }) => (
-          <label key={field} className="flex items-center gap-2 text-sm text-gray-600">
-            <input
-              type="checkbox"
-              checked={value}
-              onChange={(e) => handleCheckbox(field, e.target.checked)}
-              className="rounded border-gray-300 bg-white text-amber-500 focus:ring-amber-500/30"
-            />
-            {label}
-          </label>
-        ))}
+      {/* Status flow + Checklist */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex gap-1">
+          {statusFlow.map((s) => (
+            <button
+              key={s}
+              onClick={() => handleStatusChange(s)}
+              disabled={order.status === s}
+              className={`rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
+                order.status === s
+                  ? `${statusColors[s]} text-white`
+                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+              }`}
+            >
+              {statusLabels[s]}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-3">
+          {[
+            { field: 'material_provided', label: 'Materiał', value: order.material_provided },
+            { field: 'paints_provided', label: 'Lakiery', value: order.paints_provided },
+          ].map(({ field, label, value }) => (
+            <label key={field} className={`flex items-center gap-1 text-[11px] font-medium rounded-md px-2 py-1 transition-colors ${
+              value ? 'text-emerald-600 bg-emerald-50' : 'text-red-600 bg-red-50 animate-pulse'
+            }`}>
+              <input
+                type="checkbox"
+                checked={value}
+                onChange={(e) => handleCheckbox(field, e.target.checked)}
+                className="h-3 w-3 rounded border-gray-300 bg-white text-amber-500 focus:ring-amber-500/30"
+              />
+              {label}
+            </label>
+          ))}
+        </div>
       </div>
 
       {/* Elements table */}
       <div>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Elementy</h2>
-          <button onClick={() => setShowItemForm(true)}
-            className="flex items-center gap-1 rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-600 hover:bg-amber-100">
-            <Plus className="h-3.5 w-3.5" /> Dodaj element
-          </button>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Elementy</h2>
+          {!showInlineAdd && (
+            <button onClick={() => { setShowInlineAdd(true); setNewVariantId(variants[0]?.id ?? ''); setTimeout(() => lengthRef.current?.focus(), 50) }}
+              className="flex items-center gap-1 rounded-md bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-600 hover:bg-amber-100">
+              <Plus className="h-3 w-3" /> Dodaj
+            </button>
+          )}
         </div>
-        <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-          <table className="w-full text-sm">
+        <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+          <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Dl (mm)</th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Szer (mm)</th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Szt</th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Rodzaj</th>
-                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500">m2</th>
-                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500">Cena/m2</th>
-                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500">Razem</th>
-                <th className="px-3 py-2 w-8"></th>
+                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500">Dl</th>
+                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500">Szer</th>
+                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500">Szt</th>
+                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500">Rodzaj</th>
+                <th className="px-2 py-1.5 text-right text-[10px] font-medium text-gray-500">m²</th>
+                <th className="px-2 py-1.5 text-right text-[10px] font-medium text-gray-500">Cena</th>
+                <th className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-500">Uch</th>
+                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500">Uwagi</th>
+                <th className="px-2 py-1.5 text-right text-[10px] font-medium text-gray-500">Razem</th>
+                <th className="px-1 py-1.5 w-6"></th>
               </tr>
             </thead>
             <tbody>
-              {items.map((item) => (
-                <tr key={item.id} className="border-b border-gray-100">
-                  <td className="px-3 py-2 text-gray-800">{item.length_mm}</td>
-                  <td className="px-3 py-2 text-gray-800">{item.width_mm}</td>
-                  <td className="px-3 py-2 text-gray-800">{item.quantity}</td>
-                  <td className="px-3 py-2 text-gray-600">{(item.variant as { name: string } | undefined)?.name ?? '—'}</td>
-                  <td className="px-3 py-2 text-right text-gray-600">{Number(item.m2).toFixed(4)}</td>
-                  <td className="px-3 py-2 text-right text-gray-600">{Number(item.price_per_m2).toFixed(0)}</td>
-                  <td className="px-3 py-2 text-right font-medium text-amber-600">{Number(item.total_price).toFixed(2)}</td>
-                  <td className="px-3 py-2">
-                    <button onClick={() => handleDeleteItem(item.id)} className="rounded p-1 text-gray-400 hover:text-red-600 hover:bg-gray-100">
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {items.length === 0 && (
-                <tr><td colSpan={8} className="px-3 py-8 text-center">
-                  <p className="text-gray-500">Brak elementów</p>
-                  <p className="mt-1 text-xs text-gray-400">Kliknij "Dodaj element" żeby dodać wymiary do zamówienia</p>
+              {items.map((item, idx) => {
+                const isEditing = editingItemId === item.id
+                if (isEditing) {
+                  const vid = eiVariantId
+                  const variant = variants.find((v) => v.id === vid)
+                  const sides = variant?.sides ?? 2
+                  const l = Number(eiLength) || 0
+                  const w = Number(eiWidth) || 0
+                  const q = Number(eiQty) || 1
+                  const m2 = (l * w * q * sides) / 1_000_000
+                  const effectivePrice = Number(eiPrice) || getDefaultPrice(vid)
+                  const total = m2 * effectivePrice
+                  const ic = "w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500 tabular-nums"
+                  const kd = (e: React.KeyboardEvent) => { if (e.key === 'Enter') saveEditItem(); if (e.key === 'Escape') setEditingItemId(null) }
+                  return (
+                    <tr key={item.id} className="border-b border-gray-100 bg-blue-50/30">
+                      <td className="px-2 py-1"><input type="number" value={eiLength} onChange={(e) => setEiLength(e.target.value)} className={ic} onKeyDown={kd} /></td>
+                      <td className="px-2 py-1"><input type="number" value={eiWidth} onChange={(e) => setEiWidth(e.target.value)} className={ic} onKeyDown={kd} /></td>
+                      <td className="px-2 py-1"><input type="number" value={eiQty} onChange={(e) => setEiQty(e.target.value)} className={`${ic} w-10`} onKeyDown={kd} /></td>
+                      <td className="px-2 py-1">
+                        <select value={eiVariantId} onChange={(e) => setEiVariantId(e.target.value)}
+                          className="w-full bg-transparent border-b border-gray-300 px-0 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500" onKeyDown={kd}>
+                          {variants.filter((v) => !v.name.includes('(+ MDF)')).map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
+                        </select>
+                      </td>
+                      <td className="px-2 py-1 text-right text-gray-400 tabular-nums">{l && w ? m2.toFixed(3) : ''}</td>
+                      <td className="px-2 py-1"><input type="number" value={eiPrice} onChange={(e) => setEiPrice(e.target.value)} className="w-14 bg-transparent border-b border-gray-300 px-1 py-0.5 text-right text-xs text-gray-800 outline-none focus:border-amber-500 tabular-nums" onKeyDown={kd} /></td>
+                      <td className="px-2 py-1 text-center"><input type="checkbox" checked={eiHandle} onChange={(e) => setEiHandle(e.target.checked)} className="h-3 w-3 rounded border-gray-300 text-amber-500 focus:ring-amber-500/30" /></td>
+                      <td className="px-2 py-1"><input type="text" value={eiNotes} onChange={(e) => setEiNotes(e.target.value)} className="w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-[10px] text-gray-600 outline-none focus:border-amber-500" onKeyDown={kd} /></td>
+                      <td className="px-2 py-1 text-right text-amber-600 font-semibold tabular-nums">{l && w ? total.toFixed(2) : ''}</td>
+                      <td className="px-1 py-1 flex gap-0.5">
+                        <button onClick={saveEditItem} className="rounded p-0.5 text-emerald-500 hover:text-emerald-700"><Check className="h-3 w-3" /></button>
+                        <button onClick={() => setEditingItemId(null)} className="rounded p-0.5 text-gray-400 hover:text-gray-600"><X className="h-3 w-3" /></button>
+                      </td>
+                    </tr>
+                  )
+                }
+                return (
+                  <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
+                    onClick={() => startEditItem(item)}
+                    style={lastAddedId && idx === items.length - 1 ? { animation: 'rowFlash 1.5s ease-out' } : undefined}>
+                    <td className="px-2 py-1.5 text-gray-800 tabular-nums">{item.length_mm}</td>
+                    <td className="px-2 py-1.5 text-gray-800 tabular-nums">{item.width_mm}</td>
+                    <td className="px-2 py-1.5 text-gray-800 tabular-nums">{item.quantity}</td>
+                    <td className="px-2 py-1.5 text-gray-600">{(item.variant as { name: string } | undefined)?.name ?? '—'}</td>
+                    <td className="px-2 py-1.5 text-right text-gray-600 tabular-nums">{Number(item.m2).toFixed(3)}</td>
+                    <td className="px-2 py-1.5 text-right text-gray-600 tabular-nums">{Number(item.price_per_m2).toFixed(0)}</td>
+                    <td className="px-2 py-1.5 text-center text-gray-500">{item.has_handle ? '✓' : ''}</td>
+                    <td className="px-2 py-1.5 text-gray-400 text-[10px]">{item.notes || ''}</td>
+                    <td className="px-2 py-1.5 text-right font-semibold text-amber-600 tabular-nums">{Number(item.total_price).toFixed(2)}</td>
+                    <td className="px-1 py-1.5" onClick={(e) => e.stopPropagation()}>
+                      <button onClick={() => handleDeleteItem(item.id)} className="rounded p-0.5 text-gray-400 hover:text-red-600 hover:bg-gray-100">
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </td>
+                  </tr>
+                )
+              })}
+              {showInlineAdd && (() => {
+                const vid = newVariantId || variants[0]?.id
+                const variant = variants.find((v) => v.id === vid)
+                const sides = variant?.sides ?? 2
+                const pricePerM2 = vid ? getPriceForVariant(vid, variants) : 0
+                const l = Number(newLength) || 0
+                const w = Number(newWidth) || 0
+                const q = Number(newQty) || 1
+                const m2 = (l * w * q * sides) / 1_000_000
+                const effectivePrice = Number(newPrice) || pricePerM2
+                const total = m2 * effectivePrice
+                const inputClass = "w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500 tabular-nums"
+                return (
+                  <tr className="border-b border-gray-100 bg-amber-50/30">
+                    <td className="px-2 py-1">
+                      <input ref={lengthRef} type="number" value={newLength} onChange={(e) => setNewLength(e.target.value)}
+                        placeholder="0" className={inputClass}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleInlineAdd(); if (e.key === 'Escape') setShowInlineAdd(false) }} />
+                    </td>
+                    <td className="px-2 py-1">
+                      <input type="number" value={newWidth} onChange={(e) => setNewWidth(e.target.value)}
+                        placeholder="0" className={inputClass}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleInlineAdd(); if (e.key === 'Escape') setShowInlineAdd(false) }} />
+                    </td>
+                    <td className="px-2 py-1">
+                      <input type="number" value={newQty} onChange={(e) => setNewQty(e.target.value)}
+                        placeholder="1" className={`${inputClass} w-10`}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleInlineAdd(); if (e.key === 'Escape') setShowInlineAdd(false) }} />
+                    </td>
+                    <td className="px-2 py-1">
+                      <select value={newVariantId} onChange={(e) => setNewVariantId(e.target.value)}
+                        className="w-full bg-transparent border-b border-gray-300 px-0 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500"
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleInlineAdd(); if (e.key === 'Escape') setShowInlineAdd(false) }}>
+                        {variants.filter((v) => !v.name.includes('(+ MDF)')).map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
+                      </select>
+                    </td>
+                    <td className="px-2 py-1 text-right text-gray-400 tabular-nums">{l && w ? m2.toFixed(3) : ''}</td>
+                    <td className="px-2 py-1">
+                      <input type="number" value={newPrice} onChange={(e) => setNewPrice(e.target.value)}
+                        placeholder={String(pricePerM2 || '')}
+                        className="w-14 bg-transparent border-b border-gray-300 px-1 py-0.5 text-right text-xs text-gray-800 outline-none focus:border-amber-500 tabular-nums"
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleInlineAdd(); if (e.key === 'Escape') setShowInlineAdd(false) }} />
+                    </td>
+                    <td className="px-2 py-1 text-center">
+                      <input type="checkbox" checked={newHandle} onChange={(e) => setNewHandle(e.target.checked)}
+                        className="h-3 w-3 rounded border-gray-300 text-amber-500 focus:ring-amber-500/30" />
+                    </td>
+                    <td className="px-2 py-1">
+                      <input type="text" value={newNotes} onChange={(e) => setNewNotes(e.target.value)}
+                        placeholder="uwagi"
+                        className="w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-[10px] text-gray-600 outline-none focus:border-amber-500"
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleInlineAdd(); if (e.key === 'Escape') setShowInlineAdd(false) }} />
+                    </td>
+                    <td className="px-2 py-1 text-right text-amber-600 font-semibold tabular-nums">{l && w ? total.toFixed(2) : ''}</td>
+                    <td className="px-1 py-1">
+                      <button onClick={() => setShowInlineAdd(false)} className="rounded p-0.5 text-gray-400 hover:text-gray-600">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </td>
+                  </tr>
+                )
+              })()}
+              {!showInlineAdd && items.length === 0 && (
+                <tr><td colSpan={10} className="px-2 py-6 text-center text-xs text-gray-400">
+                  Brak elementów — kliknij "Dodaj"
                 </td></tr>
               )}
             </tbody>
           </table>
         </div>
+        {showInlineAdd && (
+          <div className="mt-1 flex gap-2 text-[10px] text-gray-400">
+            <span>TAB = następne pole</span>
+            <span>Enter = dodaj i nowy wiersz</span>
+            <span>Esc = zamknij</span>
+          </div>
+        )}
       </div>
 
       {/* Summary */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-        {[
-          { label: 'Lakier m\u00B2', value: totalM2.toFixed(2), color: 'text-gray-800' },
-          { label: 'Wartość', value: `${totalValue.toFixed(2)} zł`, color: 'text-amber-600' },
-          { label: 'Koszty pracy', value: `${totalLaborCost.toFixed(2)} zł`, color: 'text-red-600' },
-          { label: 'Godziny', value: totalHours.toFixed(1), color: 'text-gray-800' },
-          { label: 'Zysk', value: `${profit.toFixed(2)} zł`, color: profit >= 0 ? 'text-emerald-600' : 'text-red-600' },
-          { label: 'Zysk/h', value: `${profitPerHour.toFixed(2)} zł`, color: profitPerHour >= 0 ? 'text-emerald-600' : 'text-red-600' },
-        ].map((s) => (
-          <div key={s.label} className="rounded-lg bg-white shadow-sm p-3">
-            <p className="text-xs text-gray-500 uppercase">{s.label}</p>
-            <p className={`mt-1 text-lg font-bold ${s.color}`}>{s.value}</p>
-          </div>
-        ))}
+      <div className="flex gap-2 items-start">
+        <div className="rounded-lg bg-white shadow-sm px-2 py-2">
+          <p className="text-[10px] text-gray-500 uppercase">Lakier m²</p>
+          <p className="text-sm font-bold tabular-nums text-gray-800">{totalM2.toFixed(2)}</p>
+        </div>
+        <div className="rounded-lg bg-white shadow-sm px-2 py-2">
+          <p className="text-[10px] text-gray-500 uppercase">Bejca m²</p>
+          <p className="text-sm font-bold tabular-nums text-gray-800">
+            {items.filter((i) => (i.variant as { name: string } | undefined)?.name === 'Bejca').reduce((s, i) => s + Number(i.m2), 0).toFixed(2)}
+          </p>
+        </div>
+        <div className="rounded-lg bg-white shadow-sm px-2 py-2">
+          <p className="text-[10px] text-gray-500 uppercase">Uchwyty ({items.filter((i) => i.has_handle).reduce((s, i) => s + i.quantity, 0)} szt)</p>
+          <p className="text-sm font-bold tabular-nums text-gray-800">{totalHandleCost.toFixed(2)}</p>
+        </div>
+        <div className="rounded-lg bg-white shadow-sm px-2 py-2">
+          <p className="text-[10px] text-gray-500 uppercase">Wartość</p>
+          <p className="text-sm font-bold tabular-nums text-amber-600">{totalValue.toFixed(2)}</p>
+        </div>
+        <div className="flex-1 rounded-lg bg-white shadow-sm px-2 py-2">
+          <p className="text-[10px] text-gray-500 uppercase">Komentarz</p>
+          <input type="text" value={order.notes ?? ''} onChange={(e) => updateOrder({ notes: e.target.value || null })}
+            className="w-full text-xs text-gray-700 bg-transparent outline-none border-b border-transparent focus:border-amber-500 mt-0.5"
+            placeholder="dodaj komentarz..." />
+        </div>
       </div>
 
       {/* Work logs */}
       <div>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Etapy pracy</h2>
-          <button onClick={() => setShowLogForm(true)}
-            className="flex items-center gap-1 rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-600 hover:bg-amber-100">
-            <Plus className="h-3.5 w-3.5" /> Dodaj etap
-          </button>
-        </div>
-        <div className="space-y-2">
-          {logs.map((log) => (
-            <div key={log.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg bg-white shadow-sm p-3">
-              <span className="text-xs text-gray-500">{new Date(log.date).toLocaleDateString('pl-PL')}</span>
-              <span className="text-sm font-medium text-gray-800">{log.worker_name}</span>
-              <span className="rounded-full bg-gray-200 px-2 py-0.5 text-xs text-gray-600">{log.operation}</span>
-              <span className="ml-auto text-sm text-gray-500">{log.hours}h x {log.hourly_rate} zł</span>
-              <span className="text-sm font-medium text-amber-600">{Number(log.cost).toFixed(2)} zł</span>
-            </div>
-          ))}
-          {logs.length === 0 && (
-            <div className="py-8 text-center">
-              <p className="text-sm text-gray-500">Brak etapów pracy</p>
-              <p className="mt-1 text-xs text-gray-400">Zapisuj godziny pracy pracowników przy tym zamówieniu</p>
-            </div>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Etapy pracy</h2>
+          {!showLogForm && (
+            <button onClick={() => { setShowLogForm(true); setTimeout(() => logDateRef.current?.focus(), 50) }}
+              className="flex items-center gap-1 rounded-md bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-600 hover:bg-amber-100">
+              <Plus className="h-3 w-3" /> Dodaj
+            </button>
           )}
         </div>
+        <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50">
+                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500">Data</th>
+                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 w-28">Pracownik</th>
+                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 w-1/4">Operacja</th>
+                <th className="px-2 py-1.5 text-right text-[10px] font-medium text-gray-500 w-16">Godz</th>
+                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 w-1/3">Uwagi</th>
+                <th className="px-1 py-1.5 w-6"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {logs.map((log) => {
+                const isEditing = editingLogId === log.id
+                if (isEditing) {
+                  const ic = "w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500"
+                  const kd = (e: React.KeyboardEvent) => { if (e.key === 'Enter') saveEditLog(); if (e.key === 'Escape') setEditingLogId(null) }
+                  return (
+                    <tr key={log.id} className="border-b border-gray-100 bg-blue-50/30">
+                      <td className="px-2 py-1"><input type="date" value={elDate} onChange={(e) => setElDate(e.target.value)} className={`${ic} tabular-nums`} onKeyDown={kd} /></td>
+                      <td className="px-2 py-1">
+                        <select value={elWorker} onChange={(e) => setElWorker(e.target.value)} className={ic} onKeyDown={kd}>
+                          {activeWorkers.map((w) => <option key={w.id} value={w.name}>{w.name}</option>)}
+                        </select>
+                      </td>
+                      <td className="px-2 py-1">
+                        <select value={elOp} onChange={(e) => setElOp(e.target.value)} className={ic} onKeyDown={kd}>
+                          {operations.map((o) => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                      </td>
+                      <td className="px-2 py-1"><input type="number" step="0.5" value={elHours} onChange={(e) => setElHours(e.target.value)} className={`${ic} text-right tabular-nums`} onKeyDown={kd} /></td>
+                      <td className="px-2 py-1"><input type="text" value={elNotes} onChange={(e) => setElNotes(e.target.value)} className="w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-[10px] text-gray-600 outline-none focus:border-amber-500" onKeyDown={kd} /></td>
+                      <td className="px-1 py-1 flex gap-0.5">
+                        <button onClick={saveEditLog} className="rounded p-0.5 text-emerald-500 hover:text-emerald-700"><Check className="h-3 w-3" /></button>
+                        <button onClick={() => setEditingLogId(null)} className="rounded p-0.5 text-gray-400 hover:text-gray-600"><X className="h-3 w-3" /></button>
+                      </td>
+                    </tr>
+                  )
+                }
+                return (
+                  <tr key={log.id} className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer" onClick={() => startEditLog(log)}>
+                    <td className="px-2 py-1.5 text-gray-400 tabular-nums">{new Date(log.date).toLocaleDateString('pl-PL')}</td>
+                    <td className="px-2 py-1.5 font-medium text-gray-800">{log.worker_name}</td>
+                    <td className="px-2 py-1.5 text-gray-600">{log.operation}</td>
+                    <td className="px-2 py-1.5 text-right text-gray-600 tabular-nums">{log.hours}</td>
+                    <td className="px-2 py-1.5 text-gray-400 text-[10px]">{log.notes || ''}</td>
+                    <td className="px-1 py-1.5" onClick={(e) => e.stopPropagation()}>
+                      <button onClick={() => handleDeleteLog(log.id)} className="rounded p-0.5 text-gray-400 hover:text-red-600 hover:bg-gray-100">
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </td>
+                  </tr>
+                )
+              })}
+              {showLogForm && (() => {
+                const inputClass = "w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500"
+                const kd = (e: React.KeyboardEvent) => { if (e.key === 'Enter') handleInlineLogAdd(); if (e.key === 'Escape') setShowLogForm(false) }
+                return (
+                  <tr className="border-b border-gray-100 bg-amber-50/30">
+                    <td className="px-2 py-1">
+                      <input ref={logDateRef} type="date" value={logDate} onChange={(e) => setLogDate(e.target.value)}
+                        className={`${inputClass} tabular-nums`} onKeyDown={kd} />
+                    </td>
+                    <td className="px-2 py-1">
+                      <select value={logWorker} onChange={(e) => { setLogWorker(e.target.value); setLogRate(String(getWorkerRate(e.target.value))) }}
+                        className={inputClass} onKeyDown={kd}>
+                        {activeWorkers.map((w) => <option key={w.id} value={w.name}>{w.name}</option>)}
+                      </select>
+                    </td>
+                    <td className="px-2 py-1">
+                      <select value={logOp} onChange={(e) => setLogOp(e.target.value)}
+                        className={inputClass} onKeyDown={kd}>
+                        {operations.map((o) => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </td>
+                    <td className="px-2 py-1">
+                      <input type="number" step="0.5" value={logHours} onChange={(e) => setLogHours(e.target.value)}
+                        placeholder="0" className={`${inputClass} text-right tabular-nums`} onKeyDown={kd} />
+                    </td>
+                    <td className="px-2 py-1">
+                      <input type="text" value={logNotes} onChange={(e) => setLogNotes(e.target.value)}
+                        placeholder="uwagi"
+                        className="w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-[10px] text-gray-600 outline-none focus:border-amber-500"
+                        onKeyDown={kd} />
+                    </td>
+                    <td className="px-1 py-1">
+                      <button onClick={() => setShowLogForm(false)} className="rounded p-0.5 text-gray-400 hover:text-gray-600">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </td>
+                  </tr>
+                )
+              })()}
+              {!showLogForm && logs.length === 0 && (
+                <tr><td colSpan={6} className="px-2 py-6 text-center text-xs text-gray-400">
+                  Brak etapów pracy
+                </td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        {showLogForm && (
+          <div className="mt-1 flex gap-2 text-[10px] text-gray-400">
+            <span>TAB = następne pole</span>
+            <span>Enter = dodaj</span>
+            <span>Esc = zamknij</span>
+          </div>
+        )}
       </div>
-
-      {showItemForm && (
-        <OrderItemFormModal
-          variants={variants}
-          getPrice={(vid) => getPriceForVariant(vid, variants)}
-          onClose={() => setShowItemForm(false)}
-          onSave={async (item) => { await addItem(item); setShowItemForm(false); toast('Element dodany') }}
-        />
-      )}
-      {showLogForm && (
-        <WorkLogFormModal
-          orderId={id!}
-          onClose={() => setShowLogForm(false)}
-          onSave={async (log) => { await addLog(log); setShowLogForm(false); toast('Etap pracy dodany') }}
-        />
-      )}
     </div>
   )
 }

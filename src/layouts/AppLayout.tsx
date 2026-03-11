@@ -1,20 +1,23 @@
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
-import { LayoutDashboard, ClipboardList, Users, BarChart3, ShoppingCart, Menu, X, Paintbrush, LogOut } from 'lucide-react'
+import { LayoutDashboard, ClipboardList, Users, ShoppingCart, Menu, X, LogOut, Tag, HardHat } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import SprayGunIcon from '../components/SprayGunIcon'
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Tablica' },
   { to: '/zamowienia', icon: ClipboardList, label: 'Zamówienia' },
-  { to: '/raport', icon: BarChart3, label: 'Raport pracowników' },
-  { to: '/finanse', icon: BarChart3, label: 'Finanse' },
-  { to: '/klienci', icon: Users, label: 'Klienci i cenniki' },
+  // { to: '/raport', icon: BarChart3, label: 'Raport pracowników' },
+  // { to: '/finanse', icon: BarChart3, label: 'Finanse' },
+  { to: '/cennik', icon: Tag, label: 'Cennik' },
+  { to: '/klienci', icon: Users, label: 'Klienci' },
   { to: '/lakiery', icon: ShoppingCart, label: 'Zakupy lakierów' },
+  { to: '/pracownicy', icon: HardHat, label: 'Pracownicy' },
 ] as const
 
 export default function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
-  const { signOut } = useAuth()
+  const { user, signOut } = useAuth()
 
   const renderNavLink = (
     { to, icon: Icon, label }: typeof navItems[number],
@@ -43,8 +46,8 @@ export default function AppLayout() {
       {/* Desktop sidebar */}
       <aside className="hidden md:flex md:w-64 md:flex-col md:border-r md:border-gray-200 bg-white">
         <div className="flex h-14 items-center gap-2 px-5 border-b border-gray-200">
-          <div className="h-7 w-7 rounded-md bg-amber-500 flex items-center justify-center">
-            <Paintbrush className="h-4 w-4 text-slate-900" />
+          <div className="h-7 w-7 rounded-md bg-red-600 flex items-center justify-center">
+            <SprayGunIcon className="h-4 w-4 text-white" />
           </div>
           <span className="text-sm font-semibold tracking-wide text-gray-900 uppercase">
             Lakiernia
@@ -53,7 +56,15 @@ export default function AppLayout() {
         <nav className="flex-1 py-4 px-3 space-y-1">
           {navItems.map((item) => renderNavLink(item))}
         </nav>
-        <div className="px-3 pb-4">
+        <div className="px-3 pb-4 space-y-1">
+          {user && (
+            <div className="px-3 py-2">
+              {user.user_metadata?.full_name && (
+                <div className="text-xs font-medium text-gray-600 truncate">{user.user_metadata.full_name}</div>
+              )}
+              <div className="text-[11px] text-gray-400 truncate">{user.email}</div>
+            </div>
+          )}
           <button onClick={signOut} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
             <LogOut className="h-[18px] w-[18px]" />
             Wyloguj się
@@ -70,8 +81,8 @@ export default function AppLayout() {
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white flex flex-col transform transition-transform duration-200 ease-out md:hidden ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex h-14 items-center justify-between px-5 border-b border-gray-200">
           <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-md bg-amber-500 flex items-center justify-center">
-              <Paintbrush className="h-4 w-4 text-slate-900" />
+            <div className="h-7 w-7 rounded-md bg-red-600 flex items-center justify-center">
+              <SprayGunIcon className="h-4 w-4 text-white" />
             </div>
             <span className="text-sm font-semibold tracking-wide text-gray-900 uppercase">Lakiernia</span>
           </div>
@@ -82,7 +93,15 @@ export default function AppLayout() {
         <nav className="flex-1 py-4 px-3 space-y-1">
           {navItems.map((item) => renderNavLink(item, () => setMobileOpen(false)))}
         </nav>
-        <div className="px-3 pb-4">
+        <div className="px-3 pb-4 space-y-1">
+          {user && (
+            <div className="px-3 py-2">
+              {user.user_metadata?.full_name && (
+                <div className="text-xs font-medium text-gray-600 truncate">{user.user_metadata.full_name}</div>
+              )}
+              <div className="text-[11px] text-gray-400 truncate">{user.email}</div>
+            </div>
+          )}
           <button onClick={signOut} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
             <LogOut className="h-[18px] w-[18px]" />
             Wyloguj się

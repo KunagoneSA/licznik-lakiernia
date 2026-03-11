@@ -11,7 +11,7 @@ export function usePaintingVariants() {
     const { data } = await supabase
       .from('painting_variants')
       .select('*')
-      .order('name')
+      .order('sort_order', { ascending: true, nullsFirst: false })
     setVariants((data as PaintingVariant[]) ?? [])
     setLoading(false)
   }, [])

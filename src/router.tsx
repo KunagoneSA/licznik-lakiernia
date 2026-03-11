@@ -10,6 +10,8 @@ import WorkerReportPage from './pages/WorkerReportPage'
 import FinancePage from './pages/FinancePage'
 import ClientsPage from './pages/ClientsPage'
 import PaintPurchasesPage from './pages/PaintPurchasesPage'
+import CennikPage from './pages/CennikPage'
+import WorkersPage from './pages/WorkersPage'
 
 export const router = createBrowserRouter([
   {
@@ -29,8 +31,10 @@ export const router = createBrowserRouter([
           { path: 'zamowienia/:id', element: <OrderDetailPage /> },
           { path: 'raport', element: <WorkerReportPage /> },
           { path: 'finanse', element: <FinancePage /> },
+          { path: 'cennik', element: <CennikPage /> },
           { path: 'klienci', element: <ClientsPage /> },
           { path: 'lakiery', element: <PaintPurchasesPage /> },
+          { path: 'pracownicy', element: <WorkersPage /> },
         ],
       },
     ],

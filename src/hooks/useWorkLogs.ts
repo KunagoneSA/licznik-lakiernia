@@ -32,5 +32,23 @@ export function useWorkLogs(orderId?: string | null) {
     return error
   }, [fetch])
 
-  return { logs, loading, refetch: fetch, addLog }
+  const updateLog = useCallback(async (id: string, updates: Partial<WorkLog>) => {
+    const { error } = await supabase
+      .from('work_logs')
+      .update(updates)
+      .eq('id', id)
+    if (!error) await fetch()
+    return error
+  }, [fetch])
+
+  const deleteLog = useCallback(async (id: string) => {
+    const { error } = await supabase
+      .from('work_logs')
+      .delete()
+      .eq('id', id)
+    if (!error) await fetch()
+    return error
+  }, [fetch])
+
+  return { logs, loading, refetch: fetch, addLog, updateLog, deleteLog }
 }

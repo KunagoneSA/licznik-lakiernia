@@ -94,7 +94,7 @@ export default function WorkerReportPage() {
             <tbody>
               {filtered.map((l) => (
                 <tr key={l.id} className="border-b border-gray-100">
-                  <td className="px-4 py-2 text-gray-500">{new Date(l.date).toLocaleDateString('pl-PL')}</td>
+                  <td className="px-4 py-2 text-gray-500">{l.date}</td>
                   <td className="px-4 py-2 text-gray-800">{l.worker_name}</td>
                   <td className="px-4 py-2 text-gray-600">{l.operation}</td>
                   <td className="px-4 py-2 text-right text-gray-600">{l.hours}</td>

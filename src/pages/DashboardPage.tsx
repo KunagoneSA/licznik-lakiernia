@@ -8,7 +8,7 @@ const columns = [
   { status: 'nowe', title: 'Nowe', color: 'bg-blue-400' },
   { status: 'w_trakcie', title: 'W trakcie', color: 'bg-amber-400' },
   { status: 'gotowe', title: 'Gotowe', color: 'bg-emerald-400' },
-  { status: 'wydane', title: 'Do odbioru', color: 'bg-violet-400' },
+  { status: 'wydane', title: 'Oddane', color: 'bg-violet-400' },
 ] as const
 
 export default function DashboardPage() {

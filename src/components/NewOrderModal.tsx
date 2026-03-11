@@ -16,6 +16,7 @@ export default function NewOrderModal({ onClose, onSaved }: Props) {
   const [clientId, setClientId] = useState('')
   const [description, setDescription] = useState('')
   const [plannedDate, setPlannedDate] = useState('')
+  const [color, setColor] = useState('')
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
   useModalKeys(onClose)
@@ -26,6 +27,7 @@ export default function NewOrderModal({ onClose, onSaved }: Props) {
     const { error } = await supabase.from('orders').insert({
       client_id: clientId,
       description: description || null,
+      color: color || null,
       planned_date: plannedDate || null,
       notes: notes || null,
     })
@@ -70,6 +72,17 @@ export default function NewOrderModal({ onClose, onSaved }: Props) {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="np. Fronty frezowane 9016 MAT"
+              className="w-full rounded-lg bg-gray-50 border border-gray-300 px-3 py-2 text-sm text-gray-800 placeholder-gray-400 outline-none focus:ring-2 focus:ring-amber-500/30"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Kolor</label>
+            <input
+              type="text"
+              value={color}
+              onChange={(e) => setColor(e.target.value)}
+              placeholder="np. RAL 9016 MAT"
               className="w-full rounded-lg bg-gray-50 border border-gray-300 px-3 py-2 text-sm text-gray-800 placeholder-gray-400 outline-none focus:ring-2 focus:ring-amber-500/30"
             />
           </div>

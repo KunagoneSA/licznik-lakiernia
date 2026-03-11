@@ -10,7 +10,7 @@ export default function ClientsPage() {
   const { clients, refetch: refetchClients } = useClients()
   const { variants } = usePaintingVariants()
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const { pricing, upsertPricing } = useClientPricing(selectedId)
+  const { pricing } = useClientPricing(selectedId)
   const [showAdd, setShowAdd] = useState(false)
   const [newName, setNewName] = useState('')
   const [editingClient, setEditingClient] = useState(false)
@@ -39,19 +39,11 @@ export default function ClientsPage() {
 
   const handleAddClient = async () => {
     if (!newName.trim()) return
-    const code = String(Math.floor(1000 + Math.random() * 9000))
-    await supabase.from('clients').insert({ name: newName.trim(), access_code: code })
+    await supabase.from('clients').insert({ name: newName.trim() })
     setNewName('')
     setShowAdd(false)
     toast('Klient dodany')
     refetchClients()
-  }
-
-  const handlePriceChange = async (variantId: string, value: string) => {
-    const price = Number(value)
-    if (!price || price <= 0) return
-    await upsertPricing(variantId, price)
-    toast('Cennik zapisany')
   }
 
   return (
@@ -83,7 +75,7 @@ export default function ClientsPage() {
                   selectedId === c.id ? 'bg-amber-50 text-amber-700' : 'bg-white text-gray-700 hover:bg-gray-50'
                 }`}>
                 <span className="font-medium">{c.name}</span>
-                {c.access_code && <span className="ml-2 text-xs text-gray-500">PIN: {c.access_code}</span>}
+
               </button>
               <button onClick={async () => {
                 if (!confirm(`Usunąć klienta ${c.name}?`)) return
@@ -131,37 +123,52 @@ export default function ClientsPage() {
                   </button>
                 </div>
               )}
-              <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-200 bg-gray-50">
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Wariant</th>
-                      <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Domyślna</th>
-                      <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Cena klienta</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {variants.map((v) => {
-                      const custom = pricing.find((p) => p.variant_id === v.id)
-                      return (
-                        <tr key={v.id} className="border-b border-gray-100">
-                          <td className="px-4 py-2 text-gray-800">{v.name}</td>
-                          <td className="px-4 py-2 text-right text-gray-500">{v.default_price_per_m2} zł/m²</td>
-                          <td className="px-4 py-2 text-right">
-                            <input
-                              type="number"
-                              defaultValue={custom?.price_per_m2 ?? ''}
-                              placeholder={String(v.default_price_per_m2)}
-                              onBlur={(e) => handlePriceChange(v.id, e.target.value)}
-                              className="w-24 rounded bg-white border border-gray-300 px-2 py-1 text-right text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30"
-                            />
-                          </td>
+              {(() => {
+                const mdfVariants = new Map(
+                  variants
+                    .filter((v) => v.name.includes('(+ MDF)'))
+                    .map((v) => [v.name.replace(' (+ MDF)', ''), v])
+                )
+                const mainVariants = variants.filter((v) => !v.name.includes('(+ MDF)'))
+                const hasMdfCol = mdfVariants.size > 0
+                return (
+                  <div className="rounded-lg border border-gray-200 bg-white overflow-hidden max-w-lg">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b border-gray-200 bg-gray-50">
+                          <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 uppercase">Wariant</th>
+                          <th className="px-2 py-1.5 text-right text-[10px] font-medium text-gray-500 uppercase">Cena/m²</th>
+                          {hasMdfCol && (
+                            <th className="px-2 py-1.5 text-right text-[10px] font-medium text-gray-500 uppercase">+ MDF</th>
+                          )}
+                          <th className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-500 uppercase">Strony</th>
                         </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                      </thead>
+                      <tbody>
+                        {mainVariants.map((v) => {
+                          const mdfV = mdfVariants.get(v.name)
+                          const custom = pricing.find((p) => p.variant_id === v.id)
+                          const mdfCustom = mdfV ? pricing.find((p) => p.variant_id === mdfV.id) : null
+                          return (
+                            <tr key={v.id} className="border-b border-gray-100 hover:bg-gray-50">
+                              <td className="px-2 py-1.5 text-gray-800 font-medium">{v.name}</td>
+                              <td className="py-1.5 pr-5 text-right text-amber-600 font-semibold tabular-nums">
+                                {custom?.price_per_m2 ?? v.default_price_per_m2}
+                              </td>
+                              {hasMdfCol && (
+                                <td className="py-1.5 pr-5 text-right text-amber-600 font-semibold tabular-nums">
+                                  {mdfV ? (mdfCustom?.price_per_m2 ?? mdfV.default_price_per_m2) : ''}
+                                </td>
+                              )}
+                              <td className="px-2 py-1.5 text-center text-gray-500">{v.sides === 2 ? '1' : v.sides}</td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )
+              })()}
             </div>
           ) : (
             <p className="py-8 text-center text-gray-400 text-sm">Wybierz klienta, żeby zobaczyć cennik</p>

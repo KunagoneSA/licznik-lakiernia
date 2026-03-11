@@ -1,19 +1,21 @@
-import { ClipboardList, CheckCircle, Clock } from 'lucide-react'
+import { ClipboardList, CheckCircle, Clock, PackageCheck } from 'lucide-react'
 import type { Order } from '../types/database'
 
 export default function DashboardStats({ orders }: { orders: Order[] }) {
   const newCount = orders.filter((o) => o.status === 'nowe').length
   const inProgress = orders.filter((o) => o.status === 'w_trakcie').length
   const ready = orders.filter((o) => o.status === 'gotowe').length
+  const wydane = orders.filter((o) => o.status === 'wydane').length
 
   const stats = [
     { label: 'Nowe', value: newCount, icon: ClipboardList, color: 'text-blue-500' },
     { label: 'W trakcie', value: inProgress, icon: Clock, color: 'text-amber-500' },
     { label: 'Gotowe', value: ready, icon: CheckCircle, color: 'text-emerald-500' },
+    { label: 'Oddane', value: wydane, icon: PackageCheck, color: 'text-violet-500' },
   ]
 
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       {stats.map((stat) => (
         <div key={stat.label} className="rounded-lg bg-white shadow-sm p-4">
           <div className="flex items-center gap-2">

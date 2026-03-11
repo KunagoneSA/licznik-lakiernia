@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Plus, Search, ChevronUp, ChevronDown } from 'lucide-react'
 import { useOrders } from '../hooks/useOrders'
 import type { OrderStatus } from '../types/database'
@@ -21,7 +21,7 @@ const statusColors: Record<OrderStatus, string> = {
   'zapłacone': 'bg-gray-100 text-gray-500',
 }
 
-const tabs = ['wszystkie', 'nowe', 'w_trakcie', 'gotowe', 'wydane'] as const
+const tabs = ['wszystkie', 'nowe', 'w_trakcie', 'gotowe', 'wydane', 'niezapłacone'] as const
 
 function getClientName(order: Record<string, unknown>): string {
   const client = order.client as { name: string } | null
@@ -43,6 +43,7 @@ type SortKey = 'number' | 'client' | 'status' | 'planned_date' | 'value'
 type SortDir = 'asc' | 'desc'
 
 export default function OrdersListPage() {
+  const navigate = useNavigate()
   const { orders, loading, refetch } = useOrders()
   const [search, setSearch] = useState('')
   const [tab, setTab] = useState<string>('wszystkie')
@@ -61,7 +62,8 @@ export default function OrdersListPage() {
 
   const filtered = useMemo(() => {
     const list = orders.filter((o) => {
-      if (tab !== 'wszystkie' && o.status !== tab) return false
+      if (tab === 'niezapłacone' && o.status !== 'wydane') return false
+      else if (tab !== 'wszystkie' && tab !== 'niezapłacone' && o.status !== tab) return false
       if (search) {
         const q = search.toLowerCase()
         const clientName = getClientName(o as unknown as Record<string, unknown>).toLowerCase()
@@ -91,7 +93,7 @@ export default function OrdersListPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center gap-4 max-w-3xl">
         <h1 className="text-xl font-bold text-gray-900">Zamówienia</h1>
         <button
           onClick={() => setShowNew(true)}
@@ -114,17 +116,28 @@ export default function OrdersListPage() {
           />
         </div>
         <div className="flex gap-1">
-          {tabs.map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                tab === t ? 'bg-amber-50 text-amber-600' : 'text-gray-500 hover:bg-gray-100'
-              }`}
-            >
-              {t === 'wszystkie' ? 'Wszystkie' : statusLabels[t as OrderStatus]}
-            </button>
-          ))}
+          {tabs.map((t) => {
+            const tabColors: Record<string, { active: string; inactive: string }> = {
+              wszystkie: { active: 'bg-gray-700 text-white', inactive: 'bg-gray-100 text-gray-600 hover:bg-gray-200' },
+              nowe: { active: 'bg-blue-500 text-white', inactive: 'bg-blue-50 text-blue-600 hover:bg-blue-100' },
+              w_trakcie: { active: 'bg-amber-500 text-white', inactive: 'bg-amber-50 text-amber-600 hover:bg-amber-100' },
+              gotowe: { active: 'bg-emerald-500 text-white', inactive: 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' },
+              wydane: { active: 'bg-violet-500 text-white', inactive: 'bg-violet-50 text-violet-600 hover:bg-violet-100' },
+              niezapłacone: { active: 'bg-red-500 text-white', inactive: 'bg-red-50 text-red-600 hover:bg-red-100' },
+            }
+            const colors = tabColors[t]
+            return (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  tab === t ? colors.active : colors.inactive
+                }`}
+              >
+                {t === 'wszystkie' ? 'Wszystkie' : t === 'niezapłacone' ? 'Niezapłacone' : statusLabels[t as OrderStatus]}
+              </button>
+            )
+          })}
         </div>
       </div>
 
@@ -133,15 +146,17 @@ export default function OrdersListPage() {
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-amber-500" />
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-          <table className="w-full text-sm">
+        <div className="rounded-lg border border-gray-200 bg-white overflow-hidden max-w-3xl">
+          <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
                 <SortHeader label="#" sortKey="number" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
                 <SortHeader label="Klient" sortKey="client" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Opis</th>
+                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 uppercase">Opis</th>
+                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 uppercase">Kolor</th>
                 <SortHeader label="Status" sortKey="status" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
                 <SortHeader label="Wartość" sortKey="value" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                <th className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-500 uppercase">Zam.</th>
                 <SortHeader label="Termin" sortKey="planned_date" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
               </tr>
             </thead>
@@ -150,34 +165,42 @@ export default function OrdersListPage() {
                 const value = getOrderValue(order as unknown as Record<string, unknown>)
                 const overdue = isOverdue(order)
                 return (
-                  <tr key={order.id} className={`border-b border-gray-100 hover:bg-gray-50 ${overdue ? 'bg-red-50/50' : ''}`}>
-                    <td className="px-4 py-3">
-                      <Link to={`/zamowienia/${order.id}`} className="font-medium text-amber-600 hover:underline">
-                        {order.number}
-                      </Link>
+                  <tr key={order.id} onClick={() => navigate(`/zamowienia/${order.id}`)} className={`border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${overdue ? 'bg-red-50/50' : ''}`}>
+                    <td className="px-2 py-1.5 font-medium text-amber-600 tabular-nums">
+                      {order.number}/{new Date(order.created_at).getFullYear() % 100}
                     </td>
-                    <td className="px-4 py-3 text-gray-800">{getClientName(order as unknown as Record<string, unknown>)}</td>
-                    <td className="px-4 py-3 text-gray-600 max-w-xs truncate">{order.description || '—'}</td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[order.status]}`}>
+                    <td className="px-2 py-1.5 text-gray-800 font-medium">{getClientName(order as unknown as Record<string, unknown>)}</td>
+                    <td className="px-2 py-1.5 text-gray-600 max-w-[180px] truncate">{order.description || '—'}</td>
+                    <td className="px-2 py-1.5 text-gray-600">{order.color || '—'}</td>
+                    <td className="px-2 py-1.5">
+                      <span className={`inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-medium ${statusColors[order.status]}`}>
                         {statusLabels[order.status]}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right font-medium text-amber-600">
-                      {value > 0 ? `${value.toFixed(0)} zł` : '—'}
+                    <td className="px-2 py-1.5 text-right font-semibold text-amber-600 tabular-nums">
+                      {value > 0 ? value.toFixed(0) : '—'}
                     </td>
-                    <td className={`px-4 py-3 ${overdue ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
+                    <td className="px-2 py-1.5 text-center">
+                      {(!order.material_provided || !order.paints_provided) && order.status !== 'gotowe' && order.status !== 'wydane' && order.status !== 'zapłacone' ? (
+                        <span className="inline-flex gap-0.5">
+                          {!order.material_provided && <span className="text-[9px] font-bold text-red-500 bg-red-50 rounded px-1">M</span>}
+                          {!order.paints_provided && <span className="text-[9px] font-bold text-red-500 bg-red-50 rounded px-1">L</span>}
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-emerald-500">✓</span>
+                      )}
+                    </td>
+                    <td className={`px-2 py-1.5 tabular-nums ${overdue ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
                       {order.planned_date ? new Date(order.planned_date).toLocaleDateString('pl-PL') : '—'}
-                      {overdue && <span className="ml-1 text-xs">!</span>}
+                      {overdue && <span className="ml-0.5 text-[10px]">!</span>}
                     </td>
                   </tr>
                 )
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center">
-                    <p className="text-gray-500">Brak zamówień</p>
-                    <p className="mt-1 text-xs text-gray-400">{search ? 'Spróbuj zmienić wyszukiwanie' : 'Dodaj pierwsze zamówienie przyciskiem powyżej'}</p>
+                  <td colSpan={8} className="px-2 py-8 text-center text-xs text-gray-400">
+                    {search ? 'Brak wyników' : 'Brak zamówień'}
                   </td>
                 </tr>
               )}
@@ -197,12 +220,12 @@ function SortHeader({ label, sortKey, currentKey, dir, onSort }: {
   const active = sortKey === currentKey
   return (
     <th
-      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer select-none hover:text-gray-700"
+      className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 uppercase cursor-pointer select-none hover:text-gray-700"
       onClick={() => onSort(sortKey)}
     >
-      <span className="inline-flex items-center gap-1">
+      <span className="inline-flex items-center gap-0.5">
         {label}
-        {active && (dir === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />)}
+        {active && (dir === 'asc' ? <ChevronUp className="h-2.5 w-2.5" /> : <ChevronDown className="h-2.5 w-2.5" />)}
       </span>
     </th>
   )

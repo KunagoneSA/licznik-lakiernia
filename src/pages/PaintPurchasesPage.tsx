@@ -1,34 +1,114 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Plus, Trash2, X } from 'lucide-react'
+import { Plus, Trash2, X, ChevronDown, ChevronLeft, ChevronRight, Database, Pencil, Check } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import { useOrders } from '../hooks/useOrders'
 import { useToast } from '../contexts/ToastContext'
 import { useModalKeys } from '../hooks/useModalKeys'
-import type { PaintPurchase } from '../types/database'
+import type { PaintPurchase, Supplier, Product, PurchaseStatus } from '../types/database'
+
+const STATUS_CONFIG: Record<PurchaseStatus, { label: string; color: string }> = {
+  zamowione: { label: 'Zamówione', color: 'bg-blue-100 text-blue-700' },
+  dostarczone: { label: 'Dostarczone', color: 'bg-emerald-100 text-emerald-700' },
+  faktura: { label: 'Faktura', color: 'bg-violet-100 text-violet-700' },
+}
 
 export default function PaintPurchasesPage() {
   const [purchases, setPurchases] = useState<PaintPurchase[]>([])
+  const [suppliers, setSuppliers] = useState<Supplier[]>([])
+  const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
-  const { orders } = useOrders()
+  const [showManage, setShowManage] = useState(false)
+  const now = new Date()
+  const thisMonthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
+  const thisMonthEnd = (() => { const last = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate(); return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(last).padStart(2, '0')}` })()
+  const [dateFrom, setDateFrom] = useState(thisMonthStart)
+  const [dateTo, setDateTo] = useState(thisMonthEnd)
   const { toast } = useToast()
 
-  const fetch = useCallback(async () => {
-    setLoading(true)
-    const { data } = await supabase.from('paint_purchases').select('*, order:orders(number)').order('date', { ascending: false })
-    setPurchases((data as PaintPurchase[]) ?? [])
-    setLoading(false)
+  const fetchSuppliers = useCallback(async () => {
+    const { data } = await supabase.from('suppliers').select('*').order('name')
+    setSuppliers(data ?? [])
   }, [])
 
-  useEffect(() => { fetch() }, [fetch])
+  const fetchProducts = useCallback(async () => {
+    const { data } = await supabase.from('products').select('*').order('name')
+    setProducts(data ?? [])
+  }, [])
+
+  const fetchPurchases = useCallback(async () => {
+    setLoading(true)
+    let query = supabase.from('paint_purchases').select('*, supplier:suppliers(id, name), product_ref:products(id, name)').order('date', { ascending: false })
+    if (dateFrom) query = query.gte('date', dateFrom)
+    if (dateTo) query = query.lte('date', dateTo)
+    const { data } = await query
+    setPurchases((data as any[])?.map(d => ({ ...d, supplier: d.supplier ?? undefined, product_ref: d.product_ref ?? undefined })) ?? [])
+    setLoading(false)
+  }, [dateFrom, dateTo])
+
+  useEffect(() => { fetchSuppliers() }, [fetchSuppliers])
+  useEffect(() => { fetchProducts() }, [fetchProducts])
+  useEffect(() => { fetchPurchases() }, [fetchPurchases])
+
+  const updateStatus = async (id: string, status: PurchaseStatus) => {
+    await supabase.from('paint_purchases').update({ status }).eq('id', id)
+    fetchPurchases()
+  }
+
+  const deletePurchase = async (id: string) => {
+    await supabase.from('paint_purchases').delete().eq('id', id)
+    toast('Zamówienie usunięte')
+    fetchPurchases()
+  }
+
+  const filtered = purchases
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-gray-900">Zakupy lakierów</h1>
-        <button onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-400">
-          <Plus className="h-4 w-4" /> Dodaj zakup
+        <div className="flex items-center gap-2">
+          <button onClick={() => setShowManage(true)}
+            className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">
+            <Database className="h-4 w-4" /> Baza dostawców i materiałów
+          </button>
+          <button onClick={() => setShowForm(true)}
+            className="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-400">
+            <Plus className="h-4 w-4" /> Dodaj zamówienie
+          </button>
+        </div>
+      </div>
+
+      {/* Date filters with month shift */}
+      <div className="flex items-center gap-2">
+        <button onClick={() => {
+          const d = new Date(dateFrom)
+          d.setMonth(d.getMonth() - 1)
+          const y = d.getFullYear(), m = d.getMonth()
+          const first = `${y}-${String(m + 1).padStart(2, '0')}-01`
+          const last = `${y}-${String(m + 1).padStart(2, '0')}-${String(new Date(y, m + 1, 0).getDate()).padStart(2, '0')}`
+          setDateFrom(first); setDateTo(last)
+        }} className="rounded-lg border border-gray-200 bg-white p-1.5 text-gray-500 hover:bg-gray-50 hover:text-gray-700" title="Miesiąc wstecz">
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+        <div className="flex items-center gap-1.5">
+          <label className="text-xs text-gray-500">Od:</label>
+          <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+            className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-amber-500/30" />
+        </div>
+        <div className="flex items-center gap-1.5">
+          <label className="text-xs text-gray-500">Do:</label>
+          <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+            className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-amber-500/30" />
+        </div>
+        <button onClick={() => {
+          const d = new Date(dateFrom)
+          d.setMonth(d.getMonth() + 1)
+          const y = d.getFullYear(), m = d.getMonth()
+          const first = `${y}-${String(m + 1).padStart(2, '0')}-01`
+          const last = `${y}-${String(m + 1).padStart(2, '0')}-${String(new Date(y, m + 1, 0).getDate()).padStart(2, '0')}`
+          setDateFrom(first); setDateTo(last)
+        }} className="rounded-lg border border-gray-200 bg-white p-1.5 text-gray-500 hover:bg-gray-50 hover:text-gray-700" title="Miesiąc do przodu">
+          <ChevronRight className="h-4 w-4" />
         </button>
       </div>
 
@@ -41,48 +121,52 @@ export default function PaintPurchasesPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Data</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Dostawca</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Produkt</th>
-                <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Ilość</th>
-                <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Cena jedn.</th>
-                <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Suma</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Zamówienie</th>
-                <th className="px-4 py-2 w-8"></th>
+                <th className="px-2.5 py-2 text-left text-xs font-medium text-gray-500 w-12">#</th>
+                <th className="px-2.5 py-2 text-left text-xs font-medium text-gray-500 w-24">Data</th>
+                <th className="px-2.5 py-2 text-left text-xs font-medium text-gray-500">Dostawca</th>
+                <th className="px-2.5 py-2 text-left text-xs font-medium text-gray-500">Produkt</th>
+                <th className="px-2.5 py-2 text-right text-xs font-medium text-gray-500 w-20">Ilość</th>
+                <th className="px-2.5 py-2 text-right text-xs font-medium text-gray-500 w-20">Cena</th>
+                <th className="px-2.5 py-2 text-right text-xs font-medium text-gray-500 w-24">Suma</th>
+                <th className="px-2.5 py-2 text-center text-xs font-medium text-gray-500 w-28">Status</th>
+                <th className="px-2.5 py-2 text-left text-xs font-medium text-gray-500">Komentarz</th>
+                <th className="px-1 py-2 w-8"></th>
               </tr>
             </thead>
             <tbody>
-              {purchases.map((p) => (
-                <tr key={p.id} className="border-b border-gray-100">
-                  <td className="px-4 py-2 text-gray-500">{new Date(p.date).toLocaleDateString('pl-PL')}</td>
-                  <td className="px-4 py-2 text-gray-800">{p.supplier}</td>
-                  <td className="px-4 py-2 text-gray-600">{p.product}</td>
-                  <td className="px-4 py-2 text-right text-gray-600">{p.quantity} {p.unit}</td>
-                  <td className="px-4 py-2 text-right text-gray-500">{Number(p.unit_price).toFixed(2)} zł</td>
-                  <td className="px-4 py-2 text-right font-medium text-amber-600">{Number(p.total).toFixed(2)} zł</td>
-                  <td className="px-4 py-2 text-gray-500">
-                    {(p as any).order?.number ? `#${(p as any).order.number}` : '—'}
+              {filtered.map(p => (
+                <tr key={p.id} className="border-b border-gray-100 hover:bg-gray-50/50">
+                  <td className="px-2.5 py-1.5 text-xs text-gray-400">{p.number ?? '—'}</td>
+                  <td className="px-2.5 py-1.5 text-xs text-gray-500">{p.date}</td>
+                  <td className="px-2.5 py-1.5 text-xs font-medium text-gray-800">{p.supplier?.name ?? '—'}</td>
+                  <td className="px-2.5 py-1.5 text-xs text-gray-600">{(p as any).product_ref?.name ?? p.product}</td>
+                  <td className="px-2.5 py-1.5 text-right text-xs text-gray-600">{p.quantity} {p.unit}</td>
+                  <td className="px-2.5 py-1.5 text-right text-xs text-gray-500">{Number(p.unit_price).toFixed(2)}</td>
+                  <td className="px-2.5 py-1.5 text-right text-xs font-medium text-amber-600">{Number(p.total).toFixed(2)} zł</td>
+                  <td className="px-2.5 py-1.5 text-center">
+                    <StatusDropdown value={p.status} onChange={s => updateStatus(p.id, s)} />
                   </td>
-                  <td className="px-4 py-2">
-                    <button onClick={async () => {
-                      if (!confirm('Usunąć ten zakup?')) return
-                      await supabase.from('paint_purchases').delete().eq('id', p.id)
-                      toast('Zakup usunięty')
-                      fetch()
-                    }} className="rounded p-1 text-gray-400 hover:text-red-500 hover:bg-red-50">
+                  <td className="px-2.5 py-1.5 text-xs text-gray-400 max-w-[150px] truncate" title={p.notes ?? ''}>
+                    {p.notes || '—'}
+                  </td>
+                  <td className="px-1 py-1.5">
+                    <button onClick={() => deletePurchase(p.id)}
+                      className="rounded p-1 text-gray-300 hover:text-red-500 hover:bg-red-50">
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </td>
                 </tr>
               ))}
-              {purchases.length === 0 && (
-                <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-400">Brak zakupów</td></tr>
+              {filtered.length === 0 && (
+                <tr><td colSpan={10} className="px-4 py-8 text-center text-gray-400">Brak zamówień</td></tr>
               )}
-              {purchases.length > 0 && (
+              {filtered.length > 0 && (
                 <tr className="bg-gray-50 font-medium">
-                  <td className="px-4 py-2 text-gray-600" colSpan={5}>Razem</td>
-                  <td className="px-4 py-2 text-right font-medium text-amber-600">{purchases.reduce((s, p) => s + Number(p.total), 0).toFixed(2)} zł</td>
-                  <td colSpan={2}></td>
+                  <td className="px-2.5 py-2 text-xs text-gray-600" colSpan={6}>Razem</td>
+                  <td className="px-2.5 py-2 text-right text-xs font-medium text-amber-600">
+                    {filtered.reduce((s, p) => s + Number(p.total), 0).toFixed(2)} zł
+                  </td>
+                  <td colSpan={3}></td>
                 </tr>
               )}
             </tbody>
@@ -90,98 +174,390 @@ export default function PaintPurchasesPage() {
         </div>
       )}
 
-      {showForm && <PurchaseFormModal orders={orders.map(o => ({ id: o.id, number: o.number }))} onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); toast('Zakup dodany'); fetch() }} />}
+      {showForm && (
+        <PurchaseFormModal
+          suppliers={suppliers}
+          products={products}
+          onSupplierAdded={fetchSuppliers}
+          onProductAdded={fetchProducts}
+          onClose={() => setShowForm(false)}
+          onSaved={() => { setShowForm(false); toast('Zamówienie dodane'); fetchPurchases() }}
+        />
+      )}
+
+      {showManage && (
+        <ManageModal
+          suppliers={suppliers}
+          products={products}
+          onChanged={() => { fetchSuppliers(); fetchProducts(); fetchPurchases() }}
+          onClose={() => setShowManage(false)}
+        />
+      )}
     </div>
   )
 }
 
-function PurchaseFormModal({ orders, onClose, onSaved }: { orders: { id: string; number: number }[]; onClose: () => void; onSaved: () => void }) {
+function StatusDropdown({ value, onChange }: { value: PurchaseStatus; onChange: (s: PurchaseStatus) => void }) {
+  const [open, setOpen] = useState(false)
+  const config = STATUS_CONFIG[value]
+
+  return (
+    <div className="relative inline-block">
+      <button
+        onClick={() => setOpen(!open)}
+        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${config.color}`}
+      >
+        {config.label}
+        <ChevronDown className="h-3 w-3" />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute top-full mt-1 right-0 z-20 rounded-lg border border-gray-200 bg-white shadow-lg py-1 min-w-[120px]">
+            {(Object.keys(STATUS_CONFIG) as PurchaseStatus[]).map(s => (
+              <button
+                key={s}
+                onClick={() => { onChange(s); setOpen(false) }}
+                className={`w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 ${s === value ? 'font-medium' : ''}`}
+              >
+                <span className={`inline-block rounded-full px-2 py-0.5 ${STATUS_CONFIG[s].color}`}>
+                  {STATUS_CONFIG[s].label}
+                </span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+interface ProductLine {
+  productId: string
+  quantity: number
+  unit: string
+  unitPrice: number
+}
+
+function emptyLine(): ProductLine {
+  return { productId: '', quantity: 0, unit: 'kg', unitPrice: 0 }
+}
+
+function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdded, onClose, onSaved }: {
+  suppliers: Supplier[]
+  products: Product[]
+  onSupplierAdded: () => void
+  onProductAdded: () => void
+  onClose: () => void
+  onSaved: () => void
+}) {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
-  const [supplier, setSupplier] = useState('')
-  const [product, setProduct] = useState('')
-  const [quantity, setQuantity] = useState(0)
-  const [unit, setUnit] = useState('kg')
-  const [unitPrice, setUnitPrice] = useState(0)
-  const [orderId, setOrderId] = useState<string>('')
+  const [supplierId, setSupplierId] = useState('')
+  const [newSupplierName, setNewSupplierName] = useState('')
+  const [showNewSupplier, setShowNewSupplier] = useState(false)
+  const [lines, setLines] = useState<ProductLine[]>([emptyLine()])
+  const [notes, setNotes] = useState('')
+  const [status, setStatus] = useState<PurchaseStatus>('zamowione')
   const [saving, setSaving] = useState(false)
+  const [showNewProduct, setShowNewProduct] = useState(false)
+  const [newProductName, setNewProductName] = useState('')
   useModalKeys(onClose)
 
-  const total = quantity * unitPrice
+  const inputCls = "w-full rounded-lg bg-gray-50 border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30"
+
+  const updateLine = (i: number, field: Partial<ProductLine>) => {
+    setLines(prev => prev.map((l, j) => j === i ? { ...l, ...field } : l))
+  }
+
+  const grandTotal = lines.reduce((s, l) => s + l.quantity * l.unitPrice, 0)
+
+  const handleAddSupplier = async () => {
+    const name = newSupplierName.trim()
+    if (!name) return
+    const { data } = await supabase.from('suppliers').insert({ name }).select('id').single()
+    if (data) {
+      setSupplierId(data.id)
+      setNewSupplierName('')
+      setShowNewSupplier(false)
+      onSupplierAdded()
+    }
+  }
+
+  const handleAddProduct = async () => {
+    const name = newProductName.trim()
+    if (!name) return
+    const { data } = await supabase.from('products').insert({ name }).select('id').single()
+    if (data) {
+      setNewProductName('')
+      setShowNewProduct(false)
+      onProductAdded()
+    }
+  }
+
+  const canSave = supplierId && lines.every(l => l.productId && l.quantity > 0)
 
   const handleSave = async () => {
-    if (!supplier || !product || !quantity) return
+    if (!canSave) return
     setSaving(true)
-    await supabase.from('paint_purchases').insert({
-      date, supplier, product, quantity, unit, unit_price: unitPrice,
-      total: Math.round(total * 100) / 100,
-      order_id: orderId || null,
-    })
+    // Get next number from sequence
+    const { data: seqData } = await supabase.rpc('nextval_paint_purchase')
+    const number = seqData ?? null
+
+    const rows = lines.map(l => ({
+      date,
+      supplier_id: supplierId,
+      product_id: l.productId,
+      product: products.find(p => p.id === l.productId)?.name ?? '',
+      quantity: l.quantity,
+      unit: l.unit,
+      unit_price: l.unitPrice,
+      total: Math.round(l.quantity * l.unitPrice * 100) / 100,
+      status,
+      notes: notes || null,
+      number,
+    }))
+    await supabase.from('paint_purchases').insert(rows)
     setSaving(false)
     onSaved()
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onClick={onClose}>
-      <div className="w-full max-w-md rounded-xl bg-white border border-gray-200 shadow-lg p-6" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-xl rounded-xl bg-white border border-gray-200 shadow-lg p-6 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Nowy zakup</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Nowe zamówienie</h2>
           <button onClick={onClose} className="rounded-md p-1 text-gray-500 hover:bg-gray-100"><X className="h-5 w-5" /></button>
         </div>
         <div className="space-y-3">
-          <div>
-            <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Data</label>
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
-              className="w-full rounded-lg bg-gray-50 border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30" />
-          </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Dostawca</label>
-              <input type="text" value={supplier} onChange={(e) => setSupplier(e.target.value)}
-                className="w-full rounded-lg bg-gray-50 border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30" />
+              <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Data</label>
+              <input type="date" value={date} onChange={e => setDate(e.target.value)} className={inputCls} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Produkt</label>
-              <input type="text" value={product} onChange={(e) => setProduct(e.target.value)}
-                className="w-full rounded-lg bg-gray-50 border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30" />
+              <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Status</label>
+              <select value={status} onChange={e => setStatus(e.target.value as PurchaseStatus)} className={inputCls}>
+                <option value="zamowione">Zamówione</option>
+                <option value="dostarczone">Dostarczone</option>
+                <option value="faktura">Faktura</option>
+              </select>
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Zamówienie (opcj.)</label>
-            <select value={orderId} onChange={(e) => setOrderId(e.target.value)}
-              className="w-full rounded-lg bg-gray-50 border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30">
-              <option value="">— brak —</option>
-              {orders.map((o) => <option key={o.id} value={o.id}>#{o.number}</option>)}
-            </select>
+            <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Dostawca</label>
+            {showNewSupplier ? (
+              <div className="flex gap-2">
+                <input type="text" value={newSupplierName} onChange={e => setNewSupplierName(e.target.value)}
+                  placeholder="Nazwa dostawcy..." autoFocus
+                  onKeyDown={e => { if (e.key === 'Enter') handleAddSupplier() }}
+                  className={"flex-1 " + inputCls} />
+                <button onClick={handleAddSupplier} className="rounded-lg bg-amber-500 px-3 py-2 text-sm font-medium text-white hover:bg-amber-400">Dodaj</button>
+                <button onClick={() => setShowNewSupplier(false)} className="rounded-lg px-3 py-2 text-sm text-gray-500 hover:bg-gray-100">Anuluj</button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <select value={supplierId} onChange={e => setSupplierId(e.target.value)} className={"flex-1 " + inputCls}>
+                  <option value="">— wybierz —</option>
+                  {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+                <button onClick={() => setShowNewSupplier(true)} className="shrink-0 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50">
+                  <Plus className="h-4 w-4" />
+                </button>
+              </div>
+            )}
           </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Ilość</label>
-              <input type="number" value={quantity || ''} onChange={(e) => setQuantity(Number(e.target.value))}
-                className="w-full rounded-lg bg-gray-50 border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30" />
+
+          {/* Product lines */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-medium text-gray-500 uppercase">Produkty</label>
+              {showNewProduct ? (
+                <div className="flex gap-1">
+                  <input type="text" value={newProductName} onChange={e => setNewProductName(e.target.value)}
+                    placeholder="Nazwa..." autoFocus
+                    onKeyDown={e => { if (e.key === 'Enter') handleAddProduct(); if (e.key === 'Escape') setShowNewProduct(false) }}
+                    className="rounded border border-gray-300 px-2 py-0.5 text-xs outline-none focus:ring-2 focus:ring-amber-500/30 w-40" />
+                  <button onClick={handleAddProduct} className="text-xs text-amber-600 font-medium">Dodaj</button>
+                  <button onClick={() => setShowNewProduct(false)} className="text-xs text-gray-400">Anuluj</button>
+                </div>
+              ) : (
+                <button onClick={() => setShowNewProduct(true)} className="text-xs text-amber-600 hover:text-amber-700 font-medium">+ nowy produkt</button>
+              )}
             </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Jednostka</label>
-              <select value={unit} onChange={(e) => setUnit(e.target.value)}
-                className="w-full rounded-lg bg-gray-50 border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30">
-                <option value="kg">kg</option><option value="l">l</option><option value="szt">szt</option>
-              </select>
+            <div className="space-y-2">
+              {lines.map((line, i) => (
+                <div key={i} className="flex items-end gap-2 rounded-lg bg-gray-50 p-2">
+                  <div className="flex-1">
+                    <label className="block text-[10px] text-gray-400 mb-0.5">Produkt</label>
+                    <select value={line.productId} onChange={e => updateLine(i, { productId: e.target.value })}
+                      className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-amber-500/30">
+                      <option value="">— wybierz —</option>
+                      {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                  </div>
+                  <div className="w-16">
+                    <label className="block text-[10px] text-gray-400 mb-0.5">Ilość</label>
+                    <input type="number" value={line.quantity || ''} onChange={e => updateLine(i, { quantity: Number(e.target.value) })}
+                      className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-amber-500/30" />
+                  </div>
+                  <div className="w-16">
+                    <label className="block text-[10px] text-gray-400 mb-0.5">Jedn.</label>
+                    <select value={line.unit} onChange={e => updateLine(i, { unit: e.target.value })}
+                      className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-amber-500/30">
+                      <option value="kg">kg</option><option value="l">l</option><option value="szt">szt</option>
+                    </select>
+                  </div>
+                  <div className="w-20">
+                    <label className="block text-[10px] text-gray-400 mb-0.5">Cena</label>
+                    <input type="number" step="0.01" value={line.unitPrice || ''} onChange={e => updateLine(i, { unitPrice: Number(e.target.value) })}
+                      className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-amber-500/30" />
+                  </div>
+                  <div className="w-20 text-right">
+                    <span className="text-xs font-medium text-amber-600">{(line.quantity * line.unitPrice).toFixed(2)} zł</span>
+                  </div>
+                  {lines.length > 1 && (
+                    <button onClick={() => setLines(prev => prev.filter((_, j) => j !== i))}
+                      className="rounded p-1 text-gray-300 hover:text-red-500 mb-0.5">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+              ))}
             </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Cena jedn.</label>
-              <input type="number" step="0.01" value={unitPrice || ''} onChange={(e) => setUnitPrice(Number(e.target.value))}
-                className="w-full rounded-lg bg-gray-50 border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30" />
-            </div>
+            <button onClick={() => setLines(prev => [...prev, emptyLine()])}
+              className="mt-2 flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 font-medium">
+              <Plus className="h-3.5 w-3.5" /> Dodaj produkt
+            </button>
           </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Komentarz</label>
+            <input type="text" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Opcjonalny komentarz..."
+              className={inputCls} />
+          </div>
+
           <div className="rounded-lg bg-gray-50 p-3 text-sm">
-            <span className="text-gray-500">Suma:</span> <span className="text-amber-600 font-bold">{total.toFixed(2)} zł</span>
+            <span className="text-gray-500">Suma:</span> <span className="text-amber-600 font-bold">{grandTotal.toFixed(2)} zł</span>
           </div>
         </div>
         <div className="mt-4 flex justify-end gap-2">
           <button onClick={onClose} className="rounded-lg px-4 py-2 text-sm text-gray-500 hover:bg-gray-100">Anuluj</button>
-          <button onClick={handleSave} disabled={!supplier || !product || !quantity || saving}
+          <button onClick={handleSave} disabled={!canSave || saving}
             className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-400 disabled:opacity-50">
             {saving ? 'Zapisywanie...' : 'Dodaj'}
           </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function EditableList({ items, table, onChanged }: {
+  items: { id: string; name: string }[]
+  table: string
+  onChanged: () => void
+}) {
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editName, setEditName] = useState('')
+  const [newName, setNewName] = useState('')
+  const { toast } = useToast()
+
+  const startEdit = (item: { id: string; name: string }) => {
+    setEditingId(item.id)
+    setEditName(item.name)
+  }
+
+  const saveEdit = async () => {
+    if (!editingId || !editName.trim()) return
+    await supabase.from(table).update({ name: editName.trim() }).eq('id', editingId)
+    setEditingId(null)
+    onChanged()
+  }
+
+  const deleteItem = async (id: string) => {
+    const { error } = await supabase.from(table).delete().eq('id', id)
+    if (error) {
+      toast('Nie można usunąć — element jest używany', 'error')
+      return
+    }
+    onChanged()
+  }
+
+  const addItem = async () => {
+    const name = newName.trim()
+    if (!name) return
+    await supabase.from(table).insert({ name })
+    setNewName('')
+    onChanged()
+  }
+
+  return (
+    <div className="space-y-1">
+      {items.map(item => (
+        <div key={item.id} className="flex items-center gap-2 group">
+          {editingId === item.id ? (
+            <>
+              <input type="text" value={editName} onChange={e => setEditName(e.target.value)}
+                autoFocus
+                onKeyDown={e => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') setEditingId(null) }}
+                className="flex-1 rounded border border-amber-300 px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-amber-500/30" />
+              <button onClick={saveEdit} className="rounded p-1 text-emerald-500 hover:bg-emerald-50">
+                <Check className="h-3.5 w-3.5" />
+              </button>
+              <button onClick={() => setEditingId(null)} className="rounded p-1 text-gray-400 hover:bg-gray-100">
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </>
+          ) : (
+            <>
+              <span className="flex-1 text-sm text-gray-700 px-2 py-1">{item.name}</span>
+              <button onClick={() => startEdit(item)} className="rounded p-1 text-gray-300 hover:text-amber-500 hover:bg-amber-50 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Pencil className="h-3.5 w-3.5" />
+              </button>
+              <button onClick={() => deleteItem(item.id)} className="rounded p-1 text-gray-300 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </>
+          )}
+        </div>
+      ))}
+      <div className="flex items-center gap-2 mt-2">
+        <input type="text" value={newName} onChange={e => setNewName(e.target.value)}
+          placeholder="Dodaj nowy..."
+          onKeyDown={e => { if (e.key === 'Enter') addItem() }}
+          className="flex-1 rounded border border-gray-200 px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-amber-500/30" />
+        <button onClick={addItem} disabled={!newName.trim()} className="rounded p-1 text-gray-400 hover:text-amber-500 disabled:opacity-30">
+          <Plus className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function ManageModal({ suppliers, products, onChanged, onClose }: {
+  suppliers: Supplier[]
+  products: Product[]
+  onChanged: () => void
+  onClose: () => void
+}) {
+  useModalKeys(onClose)
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onClick={onClose}>
+      <div className="w-full max-w-lg rounded-xl bg-white border border-gray-200 shadow-lg p-6" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-lg font-semibold text-gray-900">Zarządzaj danymi</h2>
+          <button onClick={onClose} className="rounded-md p-1 text-gray-500 hover:bg-gray-100"><X className="h-5 w-5" /></button>
+        </div>
+        <div className="grid grid-cols-2 gap-6">
+          <div>
+            <h3 className="text-xs font-medium text-gray-500 uppercase mb-2">Dostawcy</h3>
+            <EditableList items={suppliers} table="suppliers" onChanged={onChanged} />
+          </div>
+          <div>
+            <h3 className="text-xs font-medium text-gray-500 uppercase mb-2">Produkty</h3>
+            <EditableList items={products} table="products" onChanged={onChanged} />
+          </div>
         </div>
       </div>
     </div>

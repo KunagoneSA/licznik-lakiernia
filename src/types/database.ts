@@ -15,6 +15,7 @@ export interface PaintingVariant {
   name: string
   default_price_per_m2: number
   sides: number
+  sort_order: number | null
 }
 
 export interface ClientPricing {
@@ -35,6 +36,7 @@ export interface Order {
   material_provided: boolean
   paints_provided: boolean
   dimensions_entered: boolean
+  color: string | null
   notes: string | null
   created_at: string
   created_by: string | null
@@ -66,6 +68,7 @@ export interface WorkLog {
   hourly_rate: number
   cost: number
   m2_painted: number | null
+  notes: string | null
   created_at: string
 }
 
@@ -78,14 +81,33 @@ export interface MonthlyCost {
   total: number
 }
 
+export type PurchaseStatus = 'zamowione' | 'dostarczone' | 'faktura'
+
+export interface Supplier {
+  id: string
+  name: string
+  created_at: string
+}
+
+export interface Product {
+  id: string
+  name: string
+  created_at: string
+}
+
 export interface PaintPurchase {
   id: string
   date: string
-  supplier: string
+  supplier_id: string
+  product_id: string
   product: string
   quantity: number
   unit: string
   unit_price: number
   total: number
   order_id: string | null
+  status: PurchaseStatus
+  number: number | null
+  notes: string | null
+  supplier?: Supplier
 }
