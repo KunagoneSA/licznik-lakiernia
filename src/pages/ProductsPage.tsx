@@ -109,7 +109,15 @@ export default function ProductsPage() {
                           {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                         </select>
                       </td>
-                      <td className="px-3 py-1.5"><input value={pFreq} onChange={e => setPFreq(e.target.value)} className={ic} onKeyDown={kd} placeholder="np. co miesiąc" /></td>
+                      <td className="px-3 py-1.5">
+                        <select value={pFreq} onChange={e => setPFreq(e.target.value)} className={ic} onKeyDown={kd}>
+                          <option value="">— brak —</option>
+                          <option value="co tydzień">co tydzień</option>
+                          <option value="co 2 tygodnie">co 2 tygodnie</option>
+                          <option value="co 4 tygodnie">co 4 tygodnie</option>
+                          <option value="rzadziej">rzadziej</option>
+                        </select>
+                      </td>
                       <td className="px-1 py-1.5 flex gap-1">
                         <button onClick={save} className="rounded p-1 text-emerald-500 hover:text-emerald-700"><Check className="h-4 w-4" /></button>
                         <button onClick={() => setEditingId(null)} className="rounded p-1 text-gray-400 hover:text-gray-600"><X className="h-4 w-4" /></button>

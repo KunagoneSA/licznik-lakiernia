@@ -15,7 +15,6 @@ export default function SuppliersPage() {
   const [sPhone, setSPhone] = useState('')
   const [sEmail, setSEmail] = useState('')
   const [sContact, setSContact] = useState('')
-  const [sFreq, setSFreq] = useState('')
 
   const fetchSuppliers = useCallback(async () => {
     setLoading(true)
@@ -29,14 +28,14 @@ export default function SuppliersPage() {
   const startEdit = (s: Supplier) => {
     setEditingId(s.id)
     setSName(s.name); setSPhone(s.phone ?? ''); setSEmail(s.email ?? '')
-    setSContact(s.contact_person ?? ''); setSFreq(s.order_frequency ?? '')
+    setSContact(s.contact_person ?? '')
   }
 
   const save = async () => {
     if (!editingId || !sName.trim()) return
     await supabase.from('suppliers').update({
       name: sName.trim(), phone: sPhone || null, email: sEmail || null,
-      contact_person: sContact || null, order_frequency: sFreq || null,
+      contact_person: sContact || null,
     }).eq('id', editingId)
     setEditingId(null); fetchSuppliers()
   }
@@ -78,7 +77,6 @@ export default function SuppliersPage() {
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Telefon</th>
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Email</th>
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Osoba kontaktowa</th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Częstotliwość</th>
                 <th className="px-1 py-2 w-16"></th>
               </tr>
             </thead>
@@ -93,15 +91,6 @@ export default function SuppliersPage() {
                       <td className="px-3 py-1.5"><input value={sPhone} onChange={e => setSPhone(e.target.value)} className={ic} onKeyDown={kd} placeholder="nr telefonu" /></td>
                       <td className="px-3 py-1.5"><input value={sEmail} onChange={e => setSEmail(e.target.value)} className={ic} onKeyDown={kd} placeholder="email" /></td>
                       <td className="px-3 py-1.5"><input value={sContact} onChange={e => setSContact(e.target.value)} className={ic} onKeyDown={kd} placeholder="osoba kontaktowa" /></td>
-                      <td className="px-3 py-1.5">
-                        <select value={sFreq} onChange={e => setSFreq(e.target.value)} className={ic} onKeyDown={kd}>
-                          <option value="">— brak —</option>
-                          <option value="co tydzień">co tydzień</option>
-                          <option value="co 2 tygodnie">co 2 tygodnie</option>
-                          <option value="co 4 tygodnie">co 4 tygodnie</option>
-                          <option value="rzadziej">rzadziej</option>
-                        </select>
-                      </td>
                       <td className="px-1 py-1.5 flex gap-1">
                         <button onClick={save} className="rounded p-1 text-emerald-500 hover:text-emerald-700"><Check className="h-4 w-4" /></button>
                         <button onClick={() => setEditingId(null)} className="rounded p-1 text-gray-400 hover:text-gray-600"><X className="h-4 w-4" /></button>
@@ -115,7 +104,6 @@ export default function SuppliersPage() {
                     <td className="px-3 py-2 text-gray-500">{s.phone || '—'}</td>
                     <td className="px-3 py-2 text-gray-500">{s.email || '—'}</td>
                     <td className="px-3 py-2 text-gray-500">{s.contact_person || '—'}</td>
-                    <td className="px-3 py-2 text-gray-500">{s.order_frequency || '—'}</td>
                     <td className="px-1 py-2" onClick={e => e.stopPropagation()}>
                       <button onClick={() => remove(s.id)} className="rounded p-1 text-gray-300 hover:text-red-500 hover:bg-red-50">
                         <Trash2 className="h-4 w-4" />
@@ -125,7 +113,7 @@ export default function SuppliersPage() {
                 )
               })}
               {suppliers.length === 0 && (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400">Brak dostawców</td></tr>
+                <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-400">Brak dostawców</td></tr>
               )}
             </tbody>
           </table>
