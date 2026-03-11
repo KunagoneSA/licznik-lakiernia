@@ -405,7 +405,7 @@ export default function OrderDetailPage() {
                 <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500">Dl</th>
                 <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500">Szer</th>
                 <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500">Szt</th>
-                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500">Rodzaj</th>
+                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 w-full">Rodzaj</th>
                 <th className="px-2 py-1.5 text-right text-[10px] font-medium text-gray-500">m²</th>
                 <th className="px-2 py-1.5 text-right text-[10px] font-medium text-gray-500">Cena</th>
                 <th className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-500">Uch</th>
@@ -437,7 +437,7 @@ export default function OrderDetailPage() {
                       <td className="px-2 py-1">
                         <select value={eiVariantId} onChange={(e) => setEiVariantId(e.target.value)}
                           className="w-full bg-white border border-gray-300 rounded px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30" onKeyDown={kd}>
-                          {variants.filter((v) => !v.name.includes('(+ MDF)')).map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
+                          {variants.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
                         </select>
                       </td>
                       <td className="px-2 py-1 text-right text-gray-400 tabular-nums">{l && w ? m2.toFixed(3) : ''}</td>
@@ -506,7 +506,7 @@ export default function OrderDetailPage() {
                       <select value={newVariantId} onChange={(e) => setNewVariantId(e.target.value)}
                         className="w-full bg-white border border-gray-300 rounded px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30"
                         onKeyDown={(e) => { if (e.key === 'Enter') handleInlineAdd(); if (e.key === 'Escape') setShowInlineAdd(false) }}>
-                        {variants.filter((v) => !v.name.includes('(+ MDF)')).map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
+                        {variants.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
                       </select>
                     </td>
                     <td className="px-2 py-1 text-right text-gray-400 tabular-nums">{l && w ? m2.toFixed(3) : ''}</td>
