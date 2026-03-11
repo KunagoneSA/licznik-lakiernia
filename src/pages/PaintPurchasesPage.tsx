@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Plus, Trash2, X, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useToast } from '../contexts/ToastContext'
@@ -24,6 +24,19 @@ export default function PaintPurchasesPage() {
   const [dateTo, setDateTo] = useState(thisMonthEnd)
   const { toast } = useToast()
 
+  // Inline editing state
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [eDate, setEDate] = useState('')
+  const [eSupplierId, setESupplierId] = useState('')
+  const [eProductId, setEProductId] = useState('')
+  const [eProductName, setEProductName] = useState('')
+  const [eQuantity, setEQuantity] = useState('')
+  const [eUnit, setEUnit] = useState('')
+  const [eUnitPrice, setEUnitPrice] = useState('')
+  const [eStatus, setEStatus] = useState<PurchaseStatus>('zamowione')
+  const [eNotes, setENotes] = useState('')
+  const editRowRef = useRef<HTMLTableRowElement>(null)
+
   const fetchSuppliers = useCallback(async () => {
     const { data } = await supabase.from('suppliers').select('*').order('name')
     setSuppliers(data ?? [])
@@ -48,18 +61,70 @@ export default function PaintPurchasesPage() {
   useEffect(() => { fetchProducts() }, [fetchProducts])
   useEffect(() => { fetchPurchases() }, [fetchPurchases])
 
-  const updateStatus = async (id: string, status: PurchaseStatus) => {
-    await supabase.from('paint_purchases').update({ status }).eq('id', id)
+  const startEdit = (p: PaintPurchase) => {
+    if (editingId === p.id) return
+    if (editingId) saveEdit()
+    setEditingId(p.id)
+    setEDate(p.date)
+    setESupplierId(p.supplier_id)
+    setEProductId(p.product_id)
+    setEProductName((p as any).product_ref?.name ?? p.product)
+    setEQuantity(String(p.quantity))
+    setEUnit(p.unit)
+    setEUnitPrice(String(p.unit_price))
+    setEStatus(p.status)
+    setENotes(p.notes ?? '')
+  }
+
+  const saveEdit = useCallback(async () => {
+    if (!editingId) return
+    const qty = Number(eQuantity)
+    const price = Number(eUnitPrice)
+    const total = Math.round(qty * price * 100) / 100
+    const productName = products.find(p => p.id === eProductId)?.name ?? eProductName
+    await supabase.from('paint_purchases').update({
+      date: eDate,
+      supplier_id: eSupplierId,
+      product_id: eProductId,
+      product: productName,
+      quantity: qty,
+      unit: eUnit,
+      unit_price: price,
+      total,
+      status: eStatus,
+      notes: eNotes.trim() || null,
+    }).eq('id', editingId)
+    setEditingId(null)
     fetchPurchases()
+  }, [editingId, eDate, eSupplierId, eProductId, eProductName, eQuantity, eUnit, eUnitPrice, eStatus, eNotes, products, fetchPurchases])
+
+  const cancelEdit = () => { setEditingId(null) }
+
+  const handleRowBlur = useCallback((e: React.FocusEvent) => {
+    const row = editRowRef.current
+    if (!row) return
+    if (e.relatedTarget && row.contains(e.relatedTarget as Node)) return
+    requestAnimationFrame(() => {
+      if (row.contains(document.activeElement)) return
+      saveEdit()
+    })
+  }, [saveEdit])
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') { e.preventDefault(); saveEdit() }
+    if (e.key === 'Escape') { e.preventDefault(); cancelEdit() }
   }
 
   const deletePurchase = async (id: string) => {
     await supabase.from('paint_purchases').delete().eq('id', id)
+    if (editingId === id) setEditingId(null)
     toast('Zamówienie usunięte')
     fetchPurchases()
   }
 
   const filtered = purchases
+
+  const ic = "w-full rounded border border-gray-300 px-1.5 py-1 text-xs text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30"
 
   return (
     <div className="space-y-4">
@@ -127,29 +192,103 @@ export default function PaintPurchasesPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map(p => (
-                <tr key={p.id} className="border-b border-gray-100 hover:bg-gray-50/50">
-                  <td className="px-2.5 py-1.5 text-xs text-gray-400">{p.number ?? '—'}</td>
-                  <td className="px-2.5 py-1.5 text-xs text-gray-500">{p.date}</td>
-                  <td className="px-2.5 py-1.5 text-xs font-medium text-gray-800">{p.supplier?.name ?? '—'}</td>
-                  <td className="px-2.5 py-1.5 text-xs text-gray-600">{(p as any).product_ref?.name ?? p.product}</td>
-                  <td className="px-2.5 py-1.5 text-right text-xs text-gray-600">{p.quantity} {p.unit}</td>
-                  <td className="px-2.5 py-1.5 text-right text-xs text-gray-500">{Number(p.unit_price).toFixed(2)}</td>
-                  <td className="px-2.5 py-1.5 text-right text-xs font-medium text-amber-600">{Number(p.total).toFixed(2)} zł</td>
-                  <td className="px-2.5 py-1.5 text-center">
-                    <StatusDropdown value={p.status} onChange={s => updateStatus(p.id, s)} />
-                  </td>
-                  <td className="px-2.5 py-1.5 text-xs text-gray-400 max-w-[150px] truncate" title={p.notes ?? ''}>
-                    {p.notes || '—'}
-                  </td>
-                  <td className="px-1 py-1.5">
-                    <button onClick={() => deletePurchase(p.id)}
-                      className="rounded p-1 text-gray-300 hover:text-red-500 hover:bg-red-50">
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {filtered.map(p => {
+                const isEditing = editingId === p.id
+
+                if (isEditing) {
+                  const qty = Number(eQuantity)
+                  const price = Number(eUnitPrice)
+                  return (
+                    <tr key={p.id} ref={editRowRef} onBlur={handleRowBlur} onKeyDown={handleKeyDown}
+                      className="border-b border-gray-100 bg-amber-50/50">
+                      <td className="px-2.5 py-1.5 text-xs text-gray-400">{p.number ?? '—'}</td>
+                      <td className="px-1.5 py-1">
+                        <input type="date" value={eDate} onChange={e => setEDate(e.target.value)} className={ic} />
+                      </td>
+                      <td className="px-1.5 py-1">
+                        <select value={eSupplierId} onChange={e => setESupplierId(e.target.value)} className={ic}>
+                          <option value="">— wybierz —</option>
+                          {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                        </select>
+                      </td>
+                      <td className="px-1.5 py-1">
+                        <select value={eProductId} onChange={e => {
+                          const pid = e.target.value
+                          setEProductId(pid)
+                          const prod = products.find(pp => pp.id === pid)
+                          if (prod) {
+                            setEProductName(prod.name)
+                            if (prod.unit) setEUnit(prod.unit)
+                            if (prod.default_price) setEUnitPrice(String(prod.default_price))
+                          }
+                        }} className={ic}>
+                          <option value="">— wybierz —</option>
+                          {products.map(pr => <option key={pr.id} value={pr.id}>{pr.name}</option>)}
+                        </select>
+                      </td>
+                      <td className="px-1.5 py-1">
+                        <div className="flex items-center gap-1">
+                          <input type="number" value={eQuantity} onChange={e => setEQuantity(e.target.value)}
+                            className={ic + " w-14 text-right"} />
+                          <select value={eUnit} onChange={e => setEUnit(e.target.value)}
+                            className="rounded border border-gray-300 px-1 py-1 text-xs text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30 w-12">
+                            <option value="kg">kg</option><option value="l">l</option><option value="szt">szt</option>
+                          </select>
+                        </div>
+                      </td>
+                      <td className="px-1.5 py-1">
+                        <input type="number" step="0.01" value={eUnitPrice} onChange={e => setEUnitPrice(e.target.value)}
+                          className={ic + " w-16 text-right"} />
+                      </td>
+                      <td className="px-2.5 py-1.5 text-right text-xs font-medium text-amber-600">
+                        {(qty * price).toFixed(2)} zł
+                      </td>
+                      <td className="px-1.5 py-1">
+                        <select value={eStatus} onChange={e => setEStatus(e.target.value as PurchaseStatus)} className={ic}>
+                          <option value="zamowione">Zamówione</option>
+                          <option value="dostarczone">Dostarczone</option>
+                          <option value="faktura">Faktura</option>
+                        </select>
+                      </td>
+                      <td className="px-1.5 py-1">
+                        <input value={eNotes} onChange={e => setENotes(e.target.value)} className={ic} placeholder="Komentarz..." />
+                      </td>
+                      <td className="px-1 py-1.5">
+                        <button onClick={() => deletePurchase(p.id)}
+                          className="rounded p-1 text-gray-300 hover:text-red-500 hover:bg-red-50">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                }
+
+                return (
+                  <tr key={p.id} onClick={() => startEdit(p)} className="border-b border-gray-100 hover:bg-gray-50/50 cursor-pointer">
+                    <td className="px-2.5 py-1.5 text-xs text-gray-400">{p.number ?? '—'}</td>
+                    <td className="px-2.5 py-1.5 text-xs text-gray-500">{p.date}</td>
+                    <td className="px-2.5 py-1.5 text-xs font-medium text-gray-800">{p.supplier?.name ?? '—'}</td>
+                    <td className="px-2.5 py-1.5 text-xs text-gray-600">{(p as any).product_ref?.name ?? p.product}</td>
+                    <td className="px-2.5 py-1.5 text-right text-xs text-gray-600">{p.quantity} {p.unit}</td>
+                    <td className="px-2.5 py-1.5 text-right text-xs text-gray-500">{Number(p.unit_price).toFixed(2)}</td>
+                    <td className="px-2.5 py-1.5 text-right text-xs font-medium text-amber-600">{Number(p.total).toFixed(2)} zł</td>
+                    <td className="px-2.5 py-1.5 text-center">
+                      <StatusDropdown value={p.status} onChange={s => {
+                        supabase.from('paint_purchases').update({ status: s }).eq('id', p.id).then(() => fetchPurchases())
+                      }} />
+                    </td>
+                    <td className="px-2.5 py-1.5 text-xs text-gray-400 max-w-[150px] truncate" title={p.notes ?? ''}>
+                      {p.notes || '—'}
+                    </td>
+                    <td className="px-1 py-1.5" onClick={e => e.stopPropagation()}>
+                      <button onClick={() => deletePurchase(p.id)}
+                        className="rounded p-1 text-gray-300 hover:text-red-500 hover:bg-red-50">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                )
+              })}
               {filtered.length === 0 && (
                 <tr><td colSpan={10} className="px-4 py-8 text-center text-gray-400">Brak zamówień</td></tr>
               )}
@@ -187,7 +326,7 @@ function StatusDropdown({ value, onChange }: { value: PurchaseStatus; onChange: 
   const config = STATUS_CONFIG[value]
 
   return (
-    <div className="relative inline-block">
+    <div className="relative inline-block" onClick={e => e.stopPropagation()}>
       <button
         onClick={() => setOpen(!open)}
         className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${config.color}`}
