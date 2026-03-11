@@ -153,6 +153,8 @@ export default function OrderDetailPage() {
   const [editDate, setEditDate] = useState('')
   const [editColor, setEditColor] = useState('')
   const [editNotes, setEditNotes] = useState('')
+  const [commentValue, setCommentValue] = useState<string | null>(null)
+  const commentText = commentValue ?? order?.notes ?? ''
 
   if (loading) {
     return (
@@ -315,9 +317,9 @@ export default function OrderDetailPage() {
 
       {/* Color */}
       {order.color && !editing && (
-        <div className="flex items-center gap-1.5">
-          <span className="text-[10px] font-medium text-gray-400 uppercase">Kolor:</span>
-          <span className="text-xs font-semibold text-gray-800">{order.color}</span>
+        <div className="inline-flex items-center gap-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-1.5">
+          <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">Kolor</span>
+          <span className="text-sm font-bold text-gray-900">{order.color}</span>
         </div>
       )}
 
@@ -434,7 +436,7 @@ export default function OrderDetailPage() {
                       <td className="px-2 py-1"><input type="number" value={eiQty} onChange={(e) => setEiQty(e.target.value)} className={`${ic} w-10`} onKeyDown={kd} /></td>
                       <td className="px-2 py-1">
                         <select value={eiVariantId} onChange={(e) => setEiVariantId(e.target.value)}
-                          className="w-full bg-transparent border-b border-gray-300 px-0 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500" onKeyDown={kd}>
+                          className="w-full bg-white border border-gray-300 rounded px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30" onKeyDown={kd}>
                           {variants.filter((v) => !v.name.includes('(+ MDF)')).map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
                         </select>
                       </td>
@@ -502,7 +504,7 @@ export default function OrderDetailPage() {
                     </td>
                     <td className="px-2 py-1">
                       <select value={newVariantId} onChange={(e) => setNewVariantId(e.target.value)}
-                        className="w-full bg-transparent border-b border-gray-300 px-0 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500"
+                        className="w-full bg-white border border-gray-300 rounded px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30"
                         onKeyDown={(e) => { if (e.key === 'Enter') handleInlineAdd(); if (e.key === 'Escape') setShowInlineAdd(false) }}>
                         {variants.filter((v) => !v.name.includes('(+ MDF)')).map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
                       </select>
@@ -572,7 +574,10 @@ export default function OrderDetailPage() {
         </div>
         <div className="flex-1 rounded-lg bg-white shadow-sm px-2 py-2">
           <p className="text-[10px] text-gray-500 uppercase">Komentarz</p>
-          <input type="text" value={order.notes ?? ''} onChange={(e) => updateOrder({ notes: e.target.value || null })}
+          <input type="text" value={commentText}
+            onChange={(e) => setCommentValue(e.target.value)}
+            onBlur={() => { if (commentValue !== null) { updateOrder({ notes: commentValue || null }); setCommentValue(null) } }}
+            onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
             className="w-full text-xs text-gray-700 bg-transparent outline-none border-b border-transparent focus:border-amber-500 mt-0.5"
             placeholder="dodaj komentarz..." />
         </div>
