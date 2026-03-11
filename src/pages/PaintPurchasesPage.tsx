@@ -465,7 +465,7 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onClick={onClose}>
-      <div className="w-full max-w-xl rounded-xl bg-white border border-gray-200 shadow-lg p-6 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+      <div className="w-full max-w-3xl rounded-xl bg-white border border-gray-200 shadow-lg p-6 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900">Nowe zamówienie</h2>
           <button onClick={onClose} className="rounded-md p-1 text-gray-500 hover:bg-gray-100"><X className="h-5 w-5" /></button>
@@ -530,64 +530,56 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
               {lines.map((line, i) => {
                 const fieldCls = "w-full rounded-lg border border-gray-300 px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-500/30"
                 return (
-                  <div key={i} className="rounded-lg bg-gray-50 p-3 space-y-2">
-                    {/* Górna linia: Produkt + Kolor + ewentualny delete */}
-                    <div className="flex gap-2">
-                      <div className="flex-1">
-                        <label className="block text-[10px] text-gray-400 mb-0.5">Produkt</label>
-                        <select value={line.productId} onChange={e => {
-                          const pid = e.target.value
-                          const prod = products.find(p => p.id === pid)
-                          const updates: Partial<ProductLine> = { productId: pid }
-                          if (prod) {
-                            if (prod.unit) updates.unit = prod.unit
-                            if (prod.default_price) updates.unitPrice = Number(prod.default_price)
-                            if (prod.default_supplier_id && !supplierId) setSupplierId(prod.default_supplier_id)
-                          }
-                          updateLine(i, updates)
-                        }} className={fieldCls}>
-                          <option value="">— wybierz —</option>
-                          {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                        </select>
-                      </div>
-                      <div className="w-36">
-                        <label className="block text-[10px] text-gray-400 mb-0.5">Kolor</label>
-                        <input type="text" value={line.color} onChange={e => updateLine(i, { color: e.target.value })}
-                          placeholder="np. biały, RAL 9010"
-                          className={fieldCls} />
-                      </div>
-                      {lines.length > 1 && (
-                        <div className="flex items-end pb-0.5">
-                          <button onClick={() => setLines(prev => prev.filter((_, j) => j !== i))}
-                            className="rounded p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50">
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      )}
+                  <div key={i} className="flex items-end gap-2 rounded-lg bg-gray-50 p-3">
+                    <div className="flex-1 min-w-0">
+                      <label className="block text-[10px] text-gray-400 mb-0.5">Produkt</label>
+                      <select value={line.productId} onChange={e => {
+                        const pid = e.target.value
+                        const prod = products.find(p => p.id === pid)
+                        const updates: Partial<ProductLine> = { productId: pid }
+                        if (prod) {
+                          if (prod.unit) updates.unit = prod.unit
+                          if (prod.default_price) updates.unitPrice = Number(prod.default_price)
+                          if (prod.default_supplier_id && !supplierId) setSupplierId(prod.default_supplier_id)
+                        }
+                        updateLine(i, updates)
+                      }} className={fieldCls}>
+                        <option value="">— wybierz —</option>
+                        {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                      </select>
                     </div>
-                    {/* Dolna linia: Ilość + Jedn. + Cena + Suma */}
-                    <div className="flex gap-2 items-end">
-                      <div className="w-20">
-                        <label className="block text-[10px] text-gray-400 mb-0.5">Ilość</label>
-                        <input type="number" value={line.quantity || ''} onChange={e => updateLine(i, { quantity: Number(e.target.value) })}
-                          className={fieldCls} />
-                      </div>
-                      <div className="w-20">
-                        <label className="block text-[10px] text-gray-400 mb-0.5">Jednostka</label>
-                        <select value={line.unit} onChange={e => updateLine(i, { unit: e.target.value })} className={fieldCls}>
-                          <option value="kg">kg</option><option value="l">l</option><option value="szt">szt</option>
-                        </select>
-                      </div>
-                      <div className="w-24">
-                        <label className="block text-[10px] text-gray-400 mb-0.5">Cena jedn.</label>
-                        <input type="number" step="0.01" value={line.unitPrice || ''} onChange={e => updateLine(i, { unitPrice: Number(e.target.value) })}
-                          className={fieldCls} />
-                      </div>
-                      <div className="flex-1 text-right">
-                        <label className="block text-[10px] text-gray-400 mb-0.5">Suma</label>
-                        <div className="py-2 text-sm font-semibold text-amber-600">{(line.quantity * line.unitPrice).toFixed(2)} zł</div>
-                      </div>
+                    <div className="w-20">
+                      <label className="block text-[10px] text-gray-400 mb-0.5">Ilość</label>
+                      <input type="number" value={line.quantity || ''} onChange={e => updateLine(i, { quantity: Number(e.target.value) })}
+                        className={fieldCls} />
                     </div>
+                    <div className="w-[4.5rem]">
+                      <label className="block text-[10px] text-gray-400 mb-0.5">Jedn.</label>
+                      <select value={line.unit} onChange={e => updateLine(i, { unit: e.target.value })} className={fieldCls}>
+                        <option value="kg">kg</option><option value="l">l</option><option value="szt">szt</option>
+                      </select>
+                    </div>
+                    <div className="w-24">
+                      <label className="block text-[10px] text-gray-400 mb-0.5">Cena</label>
+                      <input type="number" step="0.01" value={line.unitPrice || ''} onChange={e => updateLine(i, { unitPrice: Number(e.target.value) })}
+                        className={fieldCls} />
+                    </div>
+                    <div className="w-32">
+                      <label className="block text-[10px] text-gray-400 mb-0.5">Kolor</label>
+                      <input type="text" value={line.color} onChange={e => updateLine(i, { color: e.target.value })}
+                        placeholder="np. biały"
+                        className={fieldCls} />
+                    </div>
+                    <div className="w-20 text-right shrink-0">
+                      <label className="block text-[10px] text-gray-400 mb-0.5">Suma</label>
+                      <div className="py-2 text-sm font-semibold text-amber-600">{(line.quantity * line.unitPrice).toFixed(2)} zł</div>
+                    </div>
+                    {lines.length > 1 && (
+                      <button onClick={() => setLines(prev => prev.filter((_, j) => j !== i))}
+                        className="rounded p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 mb-1">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
                   </div>
                 )
               })}
