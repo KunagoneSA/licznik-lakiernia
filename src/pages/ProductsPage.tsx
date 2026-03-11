@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Plus, Trash2, Check, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useToast } from '../contexts/ToastContext'
@@ -60,6 +60,18 @@ export default function ProductsPage() {
     fetchProducts()
   }
 
+  const editRowRef = useRef<HTMLTableRowElement>(null)
+
+  const handleRowBlur = (e: React.FocusEvent) => {
+    const row = editRowRef.current
+    if (!row) return
+    if (e.relatedTarget && row.contains(e.relatedTarget as Node)) return
+    requestAnimationFrame(() => {
+      if (row.contains(document.activeElement)) return
+      save()
+    })
+  }
+
   const ic = "w-full rounded border border-gray-300 px-2 py-1.5 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30"
 
   return (
@@ -95,7 +107,7 @@ export default function ProductsPage() {
                 if (isEd) {
                   const kd = (e: React.KeyboardEvent) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setEditingId(null) }
                   return (
-                    <tr key={p.id} className="border-b border-gray-100 bg-amber-50/30">
+                    <tr key={p.id} ref={editRowRef} className="border-b border-gray-100 bg-amber-50/30" onBlur={handleRowBlur}
                       <td className="px-3 py-1.5"><input value={pName} onChange={e => setPName(e.target.value)} className={ic} onKeyDown={kd} autoFocus /></td>
                       <td className="px-3 py-1.5">
                         <select value={pUnit} onChange={e => setPUnit(e.target.value)} className={ic} onKeyDown={kd}>
