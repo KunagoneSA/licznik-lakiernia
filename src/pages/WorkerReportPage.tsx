@@ -108,14 +108,14 @@ export default function WorkerReportPage() {
             <div key={name} className="rounded-lg bg-white shadow-sm border border-gray-200 p-3">
               <p className="text-sm font-medium text-gray-800">{name}</p>
               <p className="text-lg font-semibold text-amber-600">{s.hours.toFixed(1)}h</p>
-              <p className="text-xs text-gray-500">{s.cost.toFixed(0)} zł{s.m2 > 0 ? ` · ${s.m2.toFixed(1)} m²` : ''}</p>
+              <p className="text-xs text-gray-500">{s.m2 > 0 ? `${s.m2.toFixed(1)} m²` : ''}</p>
             </div>
           ))}
           {grouped.size > 1 && (
             <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
               <p className="text-sm font-medium text-gray-600">Razem</p>
               <p className="text-lg font-semibold text-amber-700">{totals.hours.toFixed(1)}h</p>
-              <p className="text-xs text-gray-500">{totals.cost.toFixed(0)} zł</p>
+              <p className="text-xs text-gray-500">&nbsp;</p>
             </div>
           )}
         </div>
@@ -135,8 +135,6 @@ export default function WorkerReportPage() {
                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Operacja</th>
                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Zamówienie</th>
                 <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Godziny</th>
-                <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Stawka</th>
-                <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Koszt</th>
                 <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">m²</th>
               </tr>
             </thead>
@@ -151,22 +149,18 @@ export default function WorkerReportPage() {
                       <td className="px-4 py-2 text-gray-600">{l.operation}</td>
                       <td className="px-4 py-2 text-gray-500">{l.order?.number ? `#${l.order.number}` : '—'}</td>
                       <td className="px-4 py-2 text-right text-gray-600">{l.hours}</td>
-                      <td className="px-4 py-2 text-right text-gray-500">{l.hourly_rate} zł</td>
-                      <td className="px-4 py-2 text-right font-medium text-amber-600">{Number(l.cost).toFixed(2)} zł</td>
                       <td className="px-4 py-2 text-right text-gray-500">{l.m2_painted ? Number(l.m2_painted).toFixed(1) : '—'}</td>
                     </tr>
                   ))}
                 </>
               ))}
               {logs.length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">Brak wpisów na ten dzień</td></tr>
+                <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-400">Brak wpisów na ten dzień</td></tr>
               )}
               {logs.length > 0 && (
                 <tr className="bg-gray-50 font-medium">
                   <td className="px-4 py-2 text-gray-600" colSpan={3}>Razem</td>
                   <td className="px-4 py-2 text-right text-gray-600">{totals.hours.toFixed(1)}</td>
-                  <td className="px-4 py-2 text-right text-gray-500">—</td>
-                  <td className="px-4 py-2 text-right font-medium text-amber-600">{totals.cost.toFixed(2)} zł</td>
                   <td className="px-4 py-2 text-right text-gray-500">—</td>
                 </tr>
               )}
