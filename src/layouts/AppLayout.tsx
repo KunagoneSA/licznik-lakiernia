@@ -4,25 +4,28 @@ import { LayoutDashboard, ClipboardList, Users, ShoppingCart, Menu, X, LogOut, T
 import { useAuth } from '../contexts/AuthContext'
 import SprayGunIcon from '../components/SprayGunIcon'
 
-const navItems = [
+const mainNav = [
   { to: '/', icon: LayoutDashboard, label: 'Tablica' },
   { to: '/zamowienia', icon: ClipboardList, label: 'Zamówienia' },
-  // { to: '/raport', icon: BarChart3, label: 'Raport pracowników' },
-  // { to: '/finanse', icon: BarChart3, label: 'Finanse' },
   { to: '/cennik', icon: Tag, label: 'Cennik' },
   { to: '/klienci', icon: Users, label: 'Klienci' },
   { to: '/lakiery', icon: ShoppingCart, label: 'Zakupy lakierów' },
+] as const
+
+const baseNav = [
   { to: '/dostawcy', icon: Truck, label: 'Dostawcy' },
   { to: '/materialy', icon: Package, label: 'Materiały' },
   { to: '/pracownicy', icon: HardHat, label: 'Pracownicy' },
 ] as const
+
+type NavItem = typeof mainNav[number] | typeof baseNav[number]
 
 export default function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const { user, signOut } = useAuth()
 
   const renderNavLink = (
-    { to, icon: Icon, label }: typeof navItems[number],
+    { to, icon: Icon, label }: NavItem,
     onClick?: () => void
   ) => (
     <NavLink
@@ -55,8 +58,12 @@ export default function AppLayout() {
             Lakiernia
           </span>
         </div>
-        <nav className="flex-1 py-4 px-3 space-y-1">
-          {navItems.map((item) => renderNavLink(item))}
+        <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
+          {mainNav.map((item) => renderNavLink(item))}
+          <div className="pt-4 pb-1 px-3">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Bazy</span>
+          </div>
+          {baseNav.map((item) => renderNavLink(item))}
         </nav>
         <div className="px-3 pb-4 space-y-1">
           {user && (
@@ -92,8 +99,12 @@ export default function AppLayout() {
             <X className="h-5 w-5" />
           </button>
         </div>
-        <nav className="flex-1 py-4 px-3 space-y-1">
-          {navItems.map((item) => renderNavLink(item, () => setMobileOpen(false)))}
+        <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
+          {mainNav.map((item) => renderNavLink(item, () => setMobileOpen(false)))}
+          <div className="pt-4 pb-1 px-3">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Bazy</span>
+          </div>
+          {baseNav.map((item) => renderNavLink(item, () => setMobileOpen(false)))}
         </nav>
         <div className="px-3 pb-4 space-y-1">
           {user && (
