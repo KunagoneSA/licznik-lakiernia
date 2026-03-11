@@ -34,6 +34,7 @@ export default function PaintPurchasesPage() {
   const [eUnit, setEUnit] = useState('')
   const [eUnitPrice, setEUnitPrice] = useState('')
   const [eStatus, setEStatus] = useState<PurchaseStatus>('zamowione')
+  const [eColor, setEColor] = useState('')
   const [eNotes, setENotes] = useState('')
   const editRowRef = useRef<HTMLTableRowElement>(null)
 
@@ -49,7 +50,7 @@ export default function PaintPurchasesPage() {
 
   const fetchPurchases = useCallback(async () => {
     setLoading(true)
-    let query = supabase.from('paint_purchases').select('*, supplier:suppliers(id, name), product_ref:products(id, name, color)').order('date', { ascending: false })
+    let query = supabase.from('paint_purchases').select('*, supplier:suppliers(id, name), product_ref:products(id, name)').order('date', { ascending: false })
     if (dateFrom) query = query.gte('date', dateFrom)
     if (dateTo) query = query.lte('date', dateTo)
     const { data } = await query
@@ -73,6 +74,7 @@ export default function PaintPurchasesPage() {
     setEUnit(p.unit)
     setEUnitPrice(String(p.unit_price))
     setEStatus(p.status)
+    setEColor(p.color ?? '')
     setENotes(p.notes ?? '')
   }
 
@@ -92,11 +94,12 @@ export default function PaintPurchasesPage() {
       unit_price: price,
       total,
       status: eStatus,
+      color: eColor.trim() || null,
       notes: eNotes.trim() || null,
     }).eq('id', editingId)
     setEditingId(null)
     fetchPurchases()
-  }, [editingId, eDate, eSupplierId, eProductId, eProductName, eQuantity, eUnit, eUnitPrice, eStatus, eNotes, products, fetchPurchases])
+  }, [editingId, eDate, eSupplierId, eProductId, eProductName, eQuantity, eUnit, eUnitPrice, eStatus, eColor, eNotes, products, fetchPurchases])
 
   const cancelEdit = () => { setEditingId(null) }
 
@@ -251,8 +254,8 @@ export default function PaintPurchasesPage() {
                           <option value="faktura">Faktura</option>
                         </select>
                       </td>
-                      <td className="px-2.5 py-1.5 text-xs text-gray-500">
-                        {products.find(pr => pr.id === eProductId)?.color || '—'}
+                      <td className="px-1.5 py-1">
+                        <input value={eColor} onChange={e => setEColor(e.target.value)} className={ic} placeholder="Kolor..." />
                       </td>
                       <td className="px-1.5 py-1">
                         <input value={eNotes} onChange={e => setENotes(e.target.value)} className={ic} placeholder="Komentarz..." />
@@ -281,7 +284,7 @@ export default function PaintPurchasesPage() {
                         supabase.from('paint_purchases').update({ status: s }).eq('id', p.id).then(() => fetchPurchases())
                       }} />
                     </td>
-                    <td className="px-2.5 py-1.5 text-xs text-gray-600">{(p as any).product_ref?.color || '—'}</td>
+                    <td className="px-2.5 py-1.5 text-xs text-gray-600">{p.color || '—'}</td>
                     <td className="px-2.5 py-1.5 text-xs text-gray-400 max-w-[150px] truncate" title={p.notes ?? ''}>
                       {p.notes || '—'}
                     </td>
@@ -367,10 +370,11 @@ interface ProductLine {
   quantity: number
   unit: string
   unitPrice: number
+  color: string
 }
 
 function emptyLine(): ProductLine {
-  return { productId: '', quantity: 0, unit: 'kg', unitPrice: 0 }
+  return { productId: '', quantity: 0, unit: 'kg', unitPrice: 0, color: '' }
 }
 
 function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdded, onClose, onSaved, onError }: {
@@ -446,6 +450,7 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
       unit_price: l.unitPrice,
       total: Math.round(l.quantity * l.unitPrice * 100) / 100,
       status,
+      color: l.color.trim() || null,
       notes: notes || null,
       number,
     }))
@@ -557,6 +562,12 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
                   <div className="w-20">
                     <label className="block text-[10px] text-gray-400 mb-0.5">Cena</label>
                     <input type="number" step="0.01" value={line.unitPrice || ''} onChange={e => updateLine(i, { unitPrice: Number(e.target.value) })}
+                      className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-amber-500/30" />
+                  </div>
+                  <div className="w-28">
+                    <label className="block text-[10px] text-gray-400 mb-0.5">Kolor</label>
+                    <input type="text" value={line.color} onChange={e => updateLine(i, { color: e.target.value })}
+                      placeholder="np. biały"
                       className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-amber-500/30" />
                   </div>
                   <div className="w-20 text-right">

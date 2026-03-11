@@ -104,7 +104,6 @@ export interface Product {
   default_price: number | null
   default_supplier_id: string | null
   order_frequency: string | null
-  color: string | null
   created_at: string
   default_supplier?: Supplier
 }
