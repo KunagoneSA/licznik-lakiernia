@@ -126,7 +126,12 @@ export default function PaintPurchasesPage() {
     fetchPurchases()
   }
 
-  const filtered = purchases
+  const [tab, setTab] = useState<string>('wszystkie')
+
+  const filtered = purchases.filter(p => {
+    if (tab === 'wszystkie') return true
+    return p.status === tab
+  })
 
   const ic = "w-full rounded border border-gray-300 px-1.5 py-1 text-xs text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30"
 
@@ -172,6 +177,32 @@ export default function PaintPurchasesPage() {
         }} className="rounded-lg border border-gray-200 bg-white p-1.5 text-gray-500 hover:bg-gray-50 hover:text-gray-700" title="Miesiąc do przodu">
           <ChevronRight className="h-4 w-4" />
         </button>
+      </div>
+
+      {/* Status filter tabs */}
+      <div className="flex gap-1">
+        {(['wszystkie', 'do_zamowienia', 'zamowione', 'dostarczone', 'faktura'] as const).map(t => {
+          const tabColors: Record<string, { active: string; inactive: string }> = {
+            wszystkie: { active: 'bg-gray-700 text-white', inactive: 'bg-gray-100 text-gray-600 hover:bg-gray-200' },
+            do_zamowienia: { active: 'bg-orange-500 text-white', inactive: 'bg-orange-50 text-orange-600 hover:bg-orange-100' },
+            zamowione: { active: 'bg-blue-500 text-white', inactive: 'bg-blue-50 text-blue-600 hover:bg-blue-100' },
+            dostarczone: { active: 'bg-emerald-500 text-white', inactive: 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' },
+            faktura: { active: 'bg-violet-500 text-white', inactive: 'bg-violet-50 text-violet-600 hover:bg-violet-100' },
+          }
+          const colors = tabColors[t]
+          const label = t === 'wszystkie' ? 'Wszystkie' : STATUS_CONFIG[t as PurchaseStatus].label
+          return (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                tab === t ? colors.active : colors.inactive
+              }`}
+            >
+              {label}
+            </button>
+          )
+        })}
       </div>
 
       {loading ? (
