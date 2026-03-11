@@ -25,7 +25,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setToasts((prev) => [...prev, { id, message, type }])
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id))
-    }, 3000)
+    }, type === 'error' ? 20000 : 3000)
   }, [])
 
   const dismiss = useCallback((id: number) => {
