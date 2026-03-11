@@ -86,86 +86,156 @@ export default function ClientsPage() {
 
   const inputClass = "w-full rounded bg-white border border-gray-300 px-2 py-1.5 text-xs text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30"
 
-  const renderAddForm = (type: ClientType) => (
-    <div className="mt-2 space-y-2 rounded-lg border border-amber-200 bg-amber-50/50 p-3">
-      <div>
-        <label className="block text-[10px] font-medium text-gray-500 uppercase mb-0.5">
-          {type === 'company' ? 'Nazwa firmy' : 'Imię i nazwisko'}
-        </label>
-        <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)}
-          className={inputClass} autoFocus />
-      </div>
-      {type === 'company' && (
-        <div>
-          <label className="block text-[10px] font-medium text-gray-500 uppercase mb-0.5">Osoba kontaktowa</label>
-          <input type="text" value={newContactName} onChange={(e) => setNewContactName(e.target.value)}
-            className={inputClass} placeholder="Imię i nazwisko" />
-        </div>
-      )}
-      <div className="grid grid-cols-2 gap-2">
-        <div>
-          <label className="block text-[10px] font-medium text-gray-500 uppercase mb-0.5">Telefon</label>
-          <input type="tel" value={newPhone} onChange={(e) => setNewPhone(e.target.value)}
-            className={inputClass} placeholder="+48..." />
-        </div>
-        <div>
-          <label className="block text-[10px] font-medium text-gray-500 uppercase mb-0.5">Email</label>
-          <input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)}
-            className={inputClass} placeholder="email@..." />
-        </div>
-      </div>
-      <div className="flex gap-2">
-        <button onClick={() => handleAddClient(type)}
-          className="rounded bg-amber-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-400">Dodaj</button>
-        <button onClick={resetAddForm}
-          className="rounded px-3 py-1.5 text-xs text-gray-500 hover:bg-gray-100">Anuluj</button>
-      </div>
-    </div>
-  )
-
-  const renderClientList = (list: typeof clients, type: ClientType, icon: React.ReactNode, title: string) => (
-    <div>
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-1.5">
-          {icon}
-          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{title}</h2>
-          <span className="text-[10px] text-gray-400">({list.length})</span>
-        </div>
-        <button onClick={() => setShowAdd(type)}
-          className="flex items-center gap-1 rounded-md bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-600 hover:bg-amber-100">
-          <Plus className="h-3 w-3" /> Dodaj
-        </button>
-      </div>
-      <div className="space-y-0.5">
-        {list.map((c) => (
-          <div key={c.id} className="flex items-center gap-1">
-            <button onClick={() => setSelectedId(c.id)}
-              className={`flex-1 text-left rounded-lg px-3 py-2 text-xs transition-colors ${
-                selectedId === c.id ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-white text-gray-700 hover:bg-gray-50 border border-transparent'
-              }`}>
-              <span className="font-medium">{c.name}</span>
-              {c.phone && <span className="ml-2 text-gray-400">{c.phone}</span>}
-            </button>
-            <button onClick={() => handleDeleteClient(c.id, c.name)}
-              className="rounded-md p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50">
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        ))}
-        {list.length === 0 && <p className="text-xs text-gray-400 py-3 text-center">Brak</p>}
-      </div>
-      {showAdd === type && renderAddForm(type)}
-    </div>
-  )
-
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <h1 className="text-xl font-bold text-gray-900">Klienci i cenniki</h1>
 
-      {/* Two-column client lists */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        {renderClientList(companies, 'company', <Building2 className="h-4 w-4 text-blue-500" />, 'Firmy')}
-        {renderClientList(individuals, 'individual', <User className="h-4 w-4 text-violet-500" />, 'Klienci indywidualni')}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
+        {/* Companies — table */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-1.5">
+              <Building2 className="h-4 w-4 text-blue-500" />
+              <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Firmy</h2>
+              <span className="text-[10px] text-gray-400">({companies.length})</span>
+            </div>
+            <button onClick={() => setShowAdd('company')}
+              className="flex items-center gap-1 rounded-md bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-600 hover:bg-amber-100">
+              <Plus className="h-3 w-3" /> Dodaj
+            </button>
+          </div>
+
+          <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 bg-gray-50">
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Nazwa firmy</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Osoba kontaktowa</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Telefon</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Email</th>
+                  <th className="px-1 py-2 w-10"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {companies.map((c) => (
+                  <tr key={c.id}
+                    onClick={() => setSelectedId(c.id)}
+                    className={`border-b border-gray-100 cursor-pointer transition-colors ${
+                      selectedId === c.id ? 'bg-amber-50' : 'hover:bg-gray-50'
+                    }`}>
+                    <td className="px-3 py-2 font-medium text-gray-800">{c.name}</td>
+                    <td className="px-3 py-2 text-gray-500">{c.contact_name || '—'}</td>
+                    <td className="px-3 py-2 text-gray-500">{c.phone || '—'}</td>
+                    <td className="px-3 py-2 text-gray-500">{c.email || '—'}</td>
+                    <td className="px-1 py-2" onClick={(e) => e.stopPropagation()}>
+                      <button onClick={() => handleDeleteClient(c.id, c.name)}
+                        className="rounded p-1 text-gray-300 hover:text-red-500 hover:bg-red-50">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {companies.length === 0 && (
+                  <tr><td colSpan={5} className="px-4 py-6 text-center text-gray-400 text-xs">Brak firm</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {showAdd === 'company' && (
+            <div className="mt-2 space-y-2 rounded-lg border border-amber-200 bg-amber-50/50 p-3">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[10px] font-medium text-gray-500 uppercase mb-0.5">Nazwa firmy</label>
+                  <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)}
+                    className={inputClass} autoFocus />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-medium text-gray-500 uppercase mb-0.5">Osoba kontaktowa</label>
+                  <input type="text" value={newContactName} onChange={(e) => setNewContactName(e.target.value)}
+                    className={inputClass} placeholder="Imię i nazwisko" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-medium text-gray-500 uppercase mb-0.5">Telefon</label>
+                  <input type="tel" value={newPhone} onChange={(e) => setNewPhone(e.target.value)}
+                    className={inputClass} placeholder="+48..." />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-medium text-gray-500 uppercase mb-0.5">Email</label>
+                  <input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)}
+                    className={inputClass} placeholder="email@..." />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => handleAddClient('company')}
+                  className="rounded bg-amber-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-400">Dodaj</button>
+                <button onClick={resetAddForm}
+                  className="rounded px-3 py-1.5 text-xs text-gray-500 hover:bg-gray-100">Anuluj</button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Individuals — compact list */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-1.5">
+              <User className="h-4 w-4 text-violet-500" />
+              <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Indywidualni</h2>
+              <span className="text-[10px] text-gray-400">({individuals.length})</span>
+            </div>
+            <button onClick={() => setShowAdd('individual')}
+              className="flex items-center gap-1 rounded-md bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-600 hover:bg-amber-100">
+              <Plus className="h-3 w-3" /> Dodaj
+            </button>
+          </div>
+          <div className="space-y-0.5">
+            {individuals.map((c) => (
+              <div key={c.id} className="flex items-center gap-1">
+                <button onClick={() => setSelectedId(c.id)}
+                  className={`flex-1 text-left rounded-lg px-3 py-2 text-xs transition-colors ${
+                    selectedId === c.id ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-white text-gray-700 hover:bg-gray-50 border border-transparent'
+                  }`}>
+                  <span className="font-medium">{c.name}</span>
+                  {c.phone && <span className="ml-2 text-gray-400">{c.phone}</span>}
+                </button>
+                <button onClick={() => handleDeleteClient(c.id, c.name)}
+                  className="rounded-md p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50">
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+            {individuals.length === 0 && <p className="text-xs text-gray-400 py-3 text-center">Brak</p>}
+          </div>
+
+          {showAdd === 'individual' && (
+            <div className="mt-2 space-y-2 rounded-lg border border-amber-200 bg-amber-50/50 p-3">
+              <div>
+                <label className="block text-[10px] font-medium text-gray-500 uppercase mb-0.5">Imię i nazwisko</label>
+                <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)}
+                  className={inputClass} autoFocus />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[10px] font-medium text-gray-500 uppercase mb-0.5">Telefon</label>
+                  <input type="tel" value={newPhone} onChange={(e) => setNewPhone(e.target.value)}
+                    className={inputClass} placeholder="+48..." />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-medium text-gray-500 uppercase mb-0.5">Email</label>
+                  <input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)}
+                    className={inputClass} placeholder="email@..." />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => handleAddClient('individual')}
+                  className="rounded bg-amber-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-400">Dodaj</button>
+                <button onClick={resetAddForm}
+                  className="rounded px-3 py-1.5 text-xs text-gray-500 hover:bg-gray-100">Anuluj</button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Selected client details + pricing */}
