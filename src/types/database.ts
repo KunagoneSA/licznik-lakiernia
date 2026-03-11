@@ -121,6 +121,7 @@ export interface PaintPurchase {
   order_id: string | null
   status: PurchaseStatus
   number: number | null
+  color: string | null
   notes: string | null
   supplier?: Supplier
 }

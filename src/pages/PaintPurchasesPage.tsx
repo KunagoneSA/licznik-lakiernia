@@ -34,6 +34,7 @@ export default function PaintPurchasesPage() {
   const [eUnit, setEUnit] = useState('')
   const [eUnitPrice, setEUnitPrice] = useState('')
   const [eStatus, setEStatus] = useState<PurchaseStatus>('zamowione')
+  const [eColor, setEColor] = useState('')
   const [eNotes, setENotes] = useState('')
   const editRowRef = useRef<HTMLTableRowElement>(null)
 
@@ -73,6 +74,7 @@ export default function PaintPurchasesPage() {
     setEUnit(p.unit)
     setEUnitPrice(String(p.unit_price))
     setEStatus(p.status)
+    setEColor(p.color ?? '')
     setENotes(p.notes ?? '')
   }
 
@@ -92,11 +94,12 @@ export default function PaintPurchasesPage() {
       unit_price: price,
       total,
       status: eStatus,
+      color: eColor.trim() || null,
       notes: eNotes.trim() || null,
     }).eq('id', editingId)
     setEditingId(null)
     fetchPurchases()
-  }, [editingId, eDate, eSupplierId, eProductId, eProductName, eQuantity, eUnit, eUnitPrice, eStatus, eNotes, products, fetchPurchases])
+  }, [editingId, eDate, eSupplierId, eProductId, eProductName, eQuantity, eUnit, eUnitPrice, eStatus, eColor, eNotes, products, fetchPurchases])
 
   const cancelEdit = () => { setEditingId(null) }
 
@@ -187,6 +190,7 @@ export default function PaintPurchasesPage() {
                 <th className="px-2.5 py-2 text-right text-xs font-medium text-gray-500 w-20">Cena</th>
                 <th className="px-2.5 py-2 text-right text-xs font-medium text-gray-500 w-24">Suma</th>
                 <th className="px-2.5 py-2 text-center text-xs font-medium text-gray-500 w-28">Status</th>
+                <th className="px-2.5 py-2 text-left text-xs font-medium text-gray-500 w-24">Kolor</th>
                 <th className="px-2.5 py-2 text-left text-xs font-medium text-gray-500">Komentarz</th>
                 <th className="px-1 py-2 w-8"></th>
               </tr>
@@ -251,6 +255,9 @@ export default function PaintPurchasesPage() {
                         </select>
                       </td>
                       <td className="px-1.5 py-1">
+                        <input value={eColor} onChange={e => setEColor(e.target.value)} className={ic} placeholder="Kolor..." />
+                      </td>
+                      <td className="px-1.5 py-1">
                         <input value={eNotes} onChange={e => setENotes(e.target.value)} className={ic} placeholder="Komentarz..." />
                       </td>
                       <td className="px-1 py-1.5">
@@ -277,6 +284,7 @@ export default function PaintPurchasesPage() {
                         supabase.from('paint_purchases').update({ status: s }).eq('id', p.id).then(() => fetchPurchases())
                       }} />
                     </td>
+                    <td className="px-2.5 py-1.5 text-xs text-gray-600">{p.color || '—'}</td>
                     <td className="px-2.5 py-1.5 text-xs text-gray-400 max-w-[150px] truncate" title={p.notes ?? ''}>
                       {p.notes || '—'}
                     </td>
@@ -290,7 +298,7 @@ export default function PaintPurchasesPage() {
                 )
               })}
               {filtered.length === 0 && (
-                <tr><td colSpan={10} className="px-4 py-8 text-center text-gray-400">Brak zamówień</td></tr>
+                <tr><td colSpan={11} className="px-4 py-8 text-center text-gray-400">Brak zamówień</td></tr>
               )}
               {filtered.length > 0 && (
                 <tr className="bg-gray-50 font-medium">
@@ -298,7 +306,7 @@ export default function PaintPurchasesPage() {
                   <td className="px-2.5 py-2 text-right text-xs font-medium text-amber-600">
                     {filtered.reduce((s, p) => s + Number(p.total), 0).toFixed(2)} zł
                   </td>
-                  <td colSpan={3}></td>
+                  <td colSpan={4}></td>
                 </tr>
               )}
             </tbody>
@@ -383,6 +391,7 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
   const [showNewSupplier, setShowNewSupplier] = useState(false)
   const [lines, setLines] = useState<ProductLine[]>([emptyLine()])
   const [notes, setNotes] = useState('')
+  const [color, setColor] = useState('')
   const [status, setStatus] = useState<PurchaseStatus>('zamowione')
   const [saving, setSaving] = useState(false)
   const [showNewProduct, setShowNewProduct] = useState(false)
@@ -441,6 +450,7 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
       unit_price: l.unitPrice,
       total: Math.round(l.quantity * l.unitPrice * 100) / 100,
       status,
+      color: color.trim() || null,
       notes: notes || null,
       number,
     }))
@@ -570,6 +580,12 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
               className="mt-2 flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 font-medium">
               <Plus className="h-3.5 w-3.5" /> Dodaj produkt
             </button>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Kolor</label>
+            <input type="text" value={color} onChange={e => setColor(e.target.value)} placeholder="np. biały, RAL 9010..."
+              className={inputCls} />
           </div>
 
           <div>
