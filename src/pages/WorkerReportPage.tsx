@@ -148,11 +148,11 @@ export default function WorkerReportPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Pracownik</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Operacja</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 w-28">Pracownik</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 w-28">Operacja</th>
                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Zamówienie</th>
-                <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Godziny</th>
-                <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">m²</th>
+                <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 w-20">Godziny</th>
+                <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 w-16">m²</th>
               </tr>
             </thead>
             <tbody>
