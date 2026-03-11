@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
-import { LayoutDashboard, ClipboardList, Users, ShoppingCart, Menu, X, LogOut, Tag, HardHat } from 'lucide-react'
+import { LayoutDashboard, ClipboardList, Users, ShoppingCart, Menu, X, LogOut, Tag, HardHat, Truck, Package } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import SprayGunIcon from '../components/SprayGunIcon'
 
@@ -12,6 +12,8 @@ const navItems = [
   { to: '/cennik', icon: Tag, label: 'Cennik' },
   { to: '/klienci', icon: Users, label: 'Klienci' },
   { to: '/lakiery', icon: ShoppingCart, label: 'Zakupy lakierów' },
+  { to: '/dostawcy', icon: Truck, label: 'Dostawcy' },
+  { to: '/materialy', icon: Package, label: 'Materiały' },
   { to: '/pracownicy', icon: HardHat, label: 'Pracownicy' },
 ] as const
 

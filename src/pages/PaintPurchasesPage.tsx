@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Plus, Trash2, X, ChevronDown, ChevronLeft, ChevronRight, Database, Check } from 'lucide-react'
+import { Plus, Trash2, X, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useToast } from '../contexts/ToastContext'
 import { useModalKeys } from '../hooks/useModalKeys'
@@ -17,7 +17,6 @@ export default function PaintPurchasesPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
-  const [showManage, setShowManage] = useState(false)
   const now = new Date()
   const thisMonthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
   const thisMonthEnd = (() => { const last = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate(); return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(last).padStart(2, '0')}` })()
@@ -66,16 +65,10 @@ export default function PaintPurchasesPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-gray-900">Zakupy lakierów</h1>
-        <div className="flex items-center gap-2">
-          <button onClick={() => setShowManage(true)}
-            className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">
-            <Database className="h-4 w-4" /> Baza dostawców i materiałów
-          </button>
-          <button onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-400">
-            <Plus className="h-4 w-4" /> Dodaj zamówienie
-          </button>
-        </div>
+        <button onClick={() => setShowForm(true)}
+          className="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-400">
+          <Plus className="h-4 w-4" /> Dodaj zamówienie
+        </button>
       </div>
 
       {/* Date filters with month shift */}
@@ -185,14 +178,6 @@ export default function PaintPurchasesPage() {
         />
       )}
 
-      {showManage && (
-        <ManageModal
-          suppliers={suppliers}
-          products={products}
-          onChanged={() => { fetchSuppliers(); fetchProducts(); fetchPurchases() }}
-          onClose={() => setShowManage(false)}
-        />
-      )}
     </div>
   )
 }
@@ -457,243 +442,6 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
             {saving ? 'Zapisywanie...' : 'Dodaj'}
           </button>
         </div>
-      </div>
-    </div>
-  )
-}
-
-
-function ManageModal({ suppliers, products, onChanged, onClose }: {
-  suppliers: Supplier[]
-  products: Product[]
-  onChanged: () => void
-  onClose: () => void
-}) {
-  const [tab, setTab] = useState<'suppliers' | 'products'>('suppliers')
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const { toast } = useToast()
-  useModalKeys(onClose)
-
-  // Supplier editing state
-  const [sName, setSName] = useState('')
-  const [sPhone, setSPhone] = useState('')
-  const [sEmail, setSEmail] = useState('')
-  const [sContact, setSContact] = useState('')
-  const [sDefault, setSDefault] = useState(false)
-  const [sFreq, setSFreq] = useState('')
-
-  // Product editing state
-  const [pName, setPName] = useState('')
-  const [pUnit, setPUnit] = useState('kg')
-  const [pPrice, setPPrice] = useState('')
-  const [pSupplierId, setPSupplierId] = useState('')
-  const [pFreq, setPFreq] = useState('')
-
-  const startEditSupplier = (s: Supplier) => {
-    setEditingId(s.id)
-    setSName(s.name); setSPhone(s.phone ?? ''); setSEmail(s.email ?? '')
-    setSContact(s.contact_person ?? ''); setSDefault(s.is_default); setSFreq(s.order_frequency ?? '')
-  }
-
-  const saveSupplier = async () => {
-    if (!editingId || !sName.trim()) return
-    await supabase.from('suppliers').update({
-      name: sName.trim(), phone: sPhone || null, email: sEmail || null,
-      contact_person: sContact || null, is_default: sDefault, order_frequency: sFreq || null,
-    }).eq('id', editingId)
-    setEditingId(null); onChanged()
-  }
-
-  const addSupplier = async () => {
-    const { data } = await supabase.from('suppliers').insert({ name: 'Nowy dostawca' }).select('*').single()
-    if (data) { onChanged(); startEditSupplier(data as Supplier) }
-  }
-
-  const deleteSupplier = async (id: string) => {
-    const { error } = await supabase.from('suppliers').delete().eq('id', id)
-    if (error) { toast('Nie można usunąć — dostawca jest używany', 'error'); return }
-    if (editingId === id) setEditingId(null)
-    onChanged()
-  }
-
-  const startEditProduct = (p: Product) => {
-    setEditingId(p.id)
-    setPName(p.name); setPUnit(p.unit ?? 'kg'); setPPrice(String(p.default_price ?? ''))
-    setPSupplierId(p.default_supplier_id ?? ''); setPFreq(p.order_frequency ?? '')
-  }
-
-  const saveProduct = async () => {
-    if (!editingId || !pName.trim()) return
-    await supabase.from('products').update({
-      name: pName.trim(), unit: pUnit, default_price: Number(pPrice) || null,
-      default_supplier_id: pSupplierId || null, order_frequency: pFreq || null,
-    }).eq('id', editingId)
-    setEditingId(null); onChanged()
-  }
-
-  const addProduct = async () => {
-    const { data } = await supabase.from('products').insert({ name: 'Nowy produkt' }).select('*').single()
-    if (data) { onChanged(); startEditProduct(data as Product) }
-  }
-
-  const deleteProduct = async (id: string) => {
-    const { error } = await supabase.from('products').delete().eq('id', id)
-    if (error) { toast('Nie można usunąć — produkt jest używany', 'error'); return }
-    if (editingId === id) setEditingId(null)
-    onChanged()
-  }
-
-  const ic = "w-full rounded border border-gray-300 px-2 py-1 text-xs text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30"
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onClick={onClose}>
-      <div className="w-full max-w-4xl rounded-xl bg-white border border-gray-200 shadow-lg p-6 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Baza danych</h2>
-          <button onClick={onClose} className="rounded-md p-1 text-gray-500 hover:bg-gray-100"><X className="h-5 w-5" /></button>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex gap-1 mb-4 border-b border-gray-200">
-          {([['suppliers', 'Dostawcy'], ['products', 'Materiały']] as const).map(([key, label]) => (
-            <button key={key} onClick={() => { setTab(key); setEditingId(null) }}
-              className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
-                tab === key ? 'border-amber-500 text-amber-600' : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}>
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {/* Suppliers tab */}
-        {tab === 'suppliers' && (
-          <div>
-            <div className="overflow-x-auto rounded-lg border border-gray-200">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500">Nazwa</th>
-                    <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500">Telefon</th>
-                    <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500">Email</th>
-                    <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500">Kontakt</th>
-                    <th className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-500">Domyślny</th>
-                    <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500">Częstotliwość</th>
-                    <th className="px-1 py-1.5 w-14"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {suppliers.map(s => {
-                    const isEd = editingId === s.id
-                    if (isEd) {
-                      const kd = (e: React.KeyboardEvent) => { if (e.key === 'Enter') saveSupplier(); if (e.key === 'Escape') setEditingId(null) }
-                      return (
-                        <tr key={s.id} className="border-b border-gray-100 bg-amber-50/30">
-                          <td className="px-2 py-1"><input value={sName} onChange={e => setSName(e.target.value)} className={ic} onKeyDown={kd} autoFocus /></td>
-                          <td className="px-2 py-1"><input value={sPhone} onChange={e => setSPhone(e.target.value)} className={ic} onKeyDown={kd} placeholder="tel." /></td>
-                          <td className="px-2 py-1"><input value={sEmail} onChange={e => setSEmail(e.target.value)} className={ic} onKeyDown={kd} placeholder="email" /></td>
-                          <td className="px-2 py-1"><input value={sContact} onChange={e => setSContact(e.target.value)} className={ic} onKeyDown={kd} placeholder="osoba" /></td>
-                          <td className="px-2 py-1 text-center"><input type="checkbox" checked={sDefault} onChange={e => setSDefault(e.target.checked)} className="h-3.5 w-3.5 rounded border-gray-300 text-amber-500 focus:ring-amber-500/30" /></td>
-                          <td className="px-2 py-1"><input value={sFreq} onChange={e => setSFreq(e.target.value)} className={ic} onKeyDown={kd} placeholder="np. co tydzień" /></td>
-                          <td className="px-1 py-1 flex gap-0.5">
-                            <button onClick={saveSupplier} className="rounded p-0.5 text-emerald-500 hover:text-emerald-700"><Check className="h-3.5 w-3.5" /></button>
-                            <button onClick={() => setEditingId(null)} className="rounded p-0.5 text-gray-400 hover:text-gray-600"><X className="h-3.5 w-3.5" /></button>
-                          </td>
-                        </tr>
-                      )
-                    }
-                    return (
-                      <tr key={s.id} className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer" onClick={() => startEditSupplier(s)}>
-                        <td className="px-2 py-1.5 font-medium text-gray-800">{s.name}</td>
-                        <td className="px-2 py-1.5 text-gray-500">{s.phone || '—'}</td>
-                        <td className="px-2 py-1.5 text-gray-500">{s.email || '—'}</td>
-                        <td className="px-2 py-1.5 text-gray-500">{s.contact_person || '—'}</td>
-                        <td className="px-2 py-1.5 text-center">{s.is_default ? <span className="text-emerald-600 font-bold">✓</span> : ''}</td>
-                        <td className="px-2 py-1.5 text-gray-500">{s.order_frequency || '—'}</td>
-                        <td className="px-1 py-1.5" onClick={e => e.stopPropagation()}>
-                          <button onClick={() => deleteSupplier(s.id)} className="rounded p-0.5 text-gray-300 hover:text-red-500"><Trash2 className="h-3.5 w-3.5" /></button>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                  {suppliers.length === 0 && (
-                    <tr><td colSpan={7} className="px-4 py-6 text-center text-gray-400">Brak dostawców</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-            <button onClick={addSupplier} className="mt-2 flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 font-medium">
-              <Plus className="h-3.5 w-3.5" /> Dodaj dostawcę
-            </button>
-          </div>
-        )}
-
-        {/* Products tab */}
-        {tab === 'products' && (
-          <div>
-            <div className="overflow-x-auto rounded-lg border border-gray-200">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500">Nazwa</th>
-                    <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 w-16">Jednostka</th>
-                    <th className="px-2 py-1.5 text-right text-[10px] font-medium text-gray-500 w-20">Cena dom.</th>
-                    <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500">Domyślny dostawca</th>
-                    <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500">Częstotliwość</th>
-                    <th className="px-1 py-1.5 w-14"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {products.map(p => {
-                    const isEd = editingId === p.id
-                    if (isEd) {
-                      const kd = (e: React.KeyboardEvent) => { if (e.key === 'Enter') saveProduct(); if (e.key === 'Escape') setEditingId(null) }
-                      return (
-                        <tr key={p.id} className="border-b border-gray-100 bg-amber-50/30">
-                          <td className="px-2 py-1"><input value={pName} onChange={e => setPName(e.target.value)} className={ic} onKeyDown={kd} autoFocus /></td>
-                          <td className="px-2 py-1">
-                            <select value={pUnit} onChange={e => setPUnit(e.target.value)} className={ic} onKeyDown={kd}>
-                              <option value="kg">kg</option><option value="l">l</option><option value="szt">szt</option>
-                            </select>
-                          </td>
-                          <td className="px-2 py-1"><input type="number" step="0.01" value={pPrice} onChange={e => setPPrice(e.target.value)} className={`${ic} text-right`} onKeyDown={kd} placeholder="0.00" /></td>
-                          <td className="px-2 py-1">
-                            <select value={pSupplierId} onChange={e => setPSupplierId(e.target.value)} className={ic} onKeyDown={kd}>
-                              <option value="">— brak —</option>
-                              {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                            </select>
-                          </td>
-                          <td className="px-2 py-1"><input value={pFreq} onChange={e => setPFreq(e.target.value)} className={ic} onKeyDown={kd} placeholder="np. co miesiąc" /></td>
-                          <td className="px-1 py-1 flex gap-0.5">
-                            <button onClick={saveProduct} className="rounded p-0.5 text-emerald-500 hover:text-emerald-700"><Check className="h-3.5 w-3.5" /></button>
-                            <button onClick={() => setEditingId(null)} className="rounded p-0.5 text-gray-400 hover:text-gray-600"><X className="h-3.5 w-3.5" /></button>
-                          </td>
-                        </tr>
-                      )
-                    }
-                    return (
-                      <tr key={p.id} className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer" onClick={() => startEditProduct(p)}>
-                        <td className="px-2 py-1.5 font-medium text-gray-800">{p.name}</td>
-                        <td className="px-2 py-1.5 text-gray-500">{p.unit ?? 'kg'}</td>
-                        <td className="px-2 py-1.5 text-right text-gray-500">{p.default_price ? Number(p.default_price).toFixed(2) : '—'}</td>
-                        <td className="px-2 py-1.5 text-gray-500">{suppliers.find(s => s.id === p.default_supplier_id)?.name ?? '—'}</td>
-                        <td className="px-2 py-1.5 text-gray-500">{p.order_frequency || '—'}</td>
-                        <td className="px-1 py-1.5" onClick={e => e.stopPropagation()}>
-                          <button onClick={() => deleteProduct(p.id)} className="rounded p-0.5 text-gray-300 hover:text-red-500"><Trash2 className="h-3.5 w-3.5" /></button>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                  {products.length === 0 && (
-                    <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-400">Brak materiałów</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-            <button onClick={addProduct} className="mt-2 flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 font-medium">
-              <Plus className="h-3.5 w-3.5" /> Dodaj materiał
-            </button>
-          </div>
-        )}
       </div>
     </div>
   )
