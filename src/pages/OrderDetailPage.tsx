@@ -86,10 +86,13 @@ export default function OrderDetailPage() {
     setTimeout(() => logDateRef.current?.focus(), 0)
   }, [activeWorkers])
 
+  const orderM2 = items.reduce((sum, item) => sum + Number(item.m2 ?? 0), 0)
+
   const handleInlineLogAdd = useCallback(async () => {
     const h = Number(logHours)
     const r = Number(logRate)
     if (!h) return
+    const m2 = orderM2 > 0 ? Math.round(orderM2 * 100) / 100 : null
     await addLog({
       order_id: id!,
       worker_name: logWorker,
@@ -98,12 +101,12 @@ export default function OrderDetailPage() {
       hours: h,
       hourly_rate: r,
       cost: Math.round(h * r * 100) / 100,
-      m2_painted: null,
+      m2_painted: m2,
       notes: logNotes || null,
     })
     toast('Etap dodany')
     resetLogForm()
-  }, [logWorker, logOp, logDate, logHours, logRate, logNotes, id, addLog, toast, resetLogForm])
+  }, [logWorker, logOp, logDate, logHours, logRate, logNotes, id, addLog, toast, resetLogForm, orderM2])
 
   const getDefaultPrice = useCallback((vid: string) => {
     return vid ? getPriceForVariant(vid, variants) : 0
