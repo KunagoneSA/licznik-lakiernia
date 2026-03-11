@@ -85,17 +85,45 @@ CREATE TABLE monthly_costs (
   total decimal NOT NULL DEFAULT 0
 );
 
+-- Suppliers
+CREATE TABLE suppliers (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  phone text,
+  email text,
+  contact_person text,
+  is_default boolean DEFAULT false,
+  order_frequency text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- Products (materials)
+CREATE TABLE products (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  unit text DEFAULT 'kg',
+  default_price decimal,
+  default_supplier_id uuid REFERENCES suppliers(id) ON DELETE SET NULL,
+  order_frequency text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
 -- Paint purchases
 CREATE TABLE paint_purchases (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   date date NOT NULL DEFAULT CURRENT_DATE,
+  supplier_id uuid REFERENCES suppliers(id),
   supplier text NOT NULL,
+  product_id uuid REFERENCES products(id),
   product text NOT NULL,
   quantity decimal NOT NULL,
   unit text NOT NULL DEFAULT 'kg',
   unit_price decimal NOT NULL,
   total decimal NOT NULL DEFAULT 0,
-  order_id uuid REFERENCES orders(id) ON DELETE SET NULL
+  order_id uuid REFERENCES orders(id) ON DELETE SET NULL,
+  status text NOT NULL DEFAULT 'zamowione',
+  number integer,
+  notes text
 );
 
 -- Indexes
@@ -116,6 +144,8 @@ ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE work_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE monthly_costs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE suppliers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE paint_purchases ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
@@ -126,6 +156,8 @@ CREATE POLICY "Auth full access" ON orders FOR ALL TO authenticated USING (true)
 CREATE POLICY "Auth full access" ON order_items FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Auth full access" ON work_logs FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Auth full access" ON monthly_costs FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Auth full access" ON suppliers FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Auth full access" ON products FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Auth full access" ON paint_purchases FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Enable realtime

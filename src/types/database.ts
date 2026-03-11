@@ -89,13 +89,23 @@ export type PurchaseStatus = 'zamowione' | 'dostarczone' | 'faktura'
 export interface Supplier {
   id: string
   name: string
+  phone: string | null
+  email: string | null
+  contact_person: string | null
+  is_default: boolean
+  order_frequency: string | null
   created_at: string
 }
 
 export interface Product {
   id: string
   name: string
+  unit: string
+  default_price: number | null
+  default_supplier_id: string | null
+  order_frequency: string | null
   created_at: string
+  default_supplier?: Supplier
 }
 
 export interface PaintPurchase {
