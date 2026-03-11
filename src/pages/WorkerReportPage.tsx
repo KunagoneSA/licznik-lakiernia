@@ -3,8 +3,15 @@ import { Download, ChevronLeft, ChevronRight } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import type { WorkLog } from '../types/database'
 
+interface OrderInfo {
+  number: number
+  created_at: string
+  color: string | null
+  client: { name: string } | null
+}
+
 interface WorkLogWithOrder extends WorkLog {
-  order?: { number: number } | null
+  order?: OrderInfo | null
 }
 
 export default function WorkerReportPage() {
@@ -17,7 +24,7 @@ export default function WorkerReportPage() {
     setLoading(true)
     const { data } = await supabase
       .from('work_logs')
-      .select('*, order:orders(number)')
+      .select('*, order:orders(number, created_at, color, client:clients(name))')
       .eq('date', date)
       .order('worker_name')
       .order('created_at')
@@ -39,6 +46,16 @@ export default function WorkerReportPage() {
     const dt = new Date(d + 'T12:00:00')
     const dayNames = ['niedziela', 'poniedziałek', 'wtorek', 'środa', 'czwartek', 'piątek', 'sobota']
     return `${dayNames[dt.getDay()]}, ${dt.toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' })}`
+  }
+
+  const formatOrder = (o: OrderInfo | null | undefined) => {
+    if (!o) return '—'
+    const year = new Date(o.created_at).getFullYear() % 100
+    const num = `${o.number}/${year}`
+    const client = o.client?.name ?? ''
+    const color = o.color ?? ''
+    const details = [client, color].filter(Boolean).join(' · ')
+    return details ? `${num} — ${details}` : num
   }
 
   // Group by worker
@@ -63,7 +80,7 @@ export default function WorkerReportPage() {
   const exportCsv = () => {
     const header = 'Data,Pracownik,Operacja,Zamówienie,Godziny,Stawka,Koszt,m2\n'
     const rows = logs.map((l) =>
-      `${l.date},${l.worker_name},${l.operation},${l.order?.number ?? ''},${l.hours},${l.hourly_rate},${l.cost},${l.m2_painted ?? ''}`
+      `${l.date},${l.worker_name},${l.operation},"${formatOrder(l.order)}",${l.hours},${l.hourly_rate},${l.cost},${l.m2_painted ?? ''}`
     ).join('\n')
     const blob = new Blob([header + rows], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
@@ -147,7 +164,7 @@ export default function WorkerReportPage() {
                         <td className="px-4 py-2 font-medium text-gray-800" rowSpan={g.logs.length}>{name}</td>
                       ) : null}
                       <td className="px-4 py-2 text-gray-600">{l.operation}</td>
-                      <td className="px-4 py-2 text-gray-500">{l.order?.number ? `#${l.order.number}` : '—'}</td>
+                      <td className="px-4 py-2 text-gray-500">{formatOrder(l.order)}</td>
                       <td className="px-4 py-2 text-right text-gray-600">{l.hours}</td>
                       <td className="px-4 py-2 text-right text-gray-500">{l.m2_painted ? Number(l.m2_painted).toFixed(1) : '—'}</td>
                     </tr>
