@@ -528,11 +528,11 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
             </div>
             <div className="space-y-2">
               {lines.map((line, i) => {
-                const fieldCls = "w-full rounded-lg border border-gray-300 px-2.5 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-500/30"
+                const fieldCls = "w-full h-[38px] rounded-lg border border-gray-300 px-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-500/30"
                 return (
-                  <div key={i} className="flex items-end gap-2 rounded-lg bg-gray-50 p-3">
+                  <div key={i} className="flex items-start gap-2 rounded-lg bg-gray-50 p-3">
                     <div className="flex-1 min-w-0">
-                      <label className="block text-[10px] text-gray-400 mb-0.5">Produkt</label>
+                      <label className="block text-[10px] text-gray-400 mb-1">Produkt</label>
                       <select value={line.productId} onChange={e => {
                         const pid = e.target.value
                         const prod = products.find(p => p.id === pid)
@@ -549,36 +549,38 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
                       </select>
                     </div>
                     <div className="w-20">
-                      <label className="block text-[10px] text-gray-400 mb-0.5">Ilość</label>
+                      <label className="block text-[10px] text-gray-400 mb-1">Ilość</label>
                       <input type="number" value={line.quantity || ''} onChange={e => updateLine(i, { quantity: Number(e.target.value) })}
                         className={fieldCls} />
                     </div>
                     <div className="w-[4.5rem]">
-                      <label className="block text-[10px] text-gray-400 mb-0.5">Jedn.</label>
+                      <label className="block text-[10px] text-gray-400 mb-1">Jedn.</label>
                       <select value={line.unit} onChange={e => updateLine(i, { unit: e.target.value })} className={fieldCls}>
                         <option value="kg">kg</option><option value="l">l</option><option value="szt">szt</option>
                       </select>
                     </div>
                     <div className="w-24">
-                      <label className="block text-[10px] text-gray-400 mb-0.5">Cena</label>
+                      <label className="block text-[10px] text-gray-400 mb-1">Cena</label>
                       <input type="number" step="0.01" value={line.unitPrice || ''} onChange={e => updateLine(i, { unitPrice: Number(e.target.value) })}
                         className={fieldCls} />
                     </div>
                     <div className="w-32">
-                      <label className="block text-[10px] text-gray-400 mb-0.5">Kolor</label>
+                      <label className="block text-[10px] text-gray-400 mb-1">Kolor</label>
                       <input type="text" value={line.color} onChange={e => updateLine(i, { color: e.target.value })}
                         placeholder="np. biały"
                         className={fieldCls} />
                     </div>
                     <div className="w-20 text-right shrink-0">
-                      <label className="block text-[10px] text-gray-400 mb-0.5">Suma</label>
-                      <div className="py-2 text-sm font-semibold text-amber-600">{(line.quantity * line.unitPrice).toFixed(2)} zł</div>
+                      <label className="block text-[10px] text-gray-400 mb-1">Suma</label>
+                      <div className="h-[38px] flex items-center justify-end text-sm font-semibold text-amber-600">{(line.quantity * line.unitPrice).toFixed(2)} zł</div>
                     </div>
                     {lines.length > 1 && (
-                      <button onClick={() => setLines(prev => prev.filter((_, j) => j !== i))}
-                        className="rounded p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 mb-1">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      <div className="pt-[18px]">
+                        <button onClick={() => setLines(prev => prev.filter((_, j) => j !== i))}
+                          className="h-[38px] flex items-center rounded p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     )}
                   </div>
                 )
