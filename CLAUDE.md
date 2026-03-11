@@ -12,6 +12,9 @@
 - **Auto-push:** po każdej zmianie w kodzie — commituj i pushuj na `develop` automatycznie.
 - **Deploy:** NIGDY nie deployuj samodzielnie (Netlify, produkcja). Deploy TYLKO na wyraźne polecenie usera ("releasuj", "deploy", "na produkcję").
 
+## Powiadomienia
+- Po zakończeniu zadania (gdy czekam na kolejną komendę) — odtwórz dźwięk: `afplay /System/Library/Sounds/Glass.aiff`
+
 ## Projekt
 - Aplikacja: licznik lakiernia (React + Vite + Supabase)
 - Język interfejsu: polski
