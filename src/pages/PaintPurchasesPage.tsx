@@ -528,7 +528,7 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
             </div>
             <div className="space-y-2">
               {lines.map((line, i) => (
-                <div key={i} className="flex items-end gap-2 rounded-lg bg-gray-50 p-2">
+                <div key={i} className="flex items-start gap-2 rounded-lg bg-gray-50 p-2">
                   <div className="flex-1">
                     <label className="block text-[10px] text-gray-400 mb-0.5">Produkt</label>
                     <select value={line.productId} onChange={e => {
@@ -571,13 +571,17 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
                       className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-amber-500/30" />
                   </div>
                   <div className="w-20 text-right">
-                    <span className="text-xs font-medium text-amber-600">{(line.quantity * line.unitPrice).toFixed(2)} zł</span>
+                    <label className="block text-[10px] text-gray-400 mb-0.5">Suma</label>
+                    <div className="py-1.5 text-xs font-medium text-amber-600">{(line.quantity * line.unitPrice).toFixed(2)} zł</div>
                   </div>
                   {lines.length > 1 && (
-                    <button onClick={() => setLines(prev => prev.filter((_, j) => j !== i))}
-                      className="rounded p-1 text-gray-300 hover:text-red-500 mb-0.5">
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    <div>
+                      <label className="block text-[10px] text-transparent mb-0.5 select-none">x</label>
+                      <button onClick={() => setLines(prev => prev.filter((_, j) => j !== i))}
+                        className="rounded p-1 text-gray-300 hover:text-red-500">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   )}
                 </div>
               ))}
