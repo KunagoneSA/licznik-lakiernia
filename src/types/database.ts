@@ -6,6 +6,9 @@ export interface Client {
   name: string
   type: ClientType
   contact_info: string | null
+  contact_name: string | null
+  phone: string | null
+  email: string | null
   access_code: string | null
   created_at: string
 }

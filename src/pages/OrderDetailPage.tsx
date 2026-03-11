@@ -54,6 +54,23 @@ export default function OrderDetailPage() {
   const [logRate, setLogRate] = useState('35')
   const [logNotes, setLogNotes] = useState('')
   const logDateRef = useRef<HTMLInputElement>(null)
+  const itemRowRef = useRef<HTMLTableRowElement>(null)
+  const logRowRef = useRef<HTMLTableRowElement>(null)
+  const editItemRowRef = useRef<HTMLTableRowElement>(null)
+  const editLogRowRef = useRef<HTMLTableRowElement>(null)
+
+  const handleRowBlur = (ref: React.RefObject<HTMLElement | null>, saveFn: () => void) => (e: React.FocusEvent) => {
+    const row = ref.current
+    if (!row) return
+    // relatedTarget is the element receiving focus — if still inside the row, skip
+    if (e.relatedTarget && row.contains(e.relatedTarget as Node)) return
+    // Small delay to let click events on buttons inside the row fire first
+    requestAnimationFrame(() => {
+      // Check if focus actually left the row (not just temporarily)
+      if (row.contains(document.activeElement)) return
+      saveFn()
+    })
+  }
 
   const operations = ['Przygotowanie', 'Podkład', 'Szlifowanie', 'Lakierowanie', 'Pakowanie', 'Sprzątanie', 'Inne']
   const getWorkerRate = (name: string) => activeWorkers.find((w) => w.name === name)?.hourly_rate ?? 35
@@ -283,7 +300,7 @@ export default function OrderDetailPage() {
   }
 
   return (
-    <div className="space-y-4 max-w-3xl">
+    <div className="space-y-4 max-w-4xl">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -325,7 +342,8 @@ export default function OrderDetailPage() {
 
       {/* Editable fields */}
       {editing && (
-        <div className="grid grid-cols-4 gap-2 rounded-lg bg-gray-50 p-3">
+        <div className="grid grid-cols-4 gap-2 rounded-lg bg-gray-50 p-3"
+          onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) saveEdit() }}>
           <div>
             <label className="block text-[10px] font-medium text-gray-500 uppercase mb-0.5">Opis</label>
             <input type="text" value={editDesc} onChange={(e) => setEditDesc(e.target.value)}
@@ -367,7 +385,9 @@ export default function OrderDetailPage() {
             </button>
           ))}
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-col items-end gap-0.5">
+          <span className="text-[10px] text-gray-400">Czy zamówione?</span>
+          <div className="flex gap-3">
           {[
             { field: 'material_provided', label: 'Materiał', value: order.material_provided },
             { field: 'paints_provided', label: 'Lakiery', value: order.paints_provided },
@@ -384,6 +404,7 @@ export default function OrderDetailPage() {
               {label}
             </label>
           ))}
+          </div>
         </div>
       </div>
 
@@ -402,15 +423,14 @@ export default function OrderDetailPage() {
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500">Dl</th>
-                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500">Szer</th>
-                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500">Szt</th>
+                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 min-w-[55px]">Dl</th>
+                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 min-w-[55px]">Szer</th>
+                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 min-w-[55px]">Szt</th>
                 <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 w-full">Rodzaj</th>
                 <th className="px-2 py-1.5 text-right text-[10px] font-medium text-gray-500">m²</th>
                 <th className="px-2 py-1.5 text-right text-[10px] font-medium text-gray-500">Cena</th>
-                <th className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-500">Uch</th>
-                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500">Uwagi</th>
-                <th className="px-2 py-1.5 text-right text-[10px] font-medium text-gray-500">Razem</th>
+                <th className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-500">Uchwyt</th>
+                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 min-w-[120px]">Uwagi</th>
                 <th className="px-1 py-1.5 w-6"></th>
               </tr>
             </thead>
@@ -425,14 +445,12 @@ export default function OrderDetailPage() {
                   const w = Number(eiWidth) || 0
                   const q = Number(eiQty) || 1
                   const m2 = (l * w * q * sides) / 1_000_000
-                  const effectivePrice = Number(eiPrice) || getDefaultPrice(vid)
-                  const total = m2 * effectivePrice
                   const ic = "w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500 tabular-nums"
                   const kd = (e: React.KeyboardEvent) => { if (e.key === 'Enter') saveEditItem(); if (e.key === 'Escape') setEditingItemId(null) }
                   return (
-                    <tr key={item.id} className="border-b border-gray-100 bg-blue-50/30">
-                      <td className="px-2 py-1"><input type="number" value={eiLength} onChange={(e) => setEiLength(e.target.value)} className={ic} onKeyDown={kd} /></td>
-                      <td className="px-2 py-1"><input type="number" value={eiWidth} onChange={(e) => setEiWidth(e.target.value)} className={ic} onKeyDown={kd} /></td>
+                    <tr key={item.id} ref={editItemRowRef} onBlur={handleRowBlur(editItemRowRef, saveEditItem)} className="border-b border-gray-100 bg-blue-50/30">
+                      <td className="px-2 py-1"><input type="text" inputMode="numeric" value={eiLength} onChange={(e) => setEiLength(e.target.value)} className={ic} onKeyDown={kd} /></td>
+                      <td className="px-2 py-1"><input type="text" inputMode="numeric" value={eiWidth} onChange={(e) => setEiWidth(e.target.value)} className={ic} onKeyDown={kd} /></td>
                       <td className="px-2 py-1"><input type="number" value={eiQty} onChange={(e) => setEiQty(e.target.value)} className={`${ic} w-10`} onKeyDown={kd} /></td>
                       <td className="px-2 py-1">
                         <select value={eiVariantId} onChange={(e) => setEiVariantId(e.target.value)}
@@ -442,9 +460,8 @@ export default function OrderDetailPage() {
                       </td>
                       <td className="px-2 py-1 text-right text-gray-400 tabular-nums">{l && w ? m2.toFixed(3) : ''}</td>
                       <td className="px-2 py-1"><input type="number" value={eiPrice} onChange={(e) => setEiPrice(e.target.value)} className="w-14 bg-transparent border-b border-gray-300 px-1 py-0.5 text-right text-xs text-gray-800 outline-none focus:border-amber-500 tabular-nums" onKeyDown={kd} /></td>
-                      <td className="px-2 py-1 text-center"><input type="checkbox" checked={eiHandle} onChange={(e) => setEiHandle(e.target.checked)} className="h-3 w-3 rounded border-gray-300 text-amber-500 focus:ring-amber-500/30" /></td>
+                      <td className="px-2 py-1 text-center"><input type="checkbox" checked={eiHandle} onChange={(e) => setEiHandle(e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-amber-500 focus:ring-amber-500/30" /></td>
                       <td className="px-2 py-1"><input type="text" value={eiNotes} onChange={(e) => setEiNotes(e.target.value)} className="w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-[10px] text-gray-600 outline-none focus:border-amber-500" onKeyDown={kd} /></td>
-                      <td className="px-2 py-1 text-right text-amber-600 font-semibold tabular-nums">{l && w ? total.toFixed(2) : ''}</td>
                       <td className="px-1 py-1 flex gap-0.5">
                         <button onClick={saveEditItem} className="rounded p-0.5 text-emerald-500 hover:text-emerald-700"><Check className="h-3 w-3" /></button>
                         <button onClick={() => setEditingItemId(null)} className="rounded p-0.5 text-gray-400 hover:text-gray-600"><X className="h-3 w-3" /></button>
@@ -462,9 +479,8 @@ export default function OrderDetailPage() {
                     <td className="px-2 py-1.5 text-gray-600">{(item.variant as { name: string } | undefined)?.name ?? '—'}</td>
                     <td className="px-2 py-1.5 text-right text-gray-600 tabular-nums">{Number(item.m2).toFixed(3)}</td>
                     <td className="px-2 py-1.5 text-right text-gray-600 tabular-nums">{Number(item.price_per_m2).toFixed(0)}</td>
-                    <td className="px-2 py-1.5 text-center text-gray-500">{item.has_handle ? '✓' : ''}</td>
+                    <td className="px-2 py-1.5 text-center">{item.has_handle ? <span className="text-base font-bold text-emerald-600">✓</span> : ''}</td>
                     <td className="px-2 py-1.5 text-gray-400 text-[10px]">{item.notes || ''}</td>
-                    <td className="px-2 py-1.5 text-right font-semibold text-amber-600 tabular-nums">{Number(item.total_price).toFixed(2)}</td>
                     <td className="px-1 py-1.5" onClick={(e) => e.stopPropagation()}>
                       <button onClick={() => handleDeleteItem(item.id)} className="rounded p-0.5 text-gray-400 hover:text-red-600 hover:bg-gray-100">
                         <Trash2 className="h-3 w-3" />
@@ -482,18 +498,16 @@ export default function OrderDetailPage() {
                 const w = Number(newWidth) || 0
                 const q = Number(newQty) || 1
                 const m2 = (l * w * q * sides) / 1_000_000
-                const effectivePrice = Number(newPrice) || pricePerM2
-                const total = m2 * effectivePrice
                 const inputClass = "w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500 tabular-nums"
                 return (
-                  <tr className="border-b border-gray-100 bg-amber-50/30">
+                  <tr ref={itemRowRef} onBlur={handleRowBlur(itemRowRef, handleInlineAdd)} className="border-b border-gray-100 bg-amber-50/30">
                     <td className="px-2 py-1">
-                      <input ref={lengthRef} type="number" value={newLength} onChange={(e) => setNewLength(e.target.value)}
+                      <input ref={lengthRef} type="text" inputMode="numeric" value={newLength} onChange={(e) => setNewLength(e.target.value)}
                         placeholder="0" className={inputClass}
                         onKeyDown={(e) => { if (e.key === 'Enter') handleInlineAdd(); if (e.key === 'Escape') setShowInlineAdd(false) }} />
                     </td>
                     <td className="px-2 py-1">
-                      <input type="number" value={newWidth} onChange={(e) => setNewWidth(e.target.value)}
+                      <input type="text" inputMode="numeric" value={newWidth} onChange={(e) => setNewWidth(e.target.value)}
                         placeholder="0" className={inputClass}
                         onKeyDown={(e) => { if (e.key === 'Enter') handleInlineAdd(); if (e.key === 'Escape') setShowInlineAdd(false) }} />
                     </td>
@@ -518,7 +532,7 @@ export default function OrderDetailPage() {
                     </td>
                     <td className="px-2 py-1 text-center">
                       <input type="checkbox" checked={newHandle} onChange={(e) => setNewHandle(e.target.checked)}
-                        className="h-3 w-3 rounded border-gray-300 text-amber-500 focus:ring-amber-500/30" />
+                        className="h-4 w-4 rounded border-gray-300 text-amber-500 focus:ring-amber-500/30" />
                     </td>
                     <td className="px-2 py-1">
                       <input type="text" value={newNotes} onChange={(e) => setNewNotes(e.target.value)}
@@ -526,7 +540,6 @@ export default function OrderDetailPage() {
                         className="w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-[10px] text-gray-600 outline-none focus:border-amber-500"
                         onKeyDown={(e) => { if (e.key === 'Enter') handleInlineAdd(); if (e.key === 'Escape') setShowInlineAdd(false) }} />
                     </td>
-                    <td className="px-2 py-1 text-right text-amber-600 font-semibold tabular-nums">{l && w ? total.toFixed(2) : ''}</td>
                     <td className="px-1 py-1">
                       <button onClick={() => setShowInlineAdd(false)} className="rounded p-0.5 text-gray-400 hover:text-gray-600">
                         <X className="h-3 w-3" />
@@ -536,7 +549,7 @@ export default function OrderDetailPage() {
                 )
               })()}
               {!showInlineAdd && items.length === 0 && (
-                <tr><td colSpan={10} className="px-2 py-6 text-center text-xs text-gray-400">
+                <tr><td colSpan={9} className="px-2 py-6 text-center text-xs text-gray-400">
                   Brak elementów — kliknij "Dodaj"
                 </td></tr>
               )}
@@ -613,7 +626,7 @@ export default function OrderDetailPage() {
                   const ic = "w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500"
                   const kd = (e: React.KeyboardEvent) => { if (e.key === 'Enter') saveEditLog(); if (e.key === 'Escape') setEditingLogId(null) }
                   return (
-                    <tr key={log.id} className="border-b border-gray-100 bg-blue-50/30">
+                    <tr key={log.id} ref={editLogRowRef} onBlur={handleRowBlur(editLogRowRef, saveEditLog)} className="border-b border-gray-100 bg-blue-50/30">
                       <td className="px-2 py-1"><input type="date" value={elDate} onChange={(e) => setElDate(e.target.value)} className={`${ic} tabular-nums`} onKeyDown={kd} /></td>
                       <td className="px-2 py-1">
                         <select value={elWorker} onChange={(e) => setElWorker(e.target.value)} className={ic} onKeyDown={kd}>
@@ -653,7 +666,7 @@ export default function OrderDetailPage() {
                 const inputClass = "w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500"
                 const kd = (e: React.KeyboardEvent) => { if (e.key === 'Enter') handleInlineLogAdd(); if (e.key === 'Escape') setShowLogForm(false) }
                 return (
-                  <tr className="border-b border-gray-100 bg-amber-50/30">
+                  <tr ref={logRowRef} onBlur={handleRowBlur(logRowRef, handleInlineLogAdd)} className="border-b border-gray-100 bg-amber-50/30">
                     <td className="px-2 py-1">
                       <input ref={logDateRef} type="date" value={logDate} onChange={(e) => setLogDate(e.target.value)}
                         className={`${inputClass} tabular-nums`} onKeyDown={kd} />
