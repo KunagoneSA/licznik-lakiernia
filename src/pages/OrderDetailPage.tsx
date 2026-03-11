@@ -59,7 +59,7 @@ export default function OrderDetailPage() {
   const editItemRowRef = useRef<HTMLTableRowElement>(null)
   const editLogRowRef = useRef<HTMLTableRowElement>(null)
 
-  const handleRowBlur = (ref: React.RefObject<HTMLElement | null>, saveFn: () => void) => (e: React.FocusEvent) => {
+  const handleRowBlur = (ref: React.RefObject<HTMLElement | null>, saveFn: () => void, cancelFn?: () => void) => (e: React.FocusEvent) => {
     const row = ref.current
     if (!row) return
     // relatedTarget is the element receiving focus — if still inside the row, skip
@@ -69,6 +69,7 @@ export default function OrderDetailPage() {
       // Check if focus actually left the row (not just temporarily)
       if (row.contains(document.activeElement)) return
       saveFn()
+      cancelFn?.()
     })
   }
 
@@ -500,7 +501,7 @@ export default function OrderDetailPage() {
                 const m2 = (l * w * q * sides) / 1_000_000
                 const inputClass = "w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500 tabular-nums"
                 return (
-                  <tr ref={itemRowRef} onBlur={handleRowBlur(itemRowRef, handleInlineAdd)} className="border-b border-gray-100 bg-amber-50/30">
+                  <tr ref={itemRowRef} onBlur={handleRowBlur(itemRowRef, handleInlineAdd, () => { if (!Number(newLength) || !Number(newWidth)) setShowInlineAdd(false) })} className="border-b border-gray-100 bg-amber-50/30">
                     <td className="px-2 py-1">
                       <input ref={lengthRef} type="text" inputMode="numeric" value={newLength} onChange={(e) => setNewLength(e.target.value)}
                         placeholder="0" className={inputClass}
@@ -666,7 +667,7 @@ export default function OrderDetailPage() {
                 const inputClass = "w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500"
                 const kd = (e: React.KeyboardEvent) => { if (e.key === 'Enter') handleInlineLogAdd(); if (e.key === 'Escape') setShowLogForm(false) }
                 return (
-                  <tr ref={logRowRef} onBlur={handleRowBlur(logRowRef, handleInlineLogAdd)} className="border-b border-gray-100 bg-amber-50/30">
+                  <tr ref={logRowRef} onBlur={handleRowBlur(logRowRef, handleInlineLogAdd, () => { if (!Number(logHours)) setShowLogForm(false) })} className="border-b border-gray-100 bg-amber-50/30">
                     <td className="px-2 py-1">
                       <input ref={logDateRef} type="date" value={logDate} onChange={(e) => setLogDate(e.target.value)}
                         className={`${inputClass} tabular-nums`} onKeyDown={kd} />
