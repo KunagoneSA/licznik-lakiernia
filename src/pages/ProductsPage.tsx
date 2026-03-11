@@ -17,6 +17,7 @@ export default function ProductsPage() {
   const [pPrice, setPPrice] = useState('')
   const [pSupplierId, setPSupplierId] = useState('')
   const [pFreq, setPFreq] = useState('')
+  const [pColor, setPColor] = useState('')
 
   const fetchProducts = useCallback(async () => {
     setLoading(true)
@@ -36,14 +37,14 @@ export default function ProductsPage() {
   const startEdit = (p: Product) => {
     setEditingId(p.id)
     setPName(p.name); setPUnit(p.unit ?? 'kg'); setPPrice(String(p.default_price ?? ''))
-    setPSupplierId(p.default_supplier_id ?? ''); setPFreq(p.order_frequency ?? '')
+    setPSupplierId(p.default_supplier_id ?? ''); setPFreq(p.order_frequency ?? ''); setPColor(p.color ?? '')
   }
 
   const save = async () => {
     if (!editingId || !pName.trim()) return
     await supabase.from('products').update({
       name: pName.trim(), unit: pUnit, default_price: Number(pPrice) || null,
-      default_supplier_id: pSupplierId || null, order_frequency: pFreq || null,
+      default_supplier_id: pSupplierId || null, order_frequency: pFreq || null, color: pColor.trim() || null,
     }).eq('id', editingId)
     setEditingId(null); fetchProducts()
   }
@@ -97,6 +98,7 @@ export default function ProductsPage() {
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 w-20">Jednostka</th>
                 <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 w-32">Cena domyślna</th>
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Domyślny dostawca</th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 w-28">Kolor</th>
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 w-36">Częstotliwość</th>
                 <th className="px-1 py-2 w-16"></th>
               </tr>
@@ -121,6 +123,7 @@ export default function ProductsPage() {
                           {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                         </select>
                       </td>
+                      <td className="px-3 py-1.5"><input value={pColor} onChange={e => setPColor(e.target.value)} className={ic} onKeyDown={kd} placeholder="np. biały, RAL 9010" /></td>
                       <td className="px-3 py-1.5">
                         <select value={pFreq} onChange={e => setPFreq(e.target.value)} className={ic} onKeyDown={kd}>
                           <option value="">— brak —</option>
@@ -143,6 +146,7 @@ export default function ProductsPage() {
                     <td className="px-3 py-2 text-gray-500">{p.unit ?? 'kg'}</td>
                     <td className="px-3 py-2 text-right text-gray-500">{p.default_price ? Number(p.default_price).toFixed(2) + ' zł' : '—'}</td>
                     <td className="px-3 py-2 text-gray-500">{p.default_supplier?.name ?? '—'}</td>
+                    <td className="px-3 py-2 text-gray-500">{p.color || '—'}</td>
                     <td className="px-3 py-2 text-gray-500">{p.order_frequency || '—'}</td>
                     <td className="px-1 py-2" onClick={e => e.stopPropagation()}>
                       <button onClick={() => remove(p.id)} className="rounded p-1 text-gray-300 hover:text-red-500 hover:bg-red-50">
@@ -153,7 +157,7 @@ export default function ProductsPage() {
                 )
               })}
               {products.length === 0 && (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400">Brak materiałów</td></tr>
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">Brak materiałów</td></tr>
               )}
             </tbody>
           </table>
