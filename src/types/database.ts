@@ -84,7 +84,7 @@ export interface MonthlyCost {
   total: number
 }
 
-export type PurchaseStatus = 'zamowione' | 'dostarczone' | 'faktura'
+export type PurchaseStatus = 'do_zamowienia' | 'zamowione' | 'dostarczone' | 'faktura'
 
 export interface Supplier {
   id: string

@@ -6,6 +6,7 @@ import { useModalKeys } from '../hooks/useModalKeys'
 import type { PaintPurchase, Supplier, Product, PurchaseStatus } from '../types/database'
 
 const STATUS_CONFIG: Record<PurchaseStatus, { label: string; color: string }> = {
+  do_zamowienia: { label: 'Do zamówienia', color: 'bg-orange-100 text-orange-700' },
   zamowione: { label: 'Zamówione', color: 'bg-blue-100 text-blue-700' },
   dostarczone: { label: 'Dostarczone', color: 'bg-emerald-100 text-emerald-700' },
   faktura: { label: 'Faktura', color: 'bg-violet-100 text-violet-700' },
@@ -249,6 +250,7 @@ export default function PaintPurchasesPage() {
                       </td>
                       <td className="px-1.5 py-1">
                         <select value={eStatus} onChange={e => setEStatus(e.target.value as PurchaseStatus)} className={ic}>
+                          <option value="do_zamowienia">Do zamówienia</option>
                           <option value="zamowione">Zamówione</option>
                           <option value="dostarczone">Dostarczone</option>
                           <option value="faktura">Faktura</option>
@@ -392,7 +394,7 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
   const [showNewSupplier, setShowNewSupplier] = useState(false)
   const [lines, setLines] = useState<ProductLine[]>([emptyLine()])
   const [notes, setNotes] = useState('')
-  const [status, setStatus] = useState<PurchaseStatus>('zamowione')
+  const [status, setStatus] = useState<PurchaseStatus>('do_zamowienia')
   const [saving, setSaving] = useState(false)
   const [showNewProduct, setShowNewProduct] = useState(false)
   const [newProductName, setNewProductName] = useState('')
@@ -434,12 +436,16 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
   const handleSave = async () => {
     if (!canSave) return
     setSaving(true)
-    // Get next number from sequence
-    const { data: seqData, error: rpcErr } = await supabase.rpc('nextval_paint_purchase')
-    const number = rpcErr ? null : (seqData ?? null)
+
+    // Get a unique number for each line
+    const numbers: (number | null)[] = []
+    for (let idx = 0; idx < lines.length; idx++) {
+      const { data: seqData, error: rpcErr } = await supabase.rpc('nextval_paint_purchase')
+      numbers.push(rpcErr ? null : (seqData ?? null))
+    }
 
     const supplierName = suppliers.find(s => s.id === supplierId)?.name ?? ''
-    const rows = lines.map(l => ({
+    const rows = lines.map((l, idx) => ({
       date,
       supplier_id: supplierId,
       supplier: supplierName,
@@ -452,7 +458,7 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
       status,
       color: l.color.trim() || null,
       notes: notes || null,
-      number,
+      number: numbers[idx],
     }))
     const { error: insertErr } = await supabase.from('paint_purchases').insert(rows)
     setSaving(false)
@@ -479,6 +485,7 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
             <div>
               <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Status</label>
               <select value={status} onChange={e => setStatus(e.target.value as PurchaseStatus)} className={inputCls}>
+                <option value="do_zamowienia">Do zamówienia</option>
                 <option value="zamowione">Zamówione</option>
                 <option value="dostarczone">Dostarczone</option>
                 <option value="faktura">Faktura</option>
