@@ -60,12 +60,14 @@ export default function AppLayout() {
         </div>
         <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
           {mainNav.map((item) => renderNavLink(item))}
-          <div className="pt-4 pb-1 px-3">
+        </nav>
+        <div className="px-3 pb-2 space-y-1">
+          <div className="pb-1 px-3">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Bazy</span>
           </div>
           {baseNav.map((item) => renderNavLink(item))}
-        </nav>
-        <div className="px-3 pb-4 space-y-1">
+        </div>
+        <div className="px-3 pb-4 space-y-1 border-t border-gray-200 pt-2">
           {user && (
             <div className="px-3 py-2">
               {user.user_metadata?.full_name && (
@@ -101,11 +103,13 @@ export default function AppLayout() {
         </div>
         <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
           {mainNav.map((item) => renderNavLink(item, () => setMobileOpen(false)))}
-          <div className="pt-4 pb-1 px-3">
+        </nav>
+        <div className="px-3 pb-2 space-y-1">
+          <div className="pb-1 px-3">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Bazy</span>
           </div>
           {baseNav.map((item) => renderNavLink(item, () => setMobileOpen(false)))}
-        </nav>
+        </div>
         <div className="px-3 pb-4 space-y-1">
           {user && (
             <div className="px-3 py-2">
