@@ -429,9 +429,11 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
     const { data: seqData, error: rpcErr } = await supabase.rpc('nextval_paint_purchase')
     const number = rpcErr ? null : (seqData ?? null)
 
+    const supplierName = suppliers.find(s => s.id === supplierId)?.name ?? ''
     const rows = lines.map(l => ({
       date,
       supplier_id: supplierId,
+      supplier: supplierName,
       product_id: l.productId,
       product: products.find(p => p.id === l.productId)?.name ?? '',
       quantity: l.quantity,
