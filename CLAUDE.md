@@ -13,7 +13,7 @@
 - **Deploy:** NIGDY nie deployuj samodzielnie (Netlify, produkcja). Deploy TYLKO na wyraźne polecenie usera ("releasuj", "deploy", "na produkcję").
 
 ## Powiadomienia
-- Po zakończeniu zadania (gdy czekam na kolejną komendę) — odtwórz dźwięk: `afplay /System/Library/Sounds/Glass.aiff`
+- Po zakończeniu zadania (gdy czekam na kolejną komendę) — odtwórz dźwięk: `afplay /System/Library/Sounds/Hero.aiff`
 
 ## Projekt
 - Aplikacja: licznik lakiernia (React + Vite + Supabase)
