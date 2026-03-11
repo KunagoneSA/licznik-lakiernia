@@ -314,6 +314,7 @@ export default function PaintPurchasesPage() {
           onProductAdded={fetchProducts}
           onClose={() => setShowForm(false)}
           onSaved={() => { setShowForm(false); toast('Zamówienie dodane'); fetchPurchases() }}
+          onError={(msg) => toast(msg, 'error')}
         />
       )}
 
@@ -367,13 +368,14 @@ function emptyLine(): ProductLine {
   return { productId: '', quantity: 0, unit: 'kg', unitPrice: 0 }
 }
 
-function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdded, onClose, onSaved }: {
+function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdded, onClose, onSaved, onError }: {
   suppliers: Supplier[]
   products: Product[]
   onSupplierAdded: () => void
   onProductAdded: () => void
   onClose: () => void
   onSaved: () => void
+  onError: (msg: string) => void
 }) {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
   const [supplierId, setSupplierId] = useState('')
@@ -424,8 +426,8 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
     if (!canSave) return
     setSaving(true)
     // Get next number from sequence
-    const { data: seqData } = await supabase.rpc('nextval_paint_purchase')
-    const number = seqData ?? null
+    const { data: seqData, error: rpcErr } = await supabase.rpc('nextval_paint_purchase')
+    const number = rpcErr ? null : (seqData ?? null)
 
     const rows = lines.map(l => ({
       date,
@@ -440,8 +442,12 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
       notes: notes || null,
       number,
     }))
-    await supabase.from('paint_purchases').insert(rows)
+    const { error: insertErr } = await supabase.from('paint_purchases').insert(rows)
     setSaving(false)
+    if (insertErr) {
+      onError(`Błąd zapisu: ${insertErr.message}`)
+      return
+    }
     onSaved()
   }
 
