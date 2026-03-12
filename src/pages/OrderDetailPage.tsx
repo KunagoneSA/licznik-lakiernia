@@ -227,9 +227,12 @@ export default function OrderDetailPage() {
 
   const [editing, setEditing] = useState(false)
   const [editDesc, setEditDesc] = useState('')
+  const [editAcceptedDate, setEditAcceptedDate] = useState('')
   const [editDate, setEditDate] = useState('')
   const [editColor, setEditColor] = useState('')
   const [editNotes, setEditNotes] = useState('')
+  const [showReadyDatePicker, setShowReadyDatePicker] = useState(false)
+  const [readyDateValue, setReadyDateValue] = useState('')
   const [commentValue, setCommentValue] = useState<string | null>(null)
   const commentText = commentValue ?? order?.notes ?? ''
 
@@ -248,10 +251,19 @@ export default function OrderDetailPage() {
   const totalHandleCost = handleVariant ? items.filter((i) => i.has_handle).reduce((s, i) => s + handleVariant.default_price_per_m2 * i.quantity, 0) : 0
   const totalValue = items.reduce((s, i) => s + Number(i.total_price), 0) + totalHandleCost
   const handleStatusChange = async (newStatus: OrderStatus) => {
-    const updates: Record<string, unknown> = { status: newStatus }
-    if (newStatus === 'gotowe') updates.ready_date = new Date().toISOString().slice(0, 10)
-    await updateOrder(updates)
+    if (newStatus === 'gotowe') {
+      setReadyDateValue(new Date().toISOString().slice(0, 10))
+      setShowReadyDatePicker(true)
+      return
+    }
+    await updateOrder({ status: newStatus })
     toast(`Status zmieniony na: ${statusLabels[newStatus]}`)
+  }
+
+  const confirmReady = async () => {
+    await updateOrder({ status: 'gotowe' as OrderStatus, ready_date: readyDateValue || new Date().toISOString().slice(0, 10) })
+    setShowReadyDatePicker(false)
+    toast('Status zmieniony na: Gotowe')
   }
 
   const handleCheckbox = async (field: string, value: boolean) => {
@@ -261,6 +273,7 @@ export default function OrderDetailPage() {
   const startEdit = () => {
     setEditDesc(order.description ?? '')
     setEditColor(order.color ?? '')
+    setEditAcceptedDate(order.accepted_date ?? '')
     setEditDate(order.planned_date ?? '')
     setEditNotes(order.notes ?? '')
     setEditing(true)
@@ -270,6 +283,7 @@ export default function OrderDetailPage() {
     await updateOrder({
       description: editDesc || null,
       color: editColor || null,
+      accepted_date: editAcceptedDate || null,
       planned_date: editDate || null,
       notes: editNotes || null,
     })
@@ -397,7 +411,8 @@ export default function OrderDetailPage() {
             </div>
             <p className="text-xs text-gray-500">
               {getClientName(order as unknown as Record<string, unknown>)} · {order.description || 'Brak opisu'}
-              {order.planned_date && <> · {new Date(order.planned_date).toLocaleDateString('pl-PL')}</>}
+              {order.accepted_date && <> · Przyjęto: {new Date(order.accepted_date).toLocaleDateString('pl-PL')}</>}
+              {order.planned_date && <> · Termin: {new Date(order.planned_date).toLocaleDateString('pl-PL')}</>}
             </p>
           </div>
         </div>
@@ -423,7 +438,7 @@ export default function OrderDetailPage() {
 
       {/* Editable fields */}
       {editing && (
-        <div className="grid grid-cols-4 gap-2 rounded-lg bg-gray-50 p-3"
+        <div className="grid grid-cols-5 gap-2 rounded-lg bg-gray-50 p-3"
           onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) saveEdit() }}>
           <div>
             <label className="block text-[10px] font-medium text-gray-500 uppercase mb-0.5">Opis</label>
@@ -433,6 +448,18 @@ export default function OrderDetailPage() {
           <div>
             <label className="block text-[10px] font-medium text-gray-500 uppercase mb-0.5">Kolor</label>
             <input type="text" value={editColor} onChange={(e) => setEditColor(e.target.value)} placeholder="np. RAL 9016 MAT"
+              className="w-full rounded bg-white border border-gray-300 px-2 py-1 text-xs text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30" />
+          </div>
+          <div>
+            <label className="block text-[10px] font-medium text-gray-500 uppercase mb-0.5">Data przyjęcia</label>
+            <input type="date" value={editAcceptedDate} onChange={(e) => {
+              setEditAcceptedDate(e.target.value)
+              if (e.target.value && !editDate) {
+                const d = new Date(e.target.value)
+                d.setDate(d.getDate() + 14)
+                setEditDate(d.toISOString().slice(0, 10))
+              }
+            }}
               className="w-full rounded bg-white border border-gray-300 px-2 py-1 text-xs text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30" />
           </div>
           <div>
@@ -488,6 +515,23 @@ export default function OrderDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Ready date picker */}
+      {showReadyDatePicker && (
+        <div className="flex items-center gap-3 rounded-lg bg-emerald-50 border border-emerald-200 p-3">
+          <span className="text-xs font-medium text-emerald-700">Data gotowości:</span>
+          <input type="date" value={readyDateValue} onChange={(e) => setReadyDateValue(e.target.value)}
+            className="rounded bg-white border border-emerald-300 px-2 py-1 text-xs text-gray-800 outline-none focus:ring-2 focus:ring-emerald-500/30" />
+          <button onClick={confirmReady}
+            className="rounded-md bg-emerald-500 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-600">
+            <Check className="h-3 w-3 inline mr-1" />Potwierdź
+          </button>
+          <button onClick={() => setShowReadyDatePicker(false)}
+            className="rounded-md px-2 py-1 text-xs text-gray-500 hover:bg-gray-100">
+            Anuluj
+          </button>
+        </div>
+      )}
 
       {/* Elements table */}
       <div>

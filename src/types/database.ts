@@ -34,6 +34,7 @@ export interface Order {
   client_id: string
   description: string | null
   status: OrderStatus
+  accepted_date: string | null
   planned_date: string | null
   ready_date: string | null
   material_provided: boolean
