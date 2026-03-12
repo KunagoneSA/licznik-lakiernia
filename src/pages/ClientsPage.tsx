@@ -313,7 +313,7 @@ export default function ClientsPage() {
         const mainVariants = variants.filter((v) => !v.name.includes('(+ MDF)'))
         const hasMdfCol = mdfVariants.size > 0
         return (
-          <div className="space-y-3 border-t border-gray-200 pt-4">
+          <div key={selectedId} className="space-y-3 border-t border-gray-200 pt-4">
             <div className="flex items-center gap-2">
               {sel.type === 'company' ? <Building2 className="h-4 w-4 text-blue-500" /> : <User className="h-4 w-4 text-violet-500" />}
               <h2 className="text-sm font-semibold text-gray-700">Cennik — {sel.name}</h2>
