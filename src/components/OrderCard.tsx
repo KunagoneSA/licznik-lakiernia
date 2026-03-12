@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Calendar, Building2 } from 'lucide-react'
+import { Calendar, Building2, User } from 'lucide-react'
 import type { Order } from '../types/database'
 
 function getUrgencyClass(plannedDate: string | null, status: string): string {
@@ -11,9 +11,8 @@ function getUrgencyClass(plannedDate: string | null, status: string): string {
   return 'border-l-emerald-500'
 }
 
-function getClientName(order: Order): string {
-  const client = (order as unknown as Record<string, unknown>).client as { name: string } | null
-  return client?.name ?? '—'
+function getClient(order: Order): { name: string; type?: string } | null {
+  return (order as unknown as Record<string, unknown>).client as { name: string; type?: string } | null
 }
 
 function getOrderValue(order: Order): number {
@@ -52,8 +51,8 @@ export default function OrderCard({ order }: { order: Order }) {
       )}
       <div className="mt-1 flex items-center justify-between">
         <span className="flex items-center gap-1 text-[11px] text-gray-500">
-          <Building2 className="h-3 w-3" />
-          {getClientName(order)}
+          {getClient(order)?.type === 'company' ? <Building2 className="h-3 w-3 text-blue-500" /> : <User className="h-3 w-3 text-violet-500" />}
+          {getClient(order)?.name ?? '—'}
         </span>
         {value > 0 && <span className="text-[11px] font-medium text-emerald-600">{value.toFixed(0)} zł</span>}
       </div>

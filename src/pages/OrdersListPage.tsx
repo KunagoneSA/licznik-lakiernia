@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, ChevronUp, ChevronDown } from 'lucide-react'
+import { Plus, Search, ChevronUp, ChevronDown, Building2, User } from 'lucide-react'
 import { useOrders } from '../hooks/useOrders'
 import type { OrderStatus } from '../types/database'
 import NewOrderModal from '../components/NewOrderModal'
@@ -23,9 +23,11 @@ const statusColors: Record<OrderStatus, string> = {
 
 const tabs = ['wszystkie', 'nowe', 'w_trakcie', 'gotowe', 'wydane', 'niezapłacone'] as const
 
-function getClientName(order: Record<string, unknown>): string {
-  const client = order.client as { name: string } | null
-  return client?.name ?? '—'
+function getClient(order: Record<string, unknown>): { name: string; type?: string } | null {
+  return order.client as { name: string; type?: string } | null
+}
+function getClientNameStr(order: Record<string, unknown>): string {
+  return getClient(order)?.name ?? '—'
 }
 
 function getOrderValue(order: Record<string, unknown>): number {
@@ -66,7 +68,7 @@ export default function OrdersListPage() {
       else if (tab !== 'wszystkie' && tab !== 'niezapłacone' && o.status !== tab) return false
       if (search) {
         const q = search.toLowerCase()
-        const clientName = getClientName(o as unknown as Record<string, unknown>).toLowerCase()
+        const clientName = getClientNameStr(o as unknown as Record<string, unknown>).toLowerCase()
         return clientName.includes(q) || (o.description ?? '').toLowerCase().includes(q) || String(o.number).includes(q)
       }
       return true
@@ -78,7 +80,7 @@ export default function OrdersListPage() {
     return [...list].sort((a, b) => {
       switch (sortKey) {
         case 'number': return (a.number - b.number) * dir
-        case 'client': return getClientName(a as unknown as Record<string, unknown>).localeCompare(getClientName(b as unknown as Record<string, unknown>), 'pl') * dir
+        case 'client': return getClientNameStr(a as unknown as Record<string, unknown>).localeCompare(getClientNameStr(b as unknown as Record<string, unknown>), 'pl') * dir
         case 'status': return (statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status)) * dir
         case 'planned_date': {
           const da = a.planned_date ?? ''
@@ -169,7 +171,12 @@ export default function OrdersListPage() {
                     <td className="px-2 py-1.5 font-medium text-amber-600 tabular-nums">
                       {order.number}/{new Date(order.created_at).getFullYear() % 100}
                     </td>
-                    <td className="px-2 py-1.5 text-gray-800 font-medium">{getClientName(order as unknown as Record<string, unknown>)}</td>
+                    <td className="px-2 py-1.5 text-gray-800 font-medium">
+                      <span className="flex items-center gap-1">
+                        {getClient(order as unknown as Record<string, unknown>)?.type === 'company' ? <Building2 className="h-3 w-3 text-blue-500 flex-shrink-0" /> : <User className="h-3 w-3 text-violet-500 flex-shrink-0" />}
+                        {getClient(order as unknown as Record<string, unknown>)?.name ?? '—'}
+                      </span>
+                    </td>
                     <td className="px-2 py-1.5 text-gray-600 max-w-[180px] truncate">{order.description || '—'}</td>
                     <td className="px-2 py-1.5 text-gray-600">{order.color || '—'}</td>
                     <td className="px-2 py-1.5">
