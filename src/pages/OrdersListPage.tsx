@@ -41,7 +41,7 @@ function isOverdue(order: { planned_date: string | null; status: string }): bool
   return new Date(order.planned_date).getTime() < Date.now()
 }
 
-type SortKey = 'number' | 'client' | 'status' | 'planned_date' | 'value'
+type SortKey = 'number' | 'accepted_date' | 'client' | 'status' | 'planned_date' | 'value'
 type SortDir = 'asc' | 'desc'
 
 export default function OrdersListPage() {
@@ -80,6 +80,7 @@ export default function OrdersListPage() {
     return [...list].sort((a, b) => {
       switch (sortKey) {
         case 'number': return (a.number - b.number) * dir
+        case 'accepted_date': return (a.accepted_date ?? '').localeCompare(b.accepted_date ?? '') * dir
         case 'client': return getClientNameStr(a as unknown as Record<string, unknown>).localeCompare(getClientNameStr(b as unknown as Record<string, unknown>), 'pl') * dir
         case 'status': return (statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status)) * dir
         case 'planned_date': {
@@ -153,6 +154,7 @@ export default function OrdersListPage() {
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
                 <SortHeader label="#" sortKey="number" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                <SortHeader label="Przyjęto" sortKey="accepted_date" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
                 <SortHeader label="Klient" sortKey="client" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
                 <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 uppercase">Opis</th>
                 <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 uppercase">Kolor</th>
@@ -170,6 +172,9 @@ export default function OrdersListPage() {
                   <tr key={order.id} onClick={() => navigate(`/zamowienia/${order.id}`)} className={`border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${overdue ? 'bg-red-50/50' : ''}`}>
                     <td className="px-2 py-1.5 font-medium text-amber-600 tabular-nums">
                       {order.number}/{new Date(order.created_at).getFullYear() % 100}
+                    </td>
+                    <td className="px-2 py-1.5 text-gray-500 tabular-nums">
+                      {order.accepted_date ? new Date(order.accepted_date).toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' }) : '—'}
                     </td>
                     <td className="px-2 py-1.5 text-gray-800 font-medium">
                       <span className="flex items-center gap-1">
