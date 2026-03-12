@@ -203,7 +203,7 @@ export default function OrdersListPage() {
                       )}
                     </td>
                     <td className={`px-2 py-1.5 tabular-nums ${overdue ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
-                      {order.planned_date ? new Date(order.planned_date).toLocaleDateString('pl-PL') : '—'}
+                      {order.planned_date ? new Date(order.planned_date).toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' }) : '—'}
                       {overdue && <span className="ml-0.5 text-[10px]">!</span>}
                     </td>
                   </tr>
