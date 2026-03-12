@@ -4,7 +4,7 @@ import type { ClientPricing, PaintingVariant } from '../types/database'
 
 export function useClientPricing(clientId: string | null) {
   const [pricing, setPricing] = useState<ClientPricing[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(!!clientId)
 
   const fetch = useCallback(async () => {
     if (!clientId) { setPricing([]); return }

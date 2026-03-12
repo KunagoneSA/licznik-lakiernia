@@ -11,7 +11,7 @@ export default function ClientsPage() {
   const { clients, refetch: refetchClients } = useClients()
   const { variants } = usePaintingVariants()
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const { pricing, refetch: refetchPricing } = useClientPricing(selectedId)
+  const { pricing, loading: pricingLoading, refetch: refetchPricing, upsertPricing } = useClientPricing(selectedId)
   const [showAdd, setShowAdd] = useState<ClientType | null>(null)
   const [newName, setNewName] = useState('')
   const [newContactName, setNewContactName] = useState('')
@@ -318,75 +318,76 @@ export default function ClientsPage() {
               {sel.type === 'company' ? <Building2 className="h-4 w-4 text-blue-500" /> : <User className="h-4 w-4 text-violet-500" />}
               <h2 className="text-sm font-semibold text-gray-700">Cennik — {sel.name}</h2>
             </div>
-            <div className="rounded-lg border border-gray-200 bg-white overflow-hidden max-w-lg">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50">
-                    <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 uppercase">Wariant</th>
-                    <th className="px-2 py-1.5 text-right text-[10px] font-medium text-gray-500 uppercase">Cena/m²</th>
-                    {hasMdfCol && (
-                      <th className="px-2 py-1.5 text-right text-[10px] font-medium text-gray-500 uppercase">+ MDF</th>
-                    )}
-                    <th className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-500 uppercase">Strony</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {mainVariants.map((v) => {
-                    const mdfV = mdfVariants.get(v.name)
-                    const custom = pricing.find((p) => p.variant_id === v.id)
-                    const mdfCustom = mdfV ? pricing.find((p) => p.variant_id === mdfV.id) : null
-                    const currentPrice = custom?.price_per_m2 ?? v.default_price_per_m2
-                    const mdfPrice = mdfV ? (mdfCustom?.price_per_m2 ?? mdfV.default_price_per_m2) : null
-                    return (
-                      <tr key={v.id} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="px-2 py-1.5 text-gray-800 font-medium">{v.name}</td>
-                        <td className="px-1.5 py-1">
-                          <input
-                            type="number"
-                            defaultValue={currentPrice}
-                            onBlur={async (e) => {
-                              const val = Number(e.target.value)
-                              if (val === currentPrice) return
-                              if (custom) {
-                                await supabase.from('client_pricing').update({ price_per_m2: val }).eq('id', custom.id)
-                              } else {
-                                await supabase.from('client_pricing').insert({ client_id: selectedId, variant_id: v.id, price_per_m2: val })
-                              }
-                              refetchPricing()
-                            }}
-                            onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
-                            className="w-20 rounded border border-gray-200 px-2 py-1 text-right text-xs text-amber-600 font-semibold tabular-nums outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-300"
-                          />
-                        </td>
-                        {hasMdfCol && (
+            {pricingLoading ? (
+              <div className="flex justify-center py-6">
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-amber-500" />
+              </div>
+            ) : (
+              <div className="rounded-lg border border-gray-200 bg-white overflow-hidden max-w-lg">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-gray-200 bg-gray-50">
+                      <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 uppercase">Wariant</th>
+                      <th className="px-2 py-1.5 text-right text-[10px] font-medium text-gray-500 uppercase">Cena/m²</th>
+                      {hasMdfCol && (
+                        <th className="px-2 py-1.5 text-right text-[10px] font-medium text-gray-500 uppercase">+ MDF</th>
+                      )}
+                      <th className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-500 uppercase">Strony</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {mainVariants.map((v) => {
+                      const mdfV = mdfVariants.get(v.name)
+                      const custom = pricing.find((p) => p.variant_id === v.id)
+                      const mdfCustom = mdfV ? pricing.find((p) => p.variant_id === mdfV.id) : null
+                      const currentPrice = custom?.price_per_m2 ?? v.default_price_per_m2
+                      const mdfPrice = mdfV ? (mdfCustom?.price_per_m2 ?? mdfV.default_price_per_m2) : null
+                      const inputCls = "w-20 rounded border border-gray-200 px-2 py-1 text-right text-xs text-amber-600 font-semibold tabular-nums outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-300"
+                      return (
+                        <tr key={v.id} className="border-b border-gray-100 hover:bg-gray-50">
+                          <td className="px-2 py-1.5 text-gray-800 font-medium">{v.name}</td>
                           <td className="px-1.5 py-1">
-                            {mdfV ? (
-                              <input
-                                type="number"
-                                defaultValue={mdfPrice ?? ''}
-                                onBlur={async (e) => {
-                                  const val = Number(e.target.value)
-                                  if (val === mdfPrice) return
-                                  if (mdfCustom) {
-                                    await supabase.from('client_pricing').update({ price_per_m2: val }).eq('id', mdfCustom.id)
-                                  } else {
-                                    await supabase.from('client_pricing').insert({ client_id: selectedId, variant_id: mdfV.id, price_per_m2: val })
-                                  }
-                                  refetchPricing()
-                                }}
-                                onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
-                                className="w-20 rounded border border-gray-200 px-2 py-1 text-right text-xs text-amber-600 font-semibold tabular-nums outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-300"
-                              />
-                            ) : ''}
+                            <input
+                              key={`${selectedId}-${v.id}-${currentPrice}`}
+                              type="number"
+                              defaultValue={currentPrice}
+                              onBlur={async (e) => {
+                                const val = Number(e.target.value)
+                                if (val === currentPrice) return
+                                await upsertPricing(v.id, val)
+                                toast('Cennik zapisany')
+                              }}
+                              onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+                              className={inputCls}
+                            />
                           </td>
-                        )}
-                        <td className="px-2 py-1.5 text-center text-gray-500">{v.sides}</td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+                          {hasMdfCol && (
+                            <td className="px-1.5 py-1">
+                              {mdfV ? (
+                                <input
+                                  key={`${selectedId}-${mdfV.id}-${mdfPrice}`}
+                                  type="number"
+                                  defaultValue={mdfPrice ?? ''}
+                                  onBlur={async (e) => {
+                                    const val = Number(e.target.value)
+                                    if (val === mdfPrice) return
+                                    await upsertPricing(mdfV.id, val)
+                                    toast('Cennik zapisany')
+                                  }}
+                                  onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+                                  className={inputCls}
+                                />
+                              ) : ''}
+                            </td>
+                          )}
+                          <td className="px-2 py-1.5 text-center text-gray-500">{v.sides}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )
       })()}
