@@ -37,6 +37,7 @@ export default function OrderDetailPage() {
   const { workers } = useWorkers()
   const activeWorkers = workers.filter((w) => w.active)
   const [showInlineAdd, setShowInlineAdd] = useState(false)
+  const [showCustomAdd, setShowCustomAdd] = useState(false)
   const [newLength, setNewLength] = useState('')
   const [newWidth, setNewWidth] = useState('')
   const [newQty, setNewQty] = useState('1')
@@ -44,8 +45,15 @@ export default function OrderDetailPage() {
   const [newPrice, setNewPrice] = useState('')
   const [newHandle, setNewHandle] = useState(false)
   const [newNotes, setNewNotes] = useState('')
+  const [newCustomPrice, setNewCustomPrice] = useState('')
+  const [newCustomQty, setNewCustomQty] = useState('1')
+  const [newCustomNotes, setNewCustomNotes] = useState('')
+  const [newCustomHandle, setNewCustomHandle] = useState(false)
+  const [newCustomVariantId, setNewCustomVariantId] = useState('')
   const [lastAddedId, setLastAddedId] = useState<string | null>(null)
   const lengthRef = useRef<HTMLInputElement>(null)
+  const customPriceRef = useRef<HTMLInputElement>(null)
+  const customRowRef = useRef<HTMLTableRowElement>(null)
   const [showLogForm, setShowLogForm] = useState(false)
   const [logWorker, setLogWorker] = useState('Kasia')
   const [logOp, setLogOp] = useState('Przygotowanie')
@@ -122,6 +130,38 @@ export default function OrderDetailPage() {
     setNewNotes('')
     setTimeout(() => lengthRef.current?.focus(), 0)
   }, [variants])
+
+  const resetCustomForm = useCallback(() => {
+    setNewCustomPrice('')
+    setNewCustomQty('1')
+    setNewCustomNotes('')
+    setNewCustomHandle(false)
+    setNewCustomVariantId(variants[0]?.id ?? '')
+    setTimeout(() => customPriceRef.current?.focus(), 0)
+  }, [variants])
+
+  const handleCustomAdd = useCallback(async () => {
+    const price = Number(newCustomPrice)
+    const q = Number(newCustomQty) || 1
+    if (!price) return
+    const vid = newCustomVariantId || variants[0]?.id
+    const err = await addItem({
+      length_mm: 0,
+      width_mm: 0,
+      quantity: q,
+      variant_id: vid,
+      has_handle: newCustomHandle,
+      notes: newCustomNotes || null,
+      m2: 0,
+      price_per_m2: price,
+      total_price: Math.round(price * q * 100) / 100,
+    })
+    if (!err) {
+      setLastAddedId(String(Date.now()))
+      setTimeout(() => setLastAddedId(null), 1500)
+    }
+    resetCustomForm()
+  }, [newCustomPrice, newCustomQty, newCustomVariantId, newCustomHandle, newCustomNotes, variants, addItem, resetCustomForm])
 
   const handleInlineAdd = useCallback(async () => {
     const l = Number(newLength)
@@ -238,22 +278,38 @@ export default function OrderDetailPage() {
     const w = Number(eiWidth)
     const q = Number(eiQty) || 1
     const vid = eiVariantId
-    const variant = variants.find((v) => v.id === vid)
-    const sides = variant?.sides ?? 1
-    const pricePerM2 = Number(eiPrice) || getDefaultPrice(vid)
-    const m2 = (l * w * q * sides) / 1_000_000
-    const totalPrice = m2 * pricePerM2
-    await updateItem(editingItemId, {
-      length_mm: l,
-      width_mm: w,
-      quantity: q,
-      variant_id: vid,
-      has_handle: eiHandle,
-      notes: eiNotes || null,
-      m2: Math.round(m2 * 10000) / 10000,
-      price_per_m2: pricePerM2,
-      total_price: Math.round(totalPrice * 100) / 100,
-    })
+    const isCustom = l === 0 && w === 0
+    const pricePerUnit = Number(eiPrice)
+    if (isCustom) {
+      await updateItem(editingItemId, {
+        length_mm: 0,
+        width_mm: 0,
+        quantity: q,
+        variant_id: vid,
+        has_handle: eiHandle,
+        notes: eiNotes || null,
+        m2: 0,
+        price_per_m2: pricePerUnit,
+        total_price: Math.round(pricePerUnit * q * 100) / 100,
+      })
+    } else {
+      const variant = variants.find((v) => v.id === vid)
+      const sides = variant?.sides ?? 1
+      const pricePerM2 = pricePerUnit || getDefaultPrice(vid)
+      const m2 = (l * w * q * sides) / 1_000_000
+      const totalPrice = m2 * pricePerM2
+      await updateItem(editingItemId, {
+        length_mm: l,
+        width_mm: w,
+        quantity: q,
+        variant_id: vid,
+        has_handle: eiHandle,
+        notes: eiNotes || null,
+        m2: Math.round(m2 * 10000) / 10000,
+        price_per_m2: pricePerM2,
+        total_price: Math.round(totalPrice * 100) / 100,
+      })
+    }
     setEditingItemId(null)
     toast('Element zaktualizowany')
   }
@@ -416,11 +472,17 @@ export default function OrderDetailPage() {
       <div>
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Elementy</h2>
-          {!showInlineAdd && (
-            <button onClick={() => { setShowInlineAdd(true); setNewVariantId(variants[0]?.id ?? ''); setTimeout(() => lengthRef.current?.focus(), 50) }}
-              className="flex items-center gap-1 rounded-md bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-600 hover:bg-amber-100">
-              <Plus className="h-3 w-3" /> Dodaj
-            </button>
+          {!showInlineAdd && !showCustomAdd && (
+            <div className="flex gap-1">
+              <button onClick={() => { setShowInlineAdd(true); setShowCustomAdd(false); setNewVariantId(variants[0]?.id ?? ''); setTimeout(() => lengthRef.current?.focus(), 50) }}
+                className="flex items-center gap-1 rounded-md bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-600 hover:bg-amber-100">
+                <Plus className="h-3 w-3" /> Dodaj
+              </button>
+              <button onClick={() => { setShowCustomAdd(true); setShowInlineAdd(false); setNewCustomVariantId(variants[0]?.id ?? ''); setTimeout(() => customPriceRef.current?.focus(), 50) }}
+                className="flex items-center gap-1 rounded-md bg-blue-50 px-2 py-1 text-[11px] font-medium text-blue-600 hover:bg-blue-100">
+                <Plus className="h-3 w-3" /> Za sztukę
+              </button>
+            </div>
           )}
         </div>
         <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
@@ -477,12 +539,12 @@ export default function OrderDetailPage() {
                   <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
                     onClick={() => startEditItem(item)}
                     style={lastAddedId && idx === items.length - 1 ? { animation: 'rowFlash 1.5s ease-out' } : undefined}>
-                    <td className="px-2 py-1.5 text-gray-800 tabular-nums">{item.length_mm}</td>
-                    <td className="px-2 py-1.5 text-gray-800 tabular-nums">{item.width_mm}</td>
+                    <td className="px-2 py-1.5 text-gray-800 tabular-nums">{item.length_mm || '—'}</td>
+                    <td className="px-2 py-1.5 text-gray-800 tabular-nums">{item.width_mm || '—'}</td>
                     <td className="px-2 py-1.5 text-gray-800 tabular-nums">{item.quantity}</td>
                     <td className="px-2 py-1.5 text-gray-600">{(item.variant as { name: string } | undefined)?.name ?? '—'}</td>
-                    <td className="px-2 py-1.5 text-right text-gray-600 tabular-nums">{Number(item.m2).toFixed(3)}</td>
-                    <td className="px-2 py-1.5 text-right text-gray-600 tabular-nums">{Number(item.price_per_m2).toFixed(0)}</td>
+                    <td className="px-2 py-1.5 text-right text-gray-600 tabular-nums">{item.length_mm && item.width_mm ? Number(item.m2).toFixed(3) : '—'}</td>
+                    <td className="px-2 py-1.5 text-right text-gray-600 tabular-nums">{Number(item.price_per_m2).toFixed(0)}{item.length_mm === 0 && item.width_mm === 0 ? '/szt' : ''}</td>
                     <td className="px-2 py-1.5 text-center">{item.has_handle ? <span className="text-base font-bold text-emerald-600">✓</span> : ''}</td>
                     <td className="px-2 py-1.5 text-gray-400 text-[10px]">{item.notes || ''}</td>
                     <td className="px-1 py-1.5" onClick={(e) => e.stopPropagation()}>
@@ -552,7 +614,53 @@ export default function OrderDetailPage() {
                   </tr>
                 )
               })()}
-              {!showInlineAdd && items.length === 0 && (
+              {showCustomAdd && (() => {
+                const vid = newCustomVariantId || variants[0]?.id
+                const price = Number(newCustomPrice) || 0
+                const q = Number(newCustomQty) || 1
+                const inputClass = "w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500 tabular-nums"
+                return (
+                  <tr ref={customRowRef} onBlur={handleRowBlur(customRowRef, handleCustomAdd, () => { if (!Number(newCustomPrice)) setShowCustomAdd(false) })} className="border-b border-gray-100 bg-blue-50/30">
+                    <td className="px-2 py-1.5 text-center text-gray-300" colSpan={1}>—</td>
+                    <td className="px-2 py-1.5 text-center text-gray-300" colSpan={1}>—</td>
+                    <td className="px-2 py-1">
+                      <input type="number" value={newCustomQty} onChange={(e) => setNewCustomQty(e.target.value)}
+                        placeholder="1" className={`${inputClass} w-10`}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleCustomAdd(); if (e.key === 'Escape') setShowCustomAdd(false) }} />
+                    </td>
+                    <td className="px-2 py-1">
+                      <select value={newCustomVariantId} onChange={(e) => setNewCustomVariantId(e.target.value)}
+                        className="w-full bg-white border border-gray-300 rounded px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30"
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleCustomAdd(); if (e.key === 'Escape') setShowCustomAdd(false) }}>
+                        {variants.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
+                      </select>
+                    </td>
+                    <td className="px-2 py-1.5 text-center text-gray-300">—</td>
+                    <td className="px-2 py-1">
+                      <input ref={customPriceRef} type="number" value={newCustomPrice} onChange={(e) => setNewCustomPrice(e.target.value)}
+                        placeholder="cena/szt"
+                        className="w-14 bg-transparent border-b border-gray-300 px-1 py-0.5 text-right text-xs text-gray-800 outline-none focus:border-amber-500 tabular-nums"
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleCustomAdd(); if (e.key === 'Escape') setShowCustomAdd(false) }} />
+                    </td>
+                    <td className="px-2 py-1 text-center">
+                      <input type="checkbox" checked={newCustomHandle} onChange={(e) => setNewCustomHandle(e.target.checked)}
+                        className="h-4 w-4 rounded border-gray-300 text-amber-500 focus:ring-amber-500/30" />
+                    </td>
+                    <td className="px-2 py-1">
+                      <input type="text" value={newCustomNotes} onChange={(e) => setNewCustomNotes(e.target.value)}
+                        placeholder="opis elementu"
+                        className="w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-[10px] text-gray-600 outline-none focus:border-amber-500"
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleCustomAdd(); if (e.key === 'Escape') setShowCustomAdd(false) }} />
+                    </td>
+                    <td className="px-1 py-1">
+                      <button onClick={() => setShowCustomAdd(false)} className="rounded p-0.5 text-gray-400 hover:text-gray-600">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </td>
+                  </tr>
+                )
+              })()}
+              {!showInlineAdd && !showCustomAdd && items.length === 0 && (
                 <tr><td colSpan={9} className="px-2 py-6 text-center text-xs text-gray-400">
                   Brak elementów — kliknij "Dodaj"
                 </td></tr>
@@ -560,7 +668,7 @@ export default function OrderDetailPage() {
             </tbody>
           </table>
         </div>
-        {showInlineAdd && (
+        {(showInlineAdd || showCustomAdd) && (
           <div className="mt-1 flex gap-2 text-[10px] text-gray-400">
             <span>TAB = następne pole</span>
             <span>Enter = dodaj i nowy wiersz</span>
