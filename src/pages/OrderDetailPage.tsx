@@ -183,9 +183,7 @@ export default function OrderDetailPage() {
     const variant = selectableVariants.find((v) => v.id === vid)
     const sides = variant?.sides ?? 1
     const parsedPrice = Number(newPrice)
-    const basePrice = newPrice !== '' && !isNaN(parsedPrice) ? parsedPrice : getDefaultPrice(vid)
-    const surcharge = newColorSurcharge ? getColorSurchargePrice() : 0
-    const pricePerM2 = basePrice + surcharge
+    const pricePerM2 = newPrice !== '' && !isNaN(parsedPrice) ? parsedPrice : getDefaultPrice(vid)
     const m2 = (l * w * q * sides) / 1_000_000
     const totalPrice = m2 * pricePerM2
     const err = await addItem({
@@ -249,7 +247,9 @@ export default function OrderDetailPage() {
   const totalM2 = items.filter((i) => (i.variant as { name: string } | undefined)?.name !== 'Bejca').reduce((s, i) => s + Number(i.m2), 0)
   const handleVariant = variants.find((v) => v.name === 'Uchwyt frezowany')
   const totalHandleCost = handleVariant ? items.filter((i) => i.has_handle).reduce((s, i) => s + handleVariant.default_price_per_m2 * i.quantity, 0) : 0
-  const totalValue = items.reduce((s, i) => s + Number(i.total_price), 0) + totalHandleCost
+  const colorSurchargePrice = getColorSurchargePrice()
+  const totalColorSurchargeCost = items.filter((i) => i.color_surcharge).reduce((s, i) => s + colorSurchargePrice * Number(i.m2), 0)
+  const totalValue = items.reduce((s, i) => s + Number(i.total_price), 0) + totalHandleCost + totalColorSurchargeCost
   const handleStatusChange = async (newStatus: OrderStatus) => {
     if (newStatus === 'gotowe') {
       setReadyDateValue(new Date().toISOString().slice(0, 10))
@@ -327,9 +327,7 @@ export default function OrderDetailPage() {
     } else {
       const variant = variants.find((v) => v.id === vid)
       const sides = variant?.sides ?? 1
-      const basePrice = eiPrice !== '' && !isNaN(pricePerUnit) ? pricePerUnit : getDefaultPrice(vid)
-      const surcharge = eiColorSurcharge ? getColorSurchargePrice() : 0
-      const pricePerM2 = basePrice + surcharge
+      const pricePerM2 = eiPrice !== '' && !isNaN(pricePerUnit) ? pricePerUnit : getDefaultPrice(vid)
       const m2 = (l * w * q * sides) / 1_000_000
       const totalPrice = m2 * pricePerM2
       await updateItem(editingItemId, {
