@@ -15,6 +15,7 @@ export default function NewOrderModal({ onClose, onSaved }: Props) {
   const { toast } = useToast()
   const [clientId, setClientId] = useState('')
   const [description, setDescription] = useState('')
+  const [acceptedDate, setAcceptedDate] = useState('')
   const [plannedDate, setPlannedDate] = useState('')
   const [color, setColor] = useState('')
   const [notes, setNotes] = useState('')
@@ -28,6 +29,7 @@ export default function NewOrderModal({ onClose, onSaved }: Props) {
       client_id: clientId,
       description: description || null,
       color: color || null,
+      accepted_date: acceptedDate || null,
       planned_date: plannedDate || null,
       notes: notes || null,
     })
@@ -87,14 +89,32 @@ export default function NewOrderModal({ onClose, onSaved }: Props) {
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Planowana data</label>
-            <input
-              type="date"
-              value={plannedDate}
-              onChange={(e) => setPlannedDate(e.target.value)}
-              className="w-full rounded-lg bg-gray-50 border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30"
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Data przyjęcia</label>
+              <input
+                type="date"
+                value={acceptedDate}
+                onChange={(e) => {
+                  setAcceptedDate(e.target.value)
+                  if (e.target.value && !plannedDate) {
+                    const d = new Date(e.target.value)
+                    d.setDate(d.getDate() + 14)
+                    setPlannedDate(d.toISOString().slice(0, 10))
+                  }
+                }}
+                className="w-full rounded-lg bg-gray-50 border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Planowana data</label>
+              <input
+                type="date"
+                value={plannedDate}
+                onChange={(e) => setPlannedDate(e.target.value)}
+                className="w-full rounded-lg bg-gray-50 border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30"
+              />
+            </div>
           </div>
 
           <div>
