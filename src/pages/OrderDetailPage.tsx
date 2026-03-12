@@ -171,7 +171,8 @@ export default function OrderDetailPage() {
     if (!l || !w || !vid) return
     const variant = variants.find((v) => v.id === vid)
     const sides = variant?.sides ?? 1
-    const pricePerM2 = Number(newPrice) || getDefaultPrice(vid)
+    const parsedPrice = Number(newPrice)
+    const pricePerM2 = newPrice !== '' && !isNaN(parsedPrice) ? parsedPrice : getDefaultPrice(vid)
     const m2 = (l * w * q * sides) / 1_000_000
     const totalPrice = m2 * pricePerM2
     const err = await addItem({
@@ -295,7 +296,7 @@ export default function OrderDetailPage() {
     } else {
       const variant = variants.find((v) => v.id === vid)
       const sides = variant?.sides ?? 1
-      const pricePerM2 = pricePerUnit || getDefaultPrice(vid)
+      const pricePerM2 = eiPrice !== '' && !isNaN(pricePerUnit) ? pricePerUnit : getDefaultPrice(vid)
       const m2 = (l * w * q * sides) / 1_000_000
       const totalPrice = m2 * pricePerM2
       await updateItem(editingItemId, {
