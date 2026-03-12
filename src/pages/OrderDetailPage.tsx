@@ -616,9 +616,6 @@ export default function OrderDetailPage() {
                 )
               })()}
               {showCustomAdd && (() => {
-                const vid = newCustomVariantId || variants[0]?.id
-                const price = Number(newCustomPrice) || 0
-                const q = Number(newCustomQty) || 1
                 const inputClass = "w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500 tabular-nums"
                 return (
                   <tr ref={customRowRef} onBlur={handleRowBlur(customRowRef, handleCustomAdd, () => { if (!Number(newCustomPrice)) setShowCustomAdd(false) })} className="border-b border-gray-100 bg-blue-50/30">

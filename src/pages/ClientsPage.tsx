@@ -11,7 +11,7 @@ export default function ClientsPage() {
   const { clients, refetch: refetchClients } = useClients()
   const { variants } = usePaintingVariants()
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const { pricing, loading: pricingLoading, refetch: refetchPricing, upsertPricing } = useClientPricing(selectedId)
+  const { pricing, loading: pricingLoading, upsertPricing } = useClientPricing(selectedId)
   const [showAdd, setShowAdd] = useState<ClientType | null>(null)
   const [newName, setNewName] = useState('')
   const [newContactName, setNewContactName] = useState('')
