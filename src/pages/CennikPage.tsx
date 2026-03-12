@@ -164,7 +164,7 @@ export default function CennikPage() {
                           {mdfV ? mdfV.default_price_per_m2 : ''}
                         </td>
                       )}
-                      <td className="px-2 py-1.5 text-center text-gray-500">{v.sides === 2 ? '1' : v.sides}</td>
+                      <td className="px-2 py-1.5 text-center text-gray-500">{v.sides}</td>
                       <td className="px-1 py-1.5 text-right">
                         <div className="flex items-center justify-end gap-0.5">
                           <button onClick={() => startEdit(v)} className="rounded-md p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100">

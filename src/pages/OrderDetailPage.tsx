@@ -130,7 +130,7 @@ export default function OrderDetailPage() {
     const vid = newVariantId || variants[0]?.id
     if (!l || !w || !vid) return
     const variant = variants.find((v) => v.id === vid)
-    const sides = variant?.sides ?? 2
+    const sides = variant?.sides ?? 1
     const pricePerM2 = Number(newPrice) || getDefaultPrice(vid)
     const m2 = (l * w * q * sides) / 1_000_000
     const totalPrice = m2 * pricePerM2
@@ -239,7 +239,7 @@ export default function OrderDetailPage() {
     const q = Number(eiQty) || 1
     const vid = eiVariantId
     const variant = variants.find((v) => v.id === vid)
-    const sides = variant?.sides ?? 2
+    const sides = variant?.sides ?? 1
     const pricePerM2 = Number(eiPrice) || getDefaultPrice(vid)
     const m2 = (l * w * q * sides) / 1_000_000
     const totalPrice = m2 * pricePerM2
@@ -444,7 +444,7 @@ export default function OrderDetailPage() {
                 if (isEditing) {
                   const vid = eiVariantId
                   const variant = variants.find((v) => v.id === vid)
-                  const sides = variant?.sides ?? 2
+                  const sides = variant?.sides ?? 1
                   const l = Number(eiLength) || 0
                   const w = Number(eiWidth) || 0
                   const q = Number(eiQty) || 1
@@ -496,7 +496,7 @@ export default function OrderDetailPage() {
               {showInlineAdd && (() => {
                 const vid = newVariantId || variants[0]?.id
                 const variant = variants.find((v) => v.id === vid)
-                const sides = variant?.sides ?? 2
+                const sides = variant?.sides ?? 1
                 const pricePerM2 = vid ? getPriceForVariant(vid, variants) : 0
                 const l = Number(newLength) || 0
                 const w = Number(newWidth) || 0

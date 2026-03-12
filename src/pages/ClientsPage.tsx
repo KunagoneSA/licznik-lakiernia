@@ -344,7 +344,7 @@ export default function ClientsPage() {
                             {mdfV ? (mdfCustom?.price_per_m2 ?? mdfV.default_price_per_m2) : ''}
                           </td>
                         )}
-                        <td className="px-2 py-1.5 text-center text-gray-500">{v.sides === 2 ? '1' : v.sides}</td>
+                        <td className="px-2 py-1.5 text-center text-gray-500">{v.sides}</td>
                       </tr>
                     )
                   })}
