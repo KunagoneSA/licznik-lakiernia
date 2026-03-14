@@ -408,7 +408,7 @@ export default function OrderDetailPage() {
   return (
     <div className="space-y-4 max-w-4xl">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Link to="/zamowienia" className="rounded-md p-1 text-gray-500 hover:bg-gray-100">
             <ArrowLeft className="h-4 w-4" />
@@ -425,19 +425,21 @@ export default function OrderDetailPage() {
             </p>
           </div>
         </div>
-        <div className="flex items-start gap-6">
-          <div className="space-y-1 text-left pt-1">
-            {order.accepted_date && (
-              <p className="text-xs text-gray-500">Przyjęto: <span className="font-medium text-gray-700">{new Date(order.accepted_date).toLocaleDateString('pl-PL')}</span></p>
-            )}
-            {order.planned_date && (
-              <p className="text-xs text-gray-500">Plan: <span className="font-medium text-gray-700">{new Date(order.planned_date).toLocaleDateString('pl-PL')}</span></p>
-            )}
-            {order.ready_date && (
-              <p className="text-xs text-gray-500">Gotowe: <span className="font-medium text-emerald-600">{new Date(order.ready_date).toLocaleDateString('pl-PL')}</span></p>
-            )}
-          </div>
-          <div className="flex items-center gap-1">
+        <div className="grid grid-cols-[auto_auto] gap-x-2 gap-y-0.5 text-xs">
+          {order.accepted_date && (<>
+            <span className="text-gray-500 text-right">Przyjęto:</span>
+            <span className="font-medium text-gray-700 tabular-nums">{new Date(order.accepted_date).toLocaleDateString('pl-PL')}</span>
+          </>)}
+          {order.planned_date && (<>
+            <span className="text-gray-500 text-right">Plan:</span>
+            <span className="font-medium text-gray-700 tabular-nums">{new Date(order.planned_date).toLocaleDateString('pl-PL')}</span>
+          </>)}
+          {order.ready_date && (<>
+            <span className="text-gray-500 text-right">Gotowe:</span>
+            <span className="font-medium text-emerald-600 tabular-nums">{new Date(order.ready_date).toLocaleDateString('pl-PL')}</span>
+          </>)}
+        </div>
+        <div className="flex items-center gap-1">
             <button onClick={editing ? saveEdit : startEdit}
               className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800">
               {editing ? <><Check className="h-3 w-3" /> Zapisz</> : <><Pencil className="h-3 w-3" /> Edytuj</>}
