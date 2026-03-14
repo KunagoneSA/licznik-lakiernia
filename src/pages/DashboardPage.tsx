@@ -2,14 +2,13 @@ import { Link } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import { useOrders } from '../hooks/useOrders'
 import KanbanColumn from '../components/KanbanColumn'
-import DashboardStats from '../components/DashboardStats'
 
 const columns = [
-  { status: 'nowe', title: 'Nowe', color: 'bg-blue-400', wide: false },
-  { status: 'w_trakcie', title: 'W trakcie', color: 'bg-amber-400', wide: true },
-  { status: 'gotowe', title: 'Gotowe', color: 'bg-emerald-400', wide: false },
-  { status: 'wydane', title: 'Oddane', color: 'bg-violet-400', wide: false },
-  { status: 'fv_wystawiona', title: 'FV wystawiona', color: 'bg-pink-400', wide: false },
+  { status: 'nowe', title: 'Nowe', color: 'bg-blue-400', bg: 'bg-blue-50', wide: false },
+  { status: 'w_trakcie', title: 'W trakcie', color: 'bg-amber-400', bg: 'bg-amber-50', wide: true },
+  { status: 'gotowe', title: 'Gotowe', color: 'bg-emerald-400', bg: 'bg-emerald-50', wide: false },
+  { status: 'wydane', title: 'Oddane', color: 'bg-violet-400', bg: 'bg-violet-50', wide: false },
+  { status: 'fv_wystawiona', title: 'FV wystawiona', color: 'bg-pink-400', bg: 'bg-pink-50', wide: false },
 ] as const
 
 export default function DashboardPage() {
@@ -29,7 +28,6 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <DashboardStats orders={orders} />
       {orders.length === 0 ? (
         <div className="rounded-xl border-2 border-dashed border-gray-200 py-16 text-center">
           <p className="text-lg font-medium text-gray-500">Brak zamówień</p>
@@ -45,6 +43,7 @@ export default function DashboardPage() {
               key={col.status}
               title={col.title}
               color={col.color}
+              bg={col.bg}
               wide={col.wide}
               orders={orders.filter((o) => o.status === col.status)}
             />
