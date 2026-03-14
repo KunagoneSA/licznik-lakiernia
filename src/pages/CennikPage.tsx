@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Trash2, Save } from 'lucide-react'
+import { Plus, Trash2, Save, Pencil, ChevronUp, ChevronDown } from 'lucide-react'
 import { usePaintingVariants } from '../hooks/usePaintingVariants'
 import { supabase } from '../lib/supabase'
 import { useToast } from '../contexts/ToastContext'
@@ -50,6 +50,31 @@ export default function CennikPage() {
     refetch()
   }
 
+  const moveVariant = async (id: string, direction: 'up' | 'down') => {
+    const idx = mainVariants.findIndex((v) => v.id === id)
+    if (idx < 0) return
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1
+    if (swapIdx < 0 || swapIdx >= mainVariants.length) return
+    const a = mainVariants[idx]
+    const b = mainVariants[swapIdx]
+    const orderA = a.sort_order ?? idx
+    const orderB = b.sort_order ?? swapIdx
+    await Promise.all([
+      supabase.from('painting_variants').update({ sort_order: orderB }).eq('id', a.id),
+      supabase.from('painting_variants').update({ sort_order: orderA }).eq('id', b.id),
+    ])
+    refetch()
+  }
+
+  // Pair up main variants with their "+ MDF" counterparts (needed early for moveVariant)
+  const mdfVariants = new Map(
+    variants
+      .filter((v) => v.name.includes('(+ MDF)'))
+      .map((v) => [v.name.replace(' (+ MDF)', ''), v])
+  )
+  const mainVariants = variants.filter((v) => !v.name.includes('(+ MDF)'))
+  const hasMdfColumn = mdfVariants.size > 0
+
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`Usunąć wariant "${name}"?`)) return
     const { error } = await supabase.from('painting_variants').delete().eq('id', id)
@@ -68,15 +93,6 @@ export default function CennikPage() {
       </div>
     )
   }
-
-  // Pair up main variants with their "+ MDF" counterparts
-  const mdfVariants = new Map(
-    variants
-      .filter((v) => v.name.includes('(+ MDF)'))
-      .map((v) => [v.name.replace(' (+ MDF)', ''), v])
-  )
-  const mainVariants = variants.filter((v) => !v.name.includes('(+ MDF)'))
-  const hasMdfColumn = mdfVariants.size > 0
 
   return (
     <div className="space-y-4">
@@ -167,10 +183,18 @@ export default function CennikPage() {
                       <td className="px-2 py-1.5 text-center text-gray-500">{v.sides}</td>
                       <td className="px-1 py-1.5 text-right">
                         <div className="flex items-center justify-end gap-0.5">
-                          <button onClick={() => startEdit(v)} className="rounded-md p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100">
-                            <Save className="h-3 w-3" />
+                          <button onClick={() => moveVariant(v.id, 'up')} disabled={mainVariants.indexOf(v) === 0}
+                            className="rounded-md p-1 text-gray-300 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-300">
+                            <ChevronUp className="h-3 w-3" />
                           </button>
-                          <button onClick={() => handleDelete(v.id, v.name)} className="rounded-md p-1 text-gray-400 hover:text-red-500 hover:bg-red-50">
+                          <button onClick={() => moveVariant(v.id, 'down')} disabled={mainVariants.indexOf(v) === mainVariants.length - 1}
+                            className="rounded-md p-1 text-gray-300 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-300">
+                            <ChevronDown className="h-3 w-3" />
+                          </button>
+                          <button onClick={() => startEdit(v)} className="rounded-md p-1 text-gray-400 hover:text-amber-600 hover:bg-amber-50" title="Edytuj">
+                            <Pencil className="h-3 w-3" />
+                          </button>
+                          <button onClick={() => handleDelete(v.id, v.name)} className="rounded-md p-1 text-gray-400 hover:text-red-500 hover:bg-red-50" title="Usuń">
                             <Trash2 className="h-3 w-3" />
                           </button>
                         </div>
