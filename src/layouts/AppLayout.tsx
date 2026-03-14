@@ -5,14 +5,14 @@ import { useAuth } from '../contexts/AuthContext'
 import SprayGunIcon from '../components/SprayGunIcon'
 
 const mainNav = [
-  { to: '/', icon: LayoutDashboard, label: 'Tablica' },
   { to: '/zamowienia', icon: ClipboardList, label: 'Zamówienia' },
+  { to: '/', icon: LayoutDashboard, label: 'Tablica' },
   { to: '/lakiery', icon: ShoppingCart, label: 'Zakupy lakierów' },
 ] as const
 
 const baseNav = [
-  { to: '/klienci', icon: Users, label: 'Klienci' },
   { to: '/cennik', icon: Tag, label: 'Cennik' },
+  { to: '/klienci', icon: Users, label: 'Klienci' },
   { to: '/dostawcy', icon: Truck, label: 'Dostawcy' },
   { to: '/materialy', icon: Package, label: 'Materiały' },
   { to: '/pracownicy', icon: HardHat, label: 'Pracownicy' },
