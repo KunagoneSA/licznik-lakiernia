@@ -9,6 +9,7 @@ const columns = [
   { status: 'w_trakcie', title: 'W trakcie', color: 'bg-amber-400' },
   { status: 'gotowe', title: 'Gotowe', color: 'bg-emerald-400' },
   { status: 'wydane', title: 'Oddane', color: 'bg-violet-400' },
+  { status: 'fv_wystawiona', title: 'FV wystawiona', color: 'bg-pink-400' },
 ] as const
 
 export default function DashboardPage() {
@@ -38,7 +39,7 @@ export default function DashboardPage() {
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
           {columns.map((col) => (
             <KanbanColumn
               key={col.status}
