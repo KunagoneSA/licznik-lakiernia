@@ -43,7 +43,7 @@ function isOverdue(order: { planned_date: string | null; status: string }): bool
   return new Date(order.planned_date).getTime() < Date.now()
 }
 
-type SortKey = 'number' | 'accepted_date' | 'client' | 'status' | 'planned_date' | 'value'
+type SortKey = 'number' | 'accepted_date' | 'client' | 'status' | 'planned_date' | 'ready_date' | 'value'
 type SortDir = 'asc' | 'desc'
 
 export default function OrdersListPage() {
@@ -90,6 +90,7 @@ export default function OrdersListPage() {
           const db = b.planned_date ?? ''
           return da.localeCompare(db) * dir
         }
+        case 'ready_date': return (a.ready_date ?? '').localeCompare(b.ready_date ?? '') * dir
         case 'value': return (getOrderValue(a as unknown as Record<string, unknown>) - getOrderValue(b as unknown as Record<string, unknown>)) * dir
         default: return 0
       }
@@ -189,6 +190,7 @@ export default function OrdersListPage() {
                 <SortHeader label="Wartość" sortKey="value" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
                 <th className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-500 uppercase">Zam.</th>
                 <SortHeader label="Plan" sortKey="planned_date" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                <SortHeader label="Gotowe" sortKey="ready_date" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
               </tr>
             </thead>
             <tbody>
@@ -233,12 +235,15 @@ export default function OrdersListPage() {
                       {order.planned_date ? new Date(order.planned_date).toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' }) : '—'}
                       {overdue && <span className="ml-0.5 text-[10px]">!</span>}
                     </td>
+                    <td className="px-2 py-0.5 tabular-nums text-emerald-600 font-medium">
+                      {order.ready_date ? new Date(order.ready_date).toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' }) : ''}
+                    </td>
                   </tr>
                 )
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-2 py-8 text-center text-xs text-gray-400">
+                  <td colSpan={10} className="px-2 py-8 text-center text-xs text-gray-400">
                     {search ? 'Brak wyników' : 'Brak zamówień'}
                   </td>
                 </tr>
