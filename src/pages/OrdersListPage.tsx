@@ -53,7 +53,7 @@ export default function OrdersListPage() {
   const [tab, setTab] = useState<string>('wszystkie')
   const [showNew, setShowNew] = useState(false)
   const [sortKey, setSortKey] = useState<SortKey>('number')
-  const [sortDir, setSortDir] = useState<SortDir>('desc')
+  const [sortDir, setSortDir] = useState<SortDir>('asc')
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) {
