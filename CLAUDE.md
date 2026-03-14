@@ -11,6 +11,7 @@
 - **Nigdy nie pushuj bezpośrednio na master** — tylko przez merge z develop.
 - **Auto-push:** po każdej zmianie w kodzie — commituj i pushuj na `develop` automatycznie.
 - **Deploy:** NIGDY nie deployuj samodzielnie (Netlify, produkcja). Deploy TYLKO na wyraźne polecenie usera ("releasuj", "deploy", "na produkcję").
+- **Netlify deploy:** Netlify NIE jest podłączony do GitHuba — po release wykonaj `npx netlify deploy --prod --dir=dist` żeby wgrać nową wersję.
 - **Po release:** zawsze podaj link do aplikacji: https://licznik-lakiernia.netlify.app
 
 ## Powiadomienia
