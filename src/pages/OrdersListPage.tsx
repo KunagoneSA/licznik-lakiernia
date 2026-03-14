@@ -161,7 +161,7 @@ export default function OrdersListPage() {
                 <SortHeader label="Status" sortKey="status" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
                 <SortHeader label="Wartość" sortKey="value" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
                 <th className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-500 uppercase">Zam.</th>
-                <SortHeader label="Termin" sortKey="planned_date" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                <SortHeader label="Plan" sortKey="planned_date" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
               </tr>
             </thead>
             <tbody>
