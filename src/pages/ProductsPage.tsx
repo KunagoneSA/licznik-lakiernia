@@ -72,15 +72,15 @@ export default function ProductsPage() {
     })
   }
 
-  const ic = "w-full rounded border border-gray-300 px-2 py-1.5 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30"
+  const ic = "w-full rounded border border-gray-300 px-1.5 py-0.5 text-xs text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30"
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-900">Materiały</h1>
+        <h1 className="text-sm font-bold text-gray-900">Materiały</h1>
         <button onClick={add}
-          className="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-400">
-          <Plus className="h-4 w-4" /> Dodaj materiał
+          className="flex items-center gap-1 rounded-md bg-amber-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-amber-400">
+          <Plus className="h-3 w-3" /> Dodaj
         </button>
       </div>
 
@@ -89,16 +89,16 @@ export default function ProductsPage() {
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-amber-500" />
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white max-w-3xl">
+          <table className="w-full text-xs">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Nazwa</th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 w-20">Jednostka</th>
-                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 w-32">Cena domyślna</th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Domyślny dostawca</th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 w-36">Częstotliwość</th>
-                <th className="px-1 py-2 w-16"></th>
+                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500">Nazwa</th>
+                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 w-16">Jedn.</th>
+                <th className="px-2 py-1.5 text-right text-[10px] font-medium text-gray-500 w-24">Cena</th>
+                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500">Dostawca</th>
+                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 w-28">Częstotl.</th>
+                <th className="px-1 py-1.5 w-12"></th>
               </tr>
             </thead>
             <tbody>
@@ -108,20 +108,20 @@ export default function ProductsPage() {
                   const kd = (e: React.KeyboardEvent) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setEditingId(null) }
                   return (
                     <tr key={p.id} ref={editRowRef} className="border-b border-gray-100 bg-amber-50/30" onBlur={handleRowBlur}>
-                      <td className="px-3 py-1.5"><input value={pName} onChange={e => setPName(e.target.value)} className={ic} onKeyDown={kd} autoFocus /></td>
-                      <td className="px-3 py-1.5">
+                      <td className="px-2 py-1"><input value={pName} onChange={e => setPName(e.target.value)} className={ic} onKeyDown={kd} autoFocus /></td>
+                      <td className="px-2 py-1">
                         <select value={pUnit} onChange={e => setPUnit(e.target.value)} className={ic} onKeyDown={kd}>
                           <option value="kg">kg</option><option value="l">l</option><option value="szt">szt</option>
                         </select>
                       </td>
-                      <td className="px-3 py-1.5"><input type="number" step="0.01" value={pPrice} onChange={e => setPPrice(e.target.value)} className={`${ic} text-right`} onKeyDown={kd} placeholder="0.00" /></td>
-                      <td className="px-3 py-1.5">
+                      <td className="px-2 py-1"><input type="number" step="0.01" value={pPrice} onChange={e => setPPrice(e.target.value)} className={`${ic} text-right`} onKeyDown={kd} placeholder="0.00" /></td>
+                      <td className="px-2 py-1">
                         <select value={pSupplierId} onChange={e => setPSupplierId(e.target.value)} className={ic} onKeyDown={kd}>
                           <option value="">— brak —</option>
                           {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                         </select>
                       </td>
-                      <td className="px-3 py-1.5">
+                      <td className="px-2 py-1">
                         <select value={pFreq} onChange={e => setPFreq(e.target.value)} className={ic} onKeyDown={kd}>
                           <option value="">— brak —</option>
                           <option value="co tydzień">co tydzień</option>
@@ -130,23 +130,23 @@ export default function ProductsPage() {
                           <option value="rzadziej">rzadziej</option>
                         </select>
                       </td>
-                      <td className="px-1 py-1.5 flex gap-1">
-                        <button onClick={save} className="rounded p-1 text-emerald-500 hover:text-emerald-700"><Check className="h-4 w-4" /></button>
-                        <button onClick={() => setEditingId(null)} className="rounded p-1 text-gray-400 hover:text-gray-600"><X className="h-4 w-4" /></button>
+                      <td className="px-1 py-1 flex gap-0.5">
+                        <button onClick={save} className="rounded p-0.5 text-emerald-500 hover:text-emerald-700"><Check className="h-3 w-3" /></button>
+                        <button onClick={() => setEditingId(null)} className="rounded p-0.5 text-gray-400 hover:text-gray-600"><X className="h-3 w-3" /></button>
                       </td>
                     </tr>
                   )
                 }
                 return (
                   <tr key={p.id} className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer" onClick={() => startEdit(p)}>
-                    <td className="px-3 py-2 font-medium text-gray-800">{p.name}</td>
-                    <td className="px-3 py-2 text-gray-500">{p.unit ?? 'kg'}</td>
-                    <td className="px-3 py-2 text-right text-gray-500">{p.default_price ? Number(p.default_price).toFixed(2) + ' zł' : '—'}</td>
-                    <td className="px-3 py-2 text-gray-500">{p.default_supplier?.name ?? '—'}</td>
-                    <td className="px-3 py-2 text-gray-500">{p.order_frequency || '—'}</td>
-                    <td className="px-1 py-2" onClick={e => e.stopPropagation()}>
-                      <button onClick={() => remove(p.id)} className="rounded p-1 text-gray-300 hover:text-red-500 hover:bg-red-50">
-                        <Trash2 className="h-4 w-4" />
+                    <td className="px-2 py-1 font-medium text-gray-800">{p.name}</td>
+                    <td className="px-2 py-1 text-gray-500">{p.unit ?? 'kg'}</td>
+                    <td className="px-2 py-1 text-right text-gray-500 tabular-nums">{p.default_price ? Number(p.default_price).toFixed(2) : '—'}</td>
+                    <td className="px-2 py-1 text-gray-500">{p.default_supplier?.name ?? '—'}</td>
+                    <td className="px-2 py-1 text-gray-500">{p.order_frequency || '—'}</td>
+                    <td className="px-1 py-1" onClick={e => e.stopPropagation()}>
+                      <button onClick={() => remove(p.id)} className="rounded p-0.5 text-gray-300 hover:text-red-500 hover:bg-red-50">
+                        <Trash2 className="h-3 w-3" />
                       </button>
                     </td>
                   </tr>
