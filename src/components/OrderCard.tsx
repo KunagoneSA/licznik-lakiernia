@@ -15,25 +15,26 @@ function getClient(order: Order): { name: string; type?: string } | null {
   return (order as unknown as Record<string, unknown>).client as { name: string; type?: string } | null
 }
 
-function getOrderValue(order: Order): number {
-  const items = (order as unknown as Record<string, unknown>).order_items as { total_price: number }[] | undefined
-  return items?.reduce((s, i) => s + Number(i.total_price), 0) ?? 0
-}
-
 function formatNumber(num: number, createdAt: string): string {
   const year = new Date(createdAt).getFullYear() % 100
   return `${num}/${year}`
 }
 
 export default function OrderCard({ order }: { order: Order }) {
-  const value = getOrderValue(order)
   return (
     <Link
       to={`/zamowienia/${order.id}`}
-      className={`block rounded-lg border-l-4 bg-white shadow-sm px-2.5 py-2 transition-colors hover:bg-gray-50 ${getUrgencyClass(order.planned_date, order.status)}`}
+      className={`block rounded-lg border-l-4 bg-white shadow-sm px-2.5 py-1.5 transition-colors hover:bg-gray-50 ${getUrgencyClass(order.planned_date, order.status)}`}
     >
       <div className="flex items-center justify-between">
-        <span className="text-xs font-bold text-amber-600">{formatNumber(order.number, order.created_at)}</span>
+        <span className="flex items-center gap-1 text-xs">
+          <span className="font-bold text-amber-600">{formatNumber(order.number, order.created_at)}</span>
+          <span className="text-gray-400">·</span>
+          <span className="flex items-center gap-0.5 text-[11px] text-gray-500">
+            {getClient(order)?.type === 'company' ? <Building2 className="h-3 w-3 text-blue-500" /> : <User className="h-3 w-3 text-violet-500" />}
+            {getClient(order)?.name ?? '—'}
+          </span>
+        </span>
         {order.planned_date && (
           <span className="flex items-center gap-1 text-[11px] text-gray-400">
             <Calendar className="h-3 w-3" />
@@ -41,7 +42,7 @@ export default function OrderCard({ order }: { order: Order }) {
           </span>
         )}
       </div>
-      <p className="mt-0.5 text-xs text-gray-700 line-clamp-1">{order.description || 'Brak opisu'}</p>
+      <p className="text-[11px] text-gray-700 line-clamp-1">{order.description || 'Brak opisu'}</p>
       {order.color && <p className="text-[10px] font-medium text-gray-500">{order.color}</p>}
       {(!order.material_provided || !order.paints_provided) && (
         <div className="mt-0.5 flex gap-1">
@@ -49,13 +50,6 @@ export default function OrderCard({ order }: { order: Order }) {
           {!order.paints_provided && <span className="text-[9px] font-bold text-red-500 bg-red-50 rounded px-1 py-0.5">Lakiery</span>}
         </div>
       )}
-      <div className="mt-1 flex items-center justify-between">
-        <span className="flex items-center gap-1 text-[11px] text-gray-500">
-          {getClient(order)?.type === 'company' ? <Building2 className="h-3 w-3 text-blue-500" /> : <User className="h-3 w-3 text-violet-500" />}
-          {getClient(order)?.name ?? '—'}
-        </span>
-        {value > 0 && <span className="text-[11px] font-medium text-emerald-600">{value.toFixed(0)} zł</span>}
-      </div>
     </Link>
   )
 }
