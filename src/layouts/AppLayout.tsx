@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { LayoutDashboard, ClipboardList, Users, ShoppingCart, Menu, X, LogOut, Tag, HardHat, Truck, Package, FileBarChart } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
-import SprayGunIcon from '../components/SprayGunIcon'
+
 
 const mainNav = [
   { to: '/zamowienia', icon: ClipboardList, label: 'Zamówienia' },
@@ -54,13 +54,8 @@ export default function AppLayout() {
     <div className="flex h-screen bg-gray-50">
       {/* Desktop sidebar */}
       <aside className="hidden md:flex md:w-48 md:flex-col md:border-r md:border-gray-200 bg-white">
-        <div className="flex h-14 items-center gap-2 px-5 border-b border-gray-200">
-          <div className="h-7 w-7 rounded-md bg-red-600 flex items-center justify-center">
-            <SprayGunIcon className="h-4 w-4 text-white" />
-          </div>
-          <span className="text-sm font-semibold tracking-wide text-gray-900 uppercase">
-            Lakiernia
-          </span>
+        <div className="flex h-14 items-center px-3 border-b border-gray-200">
+          <img src={`${import.meta.env.BASE_URL}logo-kunagone.png`} alt="Kunagone" className="h-10 w-auto" />
         </div>
         <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
           {mainNav.map((item) => renderNavLink(item))}
@@ -97,12 +92,7 @@ export default function AppLayout() {
       {/* Mobile sidebar */}
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white flex flex-col transform transition-transform duration-200 ease-out md:hidden ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex h-14 items-center justify-between px-5 border-b border-gray-200">
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-md bg-red-600 flex items-center justify-center">
-              <SprayGunIcon className="h-4 w-4 text-white" />
-            </div>
-            <span className="text-sm font-semibold tracking-wide text-gray-900 uppercase">Lakiernia</span>
-          </div>
+          <img src={`${import.meta.env.BASE_URL}logo-kunagone.png`} alt="Kunagone" className="h-10 w-auto" />
           <button onClick={() => setMobileOpen(false)} className="rounded-md p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100">
             <X className="h-5 w-5" />
           </button>
@@ -140,7 +130,7 @@ export default function AppLayout() {
           <button onClick={() => setMobileOpen(true)} className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100">
             <Menu className="h-5 w-5" />
           </button>
-          <span className="text-sm font-semibold tracking-wide text-gray-900 uppercase">Lakiernia</span>
+          <img src={`${import.meta.env.BASE_URL}logo-kunagone.png`} alt="Kunagone" className="h-8 w-auto" />
         </header>
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
           <Outlet />
