@@ -606,11 +606,12 @@ export default function OrderDetailPage() {
                               const name = prompt('Wpisz nazwę rodzaju:')
                               if (name?.trim()) {
                                 supabase.from('painting_variants').insert({ name: name.trim(), default_price_per_m2: 0, sides: 2 }).select().single().then(({ data }) => {
-                                  if (data) { refetchVariants(); setEiVariantId(data.id) }
+                                  if (data) { refetchVariants(); setEiVariantId(data.id); setEiPrice(String(getDefaultPrice(data.id))) }
                                 })
                               }
                             } else {
                               setEiVariantId(e.target.value)
+                              setEiPrice(String(getDefaultPrice(e.target.value)))
                             }
                           }}
                           className="w-full bg-white border border-gray-300 rounded px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30" onKeyDown={kd}>
