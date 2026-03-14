@@ -40,12 +40,15 @@ export default function OrderCard({ order }: { order: Order }) {
           {order.color && <p className="text-[10px] font-medium text-gray-500">{order.color}</p>}
         </div>
         <div className="flex flex-col items-end gap-0.5 ml-2 shrink-0">
-          {order.planned_date && (
-            <span className="flex items-center gap-1 text-[11px] text-gray-400">
-              <Calendar className="h-3 w-3" />
-              {new Date(order.planned_date).toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' })}
-            </span>
-          )}
+          {order.planned_date && (() => {
+            const overdue = !['gotowe', 'wydane', 'zapłacone'].includes(order.status) && new Date(order.planned_date).getTime() < Date.now()
+            return (
+              <span className={`flex items-center gap-1 text-[11px] ${overdue ? 'text-red-500 font-bold' : 'text-gray-400'}`}>
+                <Calendar className="h-3 w-3" />
+                {new Date(order.planned_date).toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' })}
+              </span>
+            )
+          })()}
           {(!order.material_provided || !order.paints_provided) && (
             <div className="flex gap-1">
               {!order.material_provided && <span className="text-[9px] font-bold text-red-500 bg-red-50 rounded px-1 py-0.5">Materiał</span>}
