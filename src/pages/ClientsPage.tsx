@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
-import { Building2, Check, Plus, Trash2, User, X } from 'lucide-react'
+import { Building2, Check, ChevronDown, ChevronUp, Pencil, Plus, Save, Trash2, User, X } from 'lucide-react'
 import { useClients } from '../hooks/useClients'
 import { usePaintingVariants } from '../hooks/usePaintingVariants'
 import { useClientPricing } from '../hooks/useClientPricing'
@@ -9,7 +9,7 @@ import type { Client, ClientType } from '../types/database'
 
 export default function ClientsPage() {
   const { clients, refetch: refetchClients } = useClients()
-  const { variants } = usePaintingVariants()
+  const { variants, refetch: refetchVariants } = usePaintingVariants()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const { pricing, loading: pricingLoading, upsertPricing } = useClientPricing(selectedId)
   const [showAdd, setShowAdd] = useState<ClientType | null>(null)
@@ -25,6 +25,63 @@ export default function ClientsPage() {
   const [eContact, setEContact] = useState('')
   const [ePhone, setEPhone] = useState('')
   const [eEmail, setEEmail] = useState('')
+
+  // Variant editing state (in client pricing)
+  const [editingVariantId, setEditingVariantId] = useState<string | null>(null)
+  const [evName, setEvName] = useState('')
+  const [showAddVariant, setShowAddVariant] = useState(false)
+  const [newVarName, setNewVarName] = useState('')
+  const [newVarPrice, setNewVarPrice] = useState('')
+  const [newVarSides, setNewVarSides] = useState(2)
+
+  const mdfVariantsMap = new Map(
+    variants.filter((v) => v.name.includes('(+ MDF)')).map((v) => [v.name.replace(' (+ MDF)', ''), v])
+  )
+  const mainVariantsList = variants.filter((v) => !v.name.includes('(+ MDF)'))
+
+  const startVariantEdit = (v: typeof variants[number]) => {
+    setEditingVariantId(v.id)
+    setEvName(v.name)
+  }
+
+  const saveVariantEdit = async () => {
+    if (!editingVariantId || !evName.trim()) return
+    await supabase.from('painting_variants').update({ name: evName.trim() }).eq('id', editingVariantId)
+    setEditingVariantId(null)
+    toast('Nazwa wariantu zaktualizowana')
+    refetchVariants()
+  }
+
+  const handleAddVariant = async () => {
+    if (!newVarName.trim() || !newVarPrice) return
+    await supabase.from('painting_variants').insert({
+      name: newVarName.trim(),
+      default_price_per_m2: Number(newVarPrice),
+      sides: newVarSides,
+    })
+    setNewVarName('')
+    setNewVarPrice('')
+    setNewVarSides(2)
+    setShowAddVariant(false)
+    toast('Wariant dodany')
+    refetchVariants()
+  }
+
+  const moveVariant = async (id: string, direction: 'up' | 'down') => {
+    const idx = mainVariantsList.findIndex((v) => v.id === id)
+    if (idx < 0) return
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1
+    if (swapIdx < 0 || swapIdx >= mainVariantsList.length) return
+    const a = mainVariantsList[idx]
+    const b = mainVariantsList[swapIdx]
+    const orderA = a.sort_order ?? idx
+    const orderB = b.sort_order ?? swapIdx
+    await Promise.all([
+      supabase.from('painting_variants').update({ sort_order: orderB }).eq('id', a.id),
+      supabase.from('painting_variants').update({ sort_order: orderA }).eq('id', b.id),
+    ])
+    refetchVariants()
+  }
 
   const companies = clients.filter((c) => c.type === 'company')
   const individuals = clients.filter((c) => c.type === 'individual')
@@ -305,19 +362,45 @@ export default function ClientsPage() {
       {selectedId && (() => {
         const sel = clients.find((c) => c.id === selectedId)
         if (!sel) return null
-        const mdfVariants = new Map(
-          variants
-            .filter((v) => v.name.includes('(+ MDF)'))
-            .map((v) => [v.name.replace(' (+ MDF)', ''), v])
-        )
-        const mainVariants = variants.filter((v) => !v.name.includes('(+ MDF)'))
-        const hasMdfCol = mdfVariants.size > 0
+        const hasMdfCol = mdfVariantsMap.size > 0
         return (
           <div key={selectedId} className="space-y-3 border-t border-gray-200 pt-4">
-            <div className="flex items-center gap-2">
-              {sel.type === 'company' ? <Building2 className="h-4 w-4 text-blue-500" /> : <User className="h-4 w-4 text-violet-500" />}
-              <h2 className="text-sm font-semibold text-gray-700">Cennik — {sel.name}</h2>
+            <div className="flex items-center justify-between max-w-lg">
+              <div className="flex items-center gap-2">
+                {sel.type === 'company' ? <Building2 className="h-4 w-4 text-blue-500" /> : <User className="h-4 w-4 text-violet-500" />}
+                <h2 className="text-sm font-semibold text-gray-700">Cennik — {sel.name}</h2>
+              </div>
+              <button onClick={() => setShowAddVariant(true)}
+                className="flex items-center gap-1 rounded-md bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-600 hover:bg-amber-100">
+                <Plus className="h-3 w-3" /> Dodaj wariant
+              </button>
             </div>
+
+            {showAddVariant && (
+              <div className="flex items-end gap-2 rounded-lg bg-gray-50 p-3 max-w-lg">
+                <div className="flex-1">
+                  <label className="block text-[10px] font-medium text-gray-500 uppercase mb-0.5">Nazwa</label>
+                  <input type="text" value={newVarName} onChange={(e) => setNewVarName(e.target.value)} placeholder="np. Gładkie mat"
+                    className="w-full rounded bg-white border border-gray-300 px-2 py-1.5 text-xs text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30" />
+                </div>
+                <div className="w-24">
+                  <label className="block text-[10px] font-medium text-gray-500 uppercase mb-0.5">Cena/m²</label>
+                  <input type="number" value={newVarPrice} onChange={(e) => setNewVarPrice(e.target.value)} placeholder="0"
+                    className="w-full rounded bg-white border border-gray-300 px-2 py-1.5 text-xs text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30" />
+                </div>
+                <div className="w-20">
+                  <label className="block text-[10px] font-medium text-gray-500 uppercase mb-0.5">Strony</label>
+                  <select value={newVarSides} onChange={(e) => setNewVarSides(Number(e.target.value))}
+                    className="w-full rounded bg-white border border-gray-300 px-2 py-1.5 text-xs text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30">
+                    <option value={1}>1</option>
+                    <option value={2}>2</option>
+                  </select>
+                </div>
+                <button onClick={handleAddVariant} className="rounded bg-amber-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-400">Dodaj</button>
+                <button onClick={() => setShowAddVariant(false)} className="rounded px-2 py-1.5 text-xs text-gray-500 hover:bg-gray-100">Anuluj</button>
+              </div>
+            )}
+
             {pricingLoading ? (
               <div className="flex justify-center py-6">
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-amber-500" />
@@ -333,19 +416,31 @@ export default function ClientsPage() {
                         <th className="px-2 py-1.5 text-right text-[10px] font-medium text-gray-500 uppercase">+ MDF</th>
                       )}
                       <th className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-500 uppercase">Strony</th>
+                      <th className="px-1 py-1.5 w-20"></th>
                     </tr>
                   </thead>
                   <tbody>
-                    {mainVariants.map((v) => {
-                      const mdfV = mdfVariants.get(v.name)
+                    {mainVariantsList.map((v, idx) => {
+                      const mdfV = mdfVariantsMap.get(v.name)
                       const custom = pricing.find((p) => p.variant_id === v.id)
                       const mdfCustom = mdfV ? pricing.find((p) => p.variant_id === mdfV.id) : null
                       const currentPrice = custom?.price_per_m2 ?? v.default_price_per_m2
                       const mdfPrice = mdfV ? (mdfCustom?.price_per_m2 ?? mdfV.default_price_per_m2) : null
                       const inputCls = "w-20 rounded border border-gray-200 px-2 py-1 text-right text-xs text-amber-600 font-semibold tabular-nums outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-300"
+                      const isEvEditing = editingVariantId === v.id
                       return (
                         <tr key={v.id} className="border-b border-gray-100 hover:bg-gray-50">
-                          <td className="px-2 py-1.5 text-gray-800 font-medium">{v.name}</td>
+                          <td className="px-2 py-1.5 text-gray-800 font-medium">
+                            {isEvEditing ? (
+                              <div className="flex items-center gap-1">
+                                <input type="text" value={evName} onChange={(e) => setEvName(e.target.value)}
+                                  onKeyDown={(e) => { if (e.key === 'Enter') saveVariantEdit(); if (e.key === 'Escape') setEditingVariantId(null) }}
+                                  className="w-full rounded border border-gray-300 px-1.5 py-0.5 text-xs outline-none focus:ring-2 focus:ring-amber-500/30" autoFocus />
+                                <button onClick={saveVariantEdit} className="rounded p-0.5 text-amber-600 hover:bg-amber-50"><Save className="h-3 w-3" /></button>
+                                <button onClick={() => setEditingVariantId(null)} className="rounded p-0.5 text-gray-400 hover:text-gray-600"><X className="h-3 w-3" /></button>
+                              </div>
+                            ) : v.name}
+                          </td>
                           <td className="px-1.5 py-1">
                             <input
                               key={`${selectedId}-${v.id}-${currentPrice}`}
@@ -381,6 +476,21 @@ export default function ClientsPage() {
                             </td>
                           )}
                           <td className="px-2 py-1.5 text-center text-gray-500">{v.sides}</td>
+                          <td className="px-1 py-1.5 text-right">
+                            <div className="flex items-center justify-end gap-0.5">
+                              <button onClick={() => moveVariant(v.id, 'up')} disabled={idx === 0}
+                                className="rounded-md p-1 text-gray-300 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent">
+                                <ChevronUp className="h-3 w-3" />
+                              </button>
+                              <button onClick={() => moveVariant(v.id, 'down')} disabled={idx === mainVariantsList.length - 1}
+                                className="rounded-md p-1 text-gray-300 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent">
+                                <ChevronDown className="h-3 w-3" />
+                              </button>
+                              <button onClick={() => startVariantEdit(v)} className="rounded-md p-1 text-gray-400 hover:text-amber-600 hover:bg-amber-50" title="Edytuj nazwę">
+                                <Pencil className="h-3 w-3" />
+                              </button>
+                            </div>
+                          </td>
                         </tr>
                       )
                     })}
