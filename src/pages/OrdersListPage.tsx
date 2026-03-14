@@ -120,30 +120,50 @@ export default function OrdersListPage() {
             className="w-full rounded-lg bg-white border border-gray-300 py-2 pl-9 pr-3 text-sm text-gray-800 placeholder-gray-400 outline-none focus:ring-2 focus:ring-amber-500/30"
           />
         </div>
-        <div className="flex gap-1">
-          {tabs.map((t) => {
-            const tabColors: Record<string, { active: string; inactive: string }> = {
-              wszystkie: { active: 'bg-gray-700 text-white', inactive: 'bg-gray-100 text-gray-600 hover:bg-gray-200' },
-              nowe: { active: 'bg-blue-500 text-white', inactive: 'bg-blue-50 text-blue-600 hover:bg-blue-100' },
-              w_trakcie: { active: 'bg-amber-500 text-white', inactive: 'bg-amber-50 text-amber-600 hover:bg-amber-100' },
-              gotowe: { active: 'bg-emerald-500 text-white', inactive: 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' },
-              wydane: { active: 'bg-violet-500 text-white', inactive: 'bg-violet-50 text-violet-600 hover:bg-violet-100' },
-              fv_wystawiona: { active: 'bg-pink-500 text-white', inactive: 'bg-pink-50 text-pink-600 hover:bg-pink-100' },
-              niezapłacone: { active: 'bg-red-500 text-white', inactive: 'bg-red-50 text-red-600 hover:bg-red-100' },
-            }
-            const colors = tabColors[t]
-            return (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                  tab === t ? colors.active : colors.inactive
-                }`}
-              >
-                {t === 'wszystkie' ? 'Wszystkie' : t === 'niezapłacone' ? 'Niezapłacone' : statusLabels[t as OrderStatus]}
-              </button>
-            )
-          })}
+        <div className="flex flex-col gap-1">
+          <div className="flex gap-1">
+            {tabs.slice(0, 4).map((t) => {
+              const tabColors: Record<string, { active: string; inactive: string }> = {
+                wszystkie: { active: 'bg-gray-700 text-white', inactive: 'bg-gray-100 text-gray-600 hover:bg-gray-200' },
+                nowe: { active: 'bg-blue-500 text-white', inactive: 'bg-blue-50 text-blue-600 hover:bg-blue-100' },
+                w_trakcie: { active: 'bg-amber-500 text-white', inactive: 'bg-amber-50 text-amber-600 hover:bg-amber-100' },
+                gotowe: { active: 'bg-emerald-500 text-white', inactive: 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' },
+              }
+              const colors = tabColors[t]
+              return (
+                <button
+                  key={t}
+                  onClick={() => setTab(t)}
+                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                    tab === t ? colors.active : colors.inactive
+                  }`}
+                >
+                  {t === 'wszystkie' ? 'Wszystkie' : statusLabels[t as OrderStatus]}
+                </button>
+              )
+            })}
+          </div>
+          <div className="flex gap-1">
+            {tabs.slice(4).map((t) => {
+              const tabColors: Record<string, { active: string; inactive: string }> = {
+                wydane: { active: 'bg-violet-500 text-white', inactive: 'bg-violet-50 text-violet-600 hover:bg-violet-100' },
+                fv_wystawiona: { active: 'bg-pink-500 text-white', inactive: 'bg-pink-50 text-pink-600 hover:bg-pink-100' },
+                niezapłacone: { active: 'bg-red-500 text-white', inactive: 'bg-red-50 text-red-600 hover:bg-red-100' },
+              }
+              const colors = tabColors[t]
+              return (
+                <button
+                  key={t}
+                  onClick={() => setTab(t)}
+                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                    tab === t ? colors.active : colors.inactive
+                  }`}
+                >
+                  {t === 'niezapłacone' ? 'Niezapłacone' : statusLabels[t as OrderStatus]}
+                </button>
+              )
+            })}
+          </div>
         </div>
       </div>
 
