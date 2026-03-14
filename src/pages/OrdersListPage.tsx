@@ -96,6 +96,10 @@ export default function OrdersListPage() {
     })
   }, [orders, tab, search, sortKey, sortDir])
 
+  const totalValue = useMemo(() => {
+    return filtered.reduce((sum, o) => sum + getOrderValue(o as unknown as Record<string, unknown>), 0)
+  }, [filtered])
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-4 max-w-3xl">
@@ -241,6 +245,16 @@ export default function OrdersListPage() {
               )}
             </tbody>
           </table>
+          {filtered.length > 0 && (
+            <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-3 py-2">
+              <span className="text-[11px] text-gray-500">
+                {filtered.length} {filtered.length === 1 ? 'zamówienie' : filtered.length < 5 ? 'zamówienia' : 'zamówień'}
+              </span>
+              <span className="text-sm font-bold text-amber-600 tabular-nums">
+                Σ {totalValue.toFixed(2)} zł
+              </span>
+            </div>
+          )}
         </div>
       )}
 
