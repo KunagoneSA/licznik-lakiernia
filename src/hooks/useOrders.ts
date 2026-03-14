@@ -2,13 +2,27 @@ import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import type { Order } from '../types/database'
 
+const CACHE_KEY = 'orders_cache'
+
+function getCached(): Order[] {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch { return [] }
+}
+
+function setCache(orders: Order[]) {
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify(orders)) } catch {}
+}
+
 export function useOrders() {
-  const [orders, setOrders] = useState<Order[]>([])
-  const [loading, setLoading] = useState(true)
+  const cached = getCached()
+  const [orders, setOrders] = useState<Order[]>(cached)
+  const [loading, setLoading] = useState(cached.length === 0)
   const [error, setError] = useState<string | null>(null)
 
   const fetch = useCallback(async () => {
-    setLoading(true)
+    if (orders.length === 0) setLoading(true)
     const { data, error: err } = await supabase
       .from('orders')
       .select('*, client:clients(name, type), order_items(total_price)')
@@ -17,7 +31,9 @@ export function useOrders() {
     if (err) {
       setError(err.message)
     } else {
-      setOrders((data as Order[]) ?? [])
+      const fresh = (data as Order[]) ?? []
+      setOrders(fresh)
+      setCache(fresh)
       setError(null)
     }
     setLoading(false)
