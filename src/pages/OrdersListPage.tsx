@@ -172,7 +172,7 @@ export default function OrdersListPage() {
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-amber-500" />
         </div>
       ) : (
-        <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+        <div className="rounded-lg border border-gray-200 bg-white overflow-hidden max-w-5xl">
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
