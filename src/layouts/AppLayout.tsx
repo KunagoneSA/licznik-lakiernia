@@ -35,14 +35,14 @@ export default function AppLayout() {
       end={to === '/'}
       onClick={onClick}
       className={({ isActive }) =>
-        `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+        `flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium transition-colors ${
           isActive
             ? 'bg-amber-50 text-amber-700'
             : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
         }`
       }
     >
-      <Icon className="h-[18px] w-[18px]" />
+      <Icon className="h-4 w-4" />
       {label}
     </NavLink>
   )
@@ -50,7 +50,7 @@ export default function AppLayout() {
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex md:w-64 md:flex-col md:border-r md:border-gray-200 bg-white">
+      <aside className="hidden md:flex md:w-48 md:flex-col md:border-r md:border-gray-200 bg-white">
         <div className="flex h-14 items-center gap-2 px-5 border-b border-gray-200">
           <div className="h-7 w-7 rounded-md bg-red-600 flex items-center justify-center">
             <SprayGunIcon className="h-4 w-4 text-white" />
