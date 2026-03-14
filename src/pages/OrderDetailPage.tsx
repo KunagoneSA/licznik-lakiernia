@@ -425,11 +425,19 @@ export default function OrderDetailPage() {
             </p>
           </div>
         </div>
-        <div className="grid grid-cols-[auto_auto] gap-x-2 gap-y-0.5 text-xs">
-          {order.accepted_date ? <><span className="text-gray-500 text-right">Przyjęto:</span><span className="font-medium text-gray-700 tabular-nums">{new Date(order.accepted_date).toLocaleDateString('pl-PL')}</span></> : null}
-          {order.planned_date ? <><span className="text-gray-500 text-right">Plan:</span><span className="font-medium text-gray-700 tabular-nums">{new Date(order.planned_date).toLocaleDateString('pl-PL')}</span></> : null}
-          {order.ready_date ? <><span className="text-gray-500 text-right">Gotowe:</span><span className="font-medium text-emerald-600 tabular-nums">{new Date(order.ready_date).toLocaleDateString('pl-PL')}</span></> : null}
-        </div>
+        <table className="text-xs">
+          <tbody>
+            {order.accepted_date && (
+              <tr><td className="text-gray-500 pr-2 text-right py-px">Przyjęto:</td><td className="font-medium text-gray-700 tabular-nums py-px">{new Date(order.accepted_date).toLocaleDateString('pl-PL')}</td></tr>
+            )}
+            {order.planned_date && (
+              <tr><td className="text-gray-500 pr-2 text-right py-px">Plan:</td><td className="font-medium text-gray-700 tabular-nums py-px">{new Date(order.planned_date).toLocaleDateString('pl-PL')}</td></tr>
+            )}
+            {order.ready_date && (
+              <tr><td className="text-gray-500 pr-2 text-right py-px">Gotowe:</td><td className="font-medium text-emerald-600 tabular-nums py-px">{new Date(order.ready_date).toLocaleDateString('pl-PL')}</td></tr>
+            )}
+          </tbody>
+        </table>
         <div className="flex items-center gap-1">
             <button onClick={editing ? saveEdit : startEdit}
               className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800">
@@ -440,7 +448,6 @@ export default function OrderDetailPage() {
               <Trash2 className="h-3 w-3" /> Usuń
             </button>
           </div>
-        </div>
       </div>
 
       {/* Color */}
