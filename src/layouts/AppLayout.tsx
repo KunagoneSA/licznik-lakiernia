@@ -54,8 +54,8 @@ export default function AppLayout() {
     <div className="flex h-screen bg-gray-50">
       {/* Desktop sidebar */}
       <aside className="hidden md:flex md:w-48 md:flex-col md:border-r md:border-gray-200 bg-white">
-        <div className="flex h-20 items-center justify-center px-3 border-b border-gray-200">
-          <img src={`${import.meta.env.BASE_URL}logo-kunagone.png`} alt="Kunagone" className="h-16 w-auto" />
+        <div className="flex h-24 items-center justify-center px-3 border-b border-gray-200">
+          <img src={`${import.meta.env.BASE_URL}logo-kunagone.png`} alt="Kunagone" className="h-20 w-auto" />
         </div>
         <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
           {mainNav.map((item) => renderNavLink(item))}
