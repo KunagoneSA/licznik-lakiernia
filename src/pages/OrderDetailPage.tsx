@@ -475,7 +475,7 @@ export default function OrderDetailPage() {
 
       {/* Status flow + Checklist */}
       <div className="flex items-center justify-between gap-4">
-        <div className="flex gap-1">
+        <div className="flex flex-wrap gap-1 max-w-xs">
           {statusFlow.map((s) => (
             <button
               key={s}
