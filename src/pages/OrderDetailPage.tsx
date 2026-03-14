@@ -410,7 +410,7 @@ export default function OrderDetailPage() {
             <p className="text-xs text-gray-500">
               {getClientName(order as unknown as Record<string, unknown>)} · {order.description || 'Brak opisu'}
               {order.accepted_date && <> · Przyjęto: {new Date(order.accepted_date).toLocaleDateString('pl-PL')}</>}
-              {order.planned_date && <> · Termin: {new Date(order.planned_date).toLocaleDateString('pl-PL')}</>}
+              {order.planned_date && <> · Planowana data: {new Date(order.planned_date).toLocaleDateString('pl-PL')}</>}
             </p>
           </div>
         </div>
