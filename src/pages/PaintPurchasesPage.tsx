@@ -384,7 +384,7 @@ function StatusDropdown({ value, onChange }: { value: PurchaseStatus; onChange: 
               <button
                 key={s}
                 onClick={() => { onChange(s); setOpen(false) }}
-                className={`w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 ${s === value ? 'font-medium' : ''}`}
+                className={`w-full text-center px-3 py-1.5 text-xs hover:bg-gray-50 ${s === value ? 'font-medium' : ''}`}
               >
                 <span className={`inline-block rounded-full px-2 py-0.5 ${STATUS_CONFIG[s].color}`}>
                   {STATUS_CONFIG[s].label}
