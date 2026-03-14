@@ -73,7 +73,7 @@ export default function NewOrderModal({ onClose, onSaved }: Props) {
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="np. Fronty frezowane 9016 MAT"
+              placeholder="np. Fronty frezowane"
               className="w-full rounded-lg bg-gray-50 border border-gray-300 px-3 py-2 text-sm text-gray-800 placeholder-gray-400 outline-none focus:ring-2 focus:ring-amber-500/30"
             />
           </div>
