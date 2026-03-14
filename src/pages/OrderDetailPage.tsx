@@ -31,7 +31,7 @@ export default function OrderDetailPage() {
   const { order, loading, updateOrder } = useOrder(id!)
   const { items, addItem, updateItem, deleteItem } = useOrderItems(id!)
   const { logs, addLog, updateLog, deleteLog } = useWorkLogs(id!)
-  const { variants } = usePaintingVariants()
+  const { variants, refetch: refetchVariants } = usePaintingVariants()
   const { getPriceForVariant } = useClientPricing(order?.client_id ?? null)
   const { toast } = useToast()
   const { workers } = useWorkers()
@@ -601,9 +601,21 @@ export default function OrderDetailPage() {
                       <td className="px-2 py-1"><input type="text" inputMode="numeric" value={eiWidth} onChange={(e) => setEiWidth(e.target.value)} className={ic} onKeyDown={kd} /></td>
                       <td className="px-2 py-1"><input type="number" value={eiQty} onChange={(e) => setEiQty(e.target.value)} className={`${ic} w-10`} onKeyDown={kd} /></td>
                       <td className="px-2 py-1">
-                        <select value={eiVariantId} onChange={(e) => setEiVariantId(e.target.value)}
+                        <select value={eiVariantId} onChange={(e) => {
+                            if (e.target.value === '__custom__') {
+                              const name = prompt('Wpisz nazwę rodzaju:')
+                              if (name?.trim()) {
+                                supabase.from('painting_variants').insert({ name: name.trim(), default_price_per_m2: 0, sides: 2 }).select().single().then(({ data }) => {
+                                  if (data) { refetchVariants(); setEiVariantId(data.id) }
+                                })
+                              }
+                            } else {
+                              setEiVariantId(e.target.value)
+                            }
+                          }}
                           className="w-full bg-white border border-gray-300 rounded px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30" onKeyDown={kd}>
                           {selectableVariants.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
+                          <option value="__custom__">✏️ Inne...</option>
                         </select>
                       </td>
                       <td className="px-2 py-1 text-right text-gray-400 tabular-nums">{l && w ? m2.toFixed(3) : ''}</td>
@@ -667,10 +679,22 @@ export default function OrderDetailPage() {
                         onKeyDown={(e) => { if (e.key === 'Enter') handleInlineAdd(); if (e.key === 'Escape') setShowInlineAdd(false) }} />
                     </td>
                     <td className="px-2 py-1">
-                      <select value={newVariantId} onChange={(e) => setNewVariantId(e.target.value)}
+                      <select value={newVariantId} onChange={(e) => {
+                          if (e.target.value === '__custom__') {
+                            const name = prompt('Wpisz nazwę rodzaju:')
+                            if (name?.trim()) {
+                              supabase.from('painting_variants').insert({ name: name.trim(), default_price_per_m2: 0, sides: 2 }).select().single().then(({ data }) => {
+                                if (data) { refetchVariants(); setNewVariantId(data.id) }
+                              })
+                            }
+                          } else {
+                            setNewVariantId(e.target.value)
+                          }
+                        }}
                         className="w-full bg-white border border-gray-300 rounded px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30"
                         onKeyDown={(e) => { if (e.key === 'Enter') handleInlineAdd(); if (e.key === 'Escape') setShowInlineAdd(false) }}>
                         {selectableVariants.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
+                        <option value="__custom__">✏️ Inne...</option>
                       </select>
                     </td>
                     <td className="px-2 py-1 text-right text-gray-400 tabular-nums">{l && w ? m2.toFixed(3) : ''}</td>
@@ -714,10 +738,22 @@ export default function OrderDetailPage() {
                         onKeyDown={(e) => { if (e.key === 'Enter') handleCustomAdd(); if (e.key === 'Escape') setShowCustomAdd(false) }} />
                     </td>
                     <td className="px-2 py-1">
-                      <select value={newCustomVariantId} onChange={(e) => setNewCustomVariantId(e.target.value)}
+                      <select value={newCustomVariantId} onChange={(e) => {
+                          if (e.target.value === '__custom__') {
+                            const name = prompt('Wpisz nazwę rodzaju:')
+                            if (name?.trim()) {
+                              supabase.from('painting_variants').insert({ name: name.trim(), default_price_per_m2: 0, sides: 2 }).select().single().then(({ data }) => {
+                                if (data) { refetchVariants(); setNewCustomVariantId(data.id) }
+                              })
+                            }
+                          } else {
+                            setNewCustomVariantId(e.target.value)
+                          }
+                        }}
                         className="w-full bg-white border border-gray-300 rounded px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30"
                         onKeyDown={(e) => { if (e.key === 'Enter') handleCustomAdd(); if (e.key === 'Escape') setShowCustomAdd(false) }}>
                         {selectableVariants.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
+                        <option value="__custom__">✏️ Inne...</option>
                       </select>
                     </td>
                     <td className="px-2 py-1.5 text-center text-gray-300">—</td>
