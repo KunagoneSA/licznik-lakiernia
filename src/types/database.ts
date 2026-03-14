@@ -56,6 +56,7 @@ export interface OrderItem {
   variant_id: string
   has_handle: boolean
   color_surcharge: boolean
+  has_wplyka: boolean
   notes: string | null
   m2: number
   price_per_m2: number

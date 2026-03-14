@@ -13,7 +13,10 @@
 - **Deploy:** NIGDY nie deployuj samodzielnie (Netlify, produkcja). Deploy TYLKO na wyraźne polecenie usera ("releasuj", "deploy", "na produkcję").
 
 ## Powiadomienia
-- Po zakończeniu zadania (gdy czekam na kolejną komendę) — odtwórz dźwięk: `afplay /System/Library/Sounds/Hero.aiff`
+- Dźwięk `afplay /System/Library/Sounds/Hero.aiff` odtwarzaj **TYLKO jako ostatnią komendę** — po WSZYSTKICH operacjach (build, commit, push, odpowiedź tekstowa). Nigdy nie odtwarzaj dźwięku jeśli po nim jeszcze coś robisz.
+
+## Supabase
+- Gdy podajesz SQL do wykonania w Supabase, **zawsze dołącz link** do SQL Editor: https://supabase.com/dashboard/project/xbfafasiginpgvsnzgyz/sql/new
 
 ## Projekt
 - Aplikacja: licznik lakiernia (React + Vite + Supabase)
