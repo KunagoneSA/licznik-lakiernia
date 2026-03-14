@@ -11,6 +11,7 @@
 - **Nigdy nie pushuj bezpośrednio na master** — tylko przez merge z develop.
 - **Auto-push:** po każdej zmianie w kodzie — commituj i pushuj na `develop` automatycznie.
 - **Deploy:** NIGDY nie deployuj samodzielnie (Netlify, produkcja). Deploy TYLKO na wyraźne polecenie usera ("releasuj", "deploy", "na produkcję").
+- **Po release:** zawsze podaj link do Netlify: https://app.netlify.com/sites/lakiernia/deploys
 
 ## Powiadomienia
 - Dźwięk `afplay /System/Library/Sounds/Hero.aiff` odtwarzaj **TYLKO jako ostatnią komendę** — po WSZYSTKICH operacjach (build, commit, push, odpowiedź tekstowa). Nigdy nie odtwarzaj dźwięku jeśli po nim jeszcze coś robisz.
