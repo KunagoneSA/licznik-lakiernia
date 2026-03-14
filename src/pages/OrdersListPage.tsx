@@ -193,29 +193,29 @@ export default function OrdersListPage() {
                 const overdue = isOverdue(order)
                 return (
                   <tr key={order.id} onClick={() => navigate(`/zamowienia/${order.id}`)} className={`border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${overdue ? 'bg-red-50/50' : ''}`}>
-                    <td className="px-2 py-1.5 font-medium text-amber-600 tabular-nums">
+                    <td className="px-2 py-0.5 font-medium text-amber-600 tabular-nums">
                       {order.number}/{new Date(order.created_at).getFullYear() % 100}
                     </td>
-                    <td className="px-2 py-1.5 text-gray-500 tabular-nums">
+                    <td className="px-2 py-0.5 text-gray-500 tabular-nums">
                       {order.accepted_date ? new Date(order.accepted_date).toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' }) : '—'}
                     </td>
-                    <td className="px-2 py-1.5 text-gray-800 font-medium">
+                    <td className="px-2 py-0.5 text-gray-800 font-medium">
                       <span className="flex items-center gap-1">
                         {getClient(order as unknown as Record<string, unknown>)?.type === 'company' ? <Building2 className="h-3 w-3 text-blue-500 flex-shrink-0" /> : <User className="h-3 w-3 text-violet-500 flex-shrink-0" />}
                         {getClient(order as unknown as Record<string, unknown>)?.name ?? '—'}
                       </span>
                     </td>
-                    <td className="px-2 py-1.5 text-gray-600 max-w-[180px] truncate">{order.description || '—'}</td>
-                    <td className="px-2 py-1.5 text-gray-600">{order.color || '—'}</td>
-                    <td className="px-2 py-1.5">
+                    <td className="px-2 py-0.5 text-gray-600 max-w-[180px] truncate">{order.description || '—'}</td>
+                    <td className="px-2 py-0.5 text-gray-600">{order.color || '—'}</td>
+                    <td className="px-2 py-0.5">
                       <span className={`inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-medium ${statusColors[order.status]}`}>
                         {statusLabels[order.status]}
                       </span>
                     </td>
-                    <td className="px-2 py-1.5 text-right font-semibold text-amber-600 tabular-nums">
+                    <td className="px-2 py-0.5 text-right font-semibold text-amber-600 tabular-nums">
                       {value > 0 ? value.toFixed(0) : '—'}
                     </td>
-                    <td className="px-2 py-1.5 text-center">
+                    <td className="px-2 py-0.5 text-center">
                       {(!order.material_provided || !order.paints_provided) && order.status !== 'gotowe' && order.status !== 'wydane' && order.status !== 'fv_wystawiona' && order.status !== 'zapłacone' ? (
                         <span className="inline-flex gap-0.5">
                           {!order.material_provided && <span className="text-[9px] font-bold text-red-500 bg-red-50 rounded px-1">M</span>}
