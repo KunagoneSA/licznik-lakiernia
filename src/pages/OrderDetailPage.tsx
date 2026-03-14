@@ -475,21 +475,39 @@ export default function OrderDetailPage() {
 
       {/* Status flow + Checklist */}
       <div className="flex items-center justify-between gap-4">
-        <div className="flex flex-wrap gap-1 max-w-xs">
-          {statusFlow.map((s) => (
-            <button
-              key={s}
-              onClick={() => handleStatusChange(s)}
-              disabled={order.status === s}
-              className={`rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
-                order.status === s
-                  ? `${statusColors[s]} text-white`
-                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-              }`}
-            >
-              {statusLabels[s]}
-            </button>
-          ))}
+        <div className="flex flex-col gap-1">
+          <div className="flex gap-1">
+            {statusFlow.slice(0, 3).map((s) => (
+              <button
+                key={s}
+                onClick={() => handleStatusChange(s)}
+                disabled={order.status === s}
+                className={`rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
+                  order.status === s
+                    ? `${statusColors[s]} text-white`
+                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                }`}
+              >
+                {statusLabels[s]}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-1">
+            {statusFlow.slice(3).map((s) => (
+              <button
+                key={s}
+                onClick={() => handleStatusChange(s)}
+                disabled={order.status === s}
+                className={`rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
+                  order.status === s
+                    ? `${statusColors[s]} text-white`
+                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                }`}
+              >
+                {statusLabels[s]}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="flex flex-col items-end gap-0.5">
           <span className="text-[10px] text-gray-400">Czy zamówione?</span>
