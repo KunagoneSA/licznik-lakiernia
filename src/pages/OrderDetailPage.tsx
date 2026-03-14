@@ -13,12 +13,12 @@ import { useWorkers } from '../hooks/useWorkers'
 import type { OrderStatus } from '../types/database'
 
 const statusLabels: Record<OrderStatus, string> = {
-  nowe: 'Nowe', w_trakcie: 'W trakcie', gotowe: 'Gotowe', wydane: 'Wydane', 'zapłacone': 'Zapłacone',
+  nowe: 'Nowe', w_trakcie: 'W trakcie', gotowe: 'Gotowe', wydane: 'Wydane', fv_wystawiona: 'FV wystawiona', 'zapłacone': 'Zapłacone',
 }
 const statusColors: Record<OrderStatus, string> = {
-  nowe: 'bg-blue-500', w_trakcie: 'bg-amber-500', gotowe: 'bg-emerald-500', wydane: 'bg-violet-500', 'zapłacone': 'bg-gray-400',
+  nowe: 'bg-blue-500', w_trakcie: 'bg-amber-500', gotowe: 'bg-emerald-500', wydane: 'bg-violet-500', fv_wystawiona: 'bg-pink-500', 'zapłacone': 'bg-gray-400',
 }
-const statusFlow: OrderStatus[] = ['nowe', 'w_trakcie', 'gotowe', 'wydane', 'zapłacone']
+const statusFlow: OrderStatus[] = ['nowe', 'w_trakcie', 'gotowe', 'wydane', 'fv_wystawiona', 'zapłacone']
 
 function getClientName(order: Record<string, unknown>): string {
   const client = order.client as { name: string } | null

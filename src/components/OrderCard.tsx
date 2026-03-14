@@ -3,7 +3,7 @@ import { Calendar, Building2, User } from 'lucide-react'
 import type { Order } from '../types/database'
 
 function getUrgencyClass(plannedDate: string | null, status: string): string {
-  if (status === 'gotowe' || status === 'wydane' || status === 'zapłacone') return 'border-l-emerald-500'
+  if (status === 'gotowe' || status === 'wydane' || status === 'fv_wystawiona' || status === 'zapłacone') return 'border-l-emerald-500'
   if (!plannedDate) return 'border-l-gray-300'
   const days = Math.ceil((new Date(plannedDate).getTime() - Date.now()) / 86400000)
   if (days < 0) return 'border-l-red-500'
@@ -41,7 +41,7 @@ export default function OrderCard({ order }: { order: Order }) {
         </div>
         <div className="flex flex-col items-end gap-0.5 ml-2 shrink-0">
           {order.planned_date && (() => {
-            const overdue = !['gotowe', 'wydane', 'zapłacone'].includes(order.status) && new Date(order.planned_date).getTime() < Date.now()
+            const overdue = !['gotowe', 'wydane', 'fv_wystawiona', 'zapłacone'].includes(order.status) && new Date(order.planned_date).getTime() < Date.now()
             return (
               <span className={`flex items-center gap-1 text-[11px] ${overdue ? 'text-red-500 font-bold' : 'text-gray-400'}`}>
                 <Calendar className="h-3 w-3" />

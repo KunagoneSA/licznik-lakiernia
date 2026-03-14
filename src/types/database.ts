@@ -1,4 +1,4 @@
-export type OrderStatus = 'nowe' | 'w_trakcie' | 'gotowe' | 'wydane' | 'zapłacone'
+export type OrderStatus = 'nowe' | 'w_trakcie' | 'gotowe' | 'wydane' | 'fv_wystawiona' | 'zapłacone'
 export type ClientType = 'individual' | 'company'
 
 export interface Client {

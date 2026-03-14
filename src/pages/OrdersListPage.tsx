@@ -10,6 +10,7 @@ const statusLabels: Record<OrderStatus, string> = {
   w_trakcie: 'W trakcie',
   gotowe: 'Gotowe',
   wydane: 'Wydane',
+  fv_wystawiona: 'FV wystawiona',
   'zapłacone': 'Zapłacone',
 }
 
@@ -18,10 +19,11 @@ const statusColors: Record<OrderStatus, string> = {
   w_trakcie: 'bg-amber-50 text-amber-600',
   gotowe: 'bg-emerald-50 text-emerald-600',
   wydane: 'bg-violet-50 text-violet-600',
+  fv_wystawiona: 'bg-pink-50 text-pink-600',
   'zapłacone': 'bg-gray-100 text-gray-500',
 }
 
-const tabs = ['wszystkie', 'nowe', 'w_trakcie', 'gotowe', 'wydane', 'niezapłacone'] as const
+const tabs = ['wszystkie', 'nowe', 'w_trakcie', 'gotowe', 'wydane', 'fv_wystawiona', 'niezapłacone'] as const
 
 function getClient(order: Record<string, unknown>): { name: string; type?: string } | null {
   return order.client as { name: string; type?: string } | null
@@ -37,7 +39,7 @@ function getOrderValue(order: Record<string, unknown>): number {
 
 function isOverdue(order: { planned_date: string | null; status: string }): boolean {
   if (!order.planned_date) return false
-  if (order.status === 'gotowe' || order.status === 'wydane' || order.status === 'zapłacone') return false
+  if (order.status === 'gotowe' || order.status === 'wydane' || order.status === 'fv_wystawiona' || order.status === 'zapłacone') return false
   return new Date(order.planned_date).getTime() < Date.now()
 }
 
@@ -64,7 +66,7 @@ export default function OrdersListPage() {
 
   const filtered = useMemo(() => {
     const list = orders.filter((o) => {
-      if (tab === 'niezapłacone' && o.status !== 'wydane') return false
+      if (tab === 'niezapłacone' && o.status !== 'wydane' && o.status !== 'fv_wystawiona') return false
       else if (tab !== 'wszystkie' && tab !== 'niezapłacone' && o.status !== tab) return false
       if (search) {
         const q = search.toLowerCase()
@@ -74,7 +76,7 @@ export default function OrdersListPage() {
       return true
     })
 
-    const statusOrder = ['nowe', 'w_trakcie', 'gotowe', 'wydane', 'zapłacone']
+    const statusOrder = ['nowe', 'w_trakcie', 'gotowe', 'wydane', 'fv_wystawiona', 'zapłacone']
     const dir = sortDir === 'asc' ? 1 : -1
 
     return [...list].sort((a, b) => {
@@ -126,6 +128,7 @@ export default function OrdersListPage() {
               w_trakcie: { active: 'bg-amber-500 text-white', inactive: 'bg-amber-50 text-amber-600 hover:bg-amber-100' },
               gotowe: { active: 'bg-emerald-500 text-white', inactive: 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' },
               wydane: { active: 'bg-violet-500 text-white', inactive: 'bg-violet-50 text-violet-600 hover:bg-violet-100' },
+              fv_wystawiona: { active: 'bg-pink-500 text-white', inactive: 'bg-pink-50 text-pink-600 hover:bg-pink-100' },
               niezapłacone: { active: 'bg-red-500 text-white', inactive: 'bg-red-50 text-red-600 hover:bg-red-100' },
             }
             const colors = tabColors[t]
@@ -193,7 +196,7 @@ export default function OrdersListPage() {
                       {value > 0 ? value.toFixed(0) : '—'}
                     </td>
                     <td className="px-2 py-1.5 text-center">
-                      {(!order.material_provided || !order.paints_provided) && order.status !== 'gotowe' && order.status !== 'wydane' && order.status !== 'zapłacone' ? (
+                      {(!order.material_provided || !order.paints_provided) && order.status !== 'gotowe' && order.status !== 'wydane' && order.status !== 'fv_wystawiona' && order.status !== 'zapłacone' ? (
                         <span className="inline-flex gap-0.5">
                           {!order.material_provided && <span className="text-[9px] font-bold text-red-500 bg-red-50 rounded px-1">M</span>}
                           {!order.paints_provided && <span className="text-[9px] font-bold text-red-500 bg-red-50 rounded px-1">L</span>}
