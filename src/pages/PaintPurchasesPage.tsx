@@ -210,7 +210,7 @@ export default function PaintPurchasesPage() {
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-amber-500" />
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+        <div className="rounded-lg border border-gray-200 bg-white">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
