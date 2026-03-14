@@ -424,6 +424,7 @@ export default function OrderDetailPage() {
               {getClientName(order as unknown as Record<string, unknown>)} · {order.description || 'Brak opisu'}
               {order.accepted_date && <> · Przyjęto: {new Date(order.accepted_date).toLocaleDateString('pl-PL')}</>}
               {order.planned_date && <> · Planowana data: {new Date(order.planned_date).toLocaleDateString('pl-PL')}</>}
+              {order.ready_date && <> · <span className="text-emerald-600 font-medium">Gotowe: {new Date(order.ready_date).toLocaleDateString('pl-PL')}</span></>}
             </p>
           </div>
         </div>
