@@ -250,8 +250,8 @@ export default function OrdersListPage() {
               <span className="text-[11px] text-gray-500">
                 {filtered.length} {filtered.length === 1 ? 'zamówienie' : filtered.length < 5 ? 'zamówienia' : 'zamówień'}
               </span>
-              <span className="text-sm font-bold text-amber-600 tabular-nums">
-                Σ {totalValue.toFixed(2)} zł
+              <span className="text-[11px] font-bold text-amber-600 tabular-nums">
+                {totalValue.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} zł
               </span>
             </div>
           )}
