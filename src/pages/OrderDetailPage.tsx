@@ -425,28 +425,26 @@ export default function OrderDetailPage() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="text-right space-y-0.5">
-            {order.accepted_date && (
-              <p className="text-[11px] text-gray-500">Przyjęto: <span className="font-medium text-gray-700">{new Date(order.accepted_date).toLocaleDateString('pl-PL')}</span></p>
-            )}
-            {order.planned_date && (
-              <p className="text-[11px] text-gray-500">Plan: <span className="font-medium text-gray-700">{new Date(order.planned_date).toLocaleDateString('pl-PL')}</span></p>
-            )}
-            {order.ready_date && (
-              <p className="text-[11px] text-gray-500">Gotowe: <span className="font-medium text-emerald-600">{new Date(order.ready_date).toLocaleDateString('pl-PL')}</span></p>
-            )}
-          </div>
-          <div className="flex items-center gap-1">
-            <button onClick={editing ? saveEdit : startEdit}
-              className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800">
-              {editing ? <><Check className="h-3 w-3" /> Zapisz</> : <><Pencil className="h-3 w-3" /> Edytuj</>}
-            </button>
-            <button onClick={handleDeleteOrder}
-              className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-red-500 hover:bg-red-50">
-              <Trash2 className="h-3 w-3" /> Usuń
-            </button>
-          </div>
+        <div className="space-y-1 text-center">
+          {order.accepted_date && (
+            <p className="text-xs text-gray-500">Przyjęto: <span className="font-medium text-gray-700">{new Date(order.accepted_date).toLocaleDateString('pl-PL')}</span></p>
+          )}
+          {order.planned_date && (
+            <p className="text-xs text-gray-500">Plan: <span className="font-medium text-gray-700">{new Date(order.planned_date).toLocaleDateString('pl-PL')}</span></p>
+          )}
+          {order.ready_date && (
+            <p className="text-xs text-gray-500">Gotowe: <span className="font-medium text-emerald-600">{new Date(order.ready_date).toLocaleDateString('pl-PL')}</span></p>
+          )}
+        </div>
+        <div className="flex items-center gap-1">
+          <button onClick={editing ? saveEdit : startEdit}
+            className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800">
+            {editing ? <><Check className="h-3 w-3" /> Zapisz</> : <><Pencil className="h-3 w-3" /> Edytuj</>}
+          </button>
+          <button onClick={handleDeleteOrder}
+            className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-red-500 hover:bg-red-50">
+            <Trash2 className="h-3 w-3" /> Usuń
+          </button>
         </div>
       </div>
 
