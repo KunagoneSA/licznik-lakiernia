@@ -7,19 +7,22 @@ import SprayGunIcon from '../components/SprayGunIcon'
 const mainNav = [
   { to: '/', icon: LayoutDashboard, label: 'Tablica' },
   { to: '/zamowienia', icon: ClipboardList, label: 'Zamówienia' },
-  { to: '/cennik', icon: Tag, label: 'Cennik' },
   { to: '/lakiery', icon: ShoppingCart, label: 'Zakupy lakierów' },
-  { to: '/raport', icon: FileBarChart, label: 'Raport pracowników' },
 ] as const
 
 const baseNav = [
   { to: '/klienci', icon: Users, label: 'Klienci' },
+  { to: '/cennik', icon: Tag, label: 'Cennik' },
   { to: '/dostawcy', icon: Truck, label: 'Dostawcy' },
   { to: '/materialy', icon: Package, label: 'Materiały' },
   { to: '/pracownicy', icon: HardHat, label: 'Pracownicy' },
 ] as const
 
-type NavItem = typeof mainNav[number] | typeof baseNav[number]
+const reportNav = [
+  { to: '/raport', icon: FileBarChart, label: 'Raport pracowników' },
+] as const
+
+type NavItem = typeof mainNav[number] | typeof baseNav[number] | typeof reportNav[number]
 
 export default function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -65,6 +68,10 @@ export default function AppLayout() {
             <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Bazy</span>
           </div>
           {baseNav.map((item) => renderNavLink(item))}
+          <div className="pt-6 pb-1 px-3">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Raporty</span>
+          </div>
+          {reportNav.map((item) => renderNavLink(item))}
         </nav>
         <div className="px-3 pb-4 space-y-1 border-t border-gray-200 pt-2">
           {user && (
@@ -106,6 +113,10 @@ export default function AppLayout() {
             <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Bazy</span>
           </div>
           {baseNav.map((item) => renderNavLink(item, () => setMobileOpen(false)))}
+          <div className="pt-6 pb-1 px-3">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Raporty</span>
+          </div>
+          {reportNav.map((item) => renderNavLink(item, () => setMobileOpen(false)))}
         </nav>
         <div className="px-3 pb-4 space-y-1">
           {user && (
