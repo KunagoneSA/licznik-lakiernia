@@ -426,18 +426,9 @@ export default function OrderDetailPage() {
           </div>
         </div>
         <div className="grid grid-cols-[auto_auto] gap-x-2 gap-y-0.5 text-xs">
-          {order.accepted_date && (<>
-            <span className="text-gray-500 text-right">Przyjęto:</span>
-            <span className="font-medium text-gray-700 tabular-nums">{new Date(order.accepted_date).toLocaleDateString('pl-PL')}</span>
-          </>)}
-          {order.planned_date && (<>
-            <span className="text-gray-500 text-right">Plan:</span>
-            <span className="font-medium text-gray-700 tabular-nums">{new Date(order.planned_date).toLocaleDateString('pl-PL')}</span>
-          </>)}
-          {order.ready_date && (<>
-            <span className="text-gray-500 text-right">Gotowe:</span>
-            <span className="font-medium text-emerald-600 tabular-nums">{new Date(order.ready_date).toLocaleDateString('pl-PL')}</span>
-          </>)}
+          {order.accepted_date ? <><span className="text-gray-500 text-right">Przyjęto:</span><span className="font-medium text-gray-700 tabular-nums">{new Date(order.accepted_date).toLocaleDateString('pl-PL')}</span></> : null}
+          {order.planned_date ? <><span className="text-gray-500 text-right">Plan:</span><span className="font-medium text-gray-700 tabular-nums">{new Date(order.planned_date).toLocaleDateString('pl-PL')}</span></> : null}
+          {order.ready_date ? <><span className="text-gray-500 text-right">Gotowe:</span><span className="font-medium text-emerald-600 tabular-nums">{new Date(order.ready_date).toLocaleDateString('pl-PL')}</span></> : null}
         </div>
         <div className="flex items-center gap-1">
             <button onClick={editing ? saveEdit : startEdit}
