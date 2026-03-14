@@ -408,7 +408,7 @@ export default function OrderDetailPage() {
   return (
     <div className="space-y-4 max-w-4xl">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between">
         <div className="flex items-center gap-2">
           <Link to="/zamowienia" className="rounded-md p-1 text-gray-500 hover:bg-gray-100">
             <ArrowLeft className="h-4 w-4" />
