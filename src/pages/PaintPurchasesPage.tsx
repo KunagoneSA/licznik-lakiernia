@@ -529,7 +529,7 @@ export default function PaintPurchasesPage() {
               <tr className="border-b border-gray-200 bg-gray-50">
                 <th className="px-2.5 py-2 text-left text-xs font-medium text-gray-500 w-12">#</th>
                 <th className="px-2.5 py-2 text-left text-xs font-medium text-gray-500 w-24">Data</th>
-                <th className="px-2.5 py-2 text-left text-xs font-medium text-gray-500">Dostawca</th>
+                <th className="px-2.5 py-2 text-left text-xs font-medium text-gray-500 max-w-[160px]">Dostawca</th>
                 <th className="px-2.5 py-2 text-left text-xs font-medium text-gray-500">Produkt</th>
                 <th className="px-2.5 py-2 text-right text-xs font-medium text-gray-500 w-20">Ilość</th>
                 <th className="px-2.5 py-2 text-right text-xs font-medium text-gray-500 w-20">Cena</th>
@@ -620,7 +620,7 @@ export default function PaintPurchasesPage() {
                   <tr key={p.id} onClick={() => startEdit(p)} className="border-b border-gray-100 hover:bg-gray-50/50 cursor-pointer">
                     <td className="px-2.5 py-1.5 text-xs text-gray-400">{p.number ?? '—'}</td>
                     <td className="px-2.5 py-1.5 text-xs text-gray-500">{p.date}</td>
-                    <td className="px-2.5 py-1.5 text-xs font-medium text-gray-800">{p.supplier?.name ?? '—'}</td>
+                    <td className="px-2.5 py-1.5 text-xs font-medium text-gray-800 max-w-[160px] truncate" title={p.supplier?.name ?? ''}>{p.supplier?.name ?? '—'}</td>
                     <td className="px-2.5 py-1.5 text-xs text-gray-600">{(p as any).product_ref?.name ?? p.product}</td>
                     <td className="px-2.5 py-1.5 text-right text-xs text-gray-600">{p.quantity} {p.unit}</td>
                     <td className="px-2.5 py-1.5 text-right text-xs text-gray-500">{Number(p.unit_price).toFixed(2)}</td>
