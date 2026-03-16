@@ -170,7 +170,7 @@ export default function PaintPurchasesPage() {
       if (data?.error) throw new Error(data.error)
       if (!data?.items || !Array.isArray(data.items)) {
         console.error('Unexpected response:', data)
-        throw new Error('Brak pozycji. Odpowiedź: ' + JSON.stringify(data).slice(0, 300))
+        throw new Error('Nie udało się odczytać pozycji z dokumentu')
       }
 
       setParsedInvoice({
