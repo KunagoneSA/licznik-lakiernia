@@ -21,23 +21,38 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { pdf_base64 } = await req.json()
+    const { pdf_base64, image_base64, media_type } = await req.json()
 
-    if (!pdf_base64) {
-      return new Response(JSON.stringify({ error: 'Brak pliku PDF' }), {
+    if (!pdf_base64 && !image_base64) {
+      return new Response(JSON.stringify({ error: 'Brak pliku' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
+    const isPdf = !!pdf_base64
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'x-api-key': ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01',
+    }
+    if (isPdf) {
+      headers['anthropic-beta'] = 'pdfs-2024-09-25'
+    }
+
+    const fileContent = isPdf
+      ? {
+          type: 'document' as const,
+          source: { type: 'base64', media_type: 'application/pdf', data: pdf_base64 },
+        }
+      : {
+          type: 'image' as const,
+          source: { type: 'base64', media_type: media_type || 'image/jpeg', data: image_base64 },
+        }
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'anthropic-beta': 'pdfs-2024-09-25',
-      },
+      headers,
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 4096,
@@ -45,14 +60,7 @@ Deno.serve(async (req) => {
           {
             role: 'user',
             content: [
-              {
-                type: 'document',
-                source: {
-                  type: 'base64',
-                  media_type: 'application/pdf',
-                  data: pdf_base64,
-                },
-              },
+              fileContent,
               {
                 type: 'text',
                 text: `Przeanalizuj tę fakturę/WZ i wyciągnij pozycje zakupowe.

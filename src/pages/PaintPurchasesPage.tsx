@@ -135,16 +135,17 @@ export default function PaintPurchasesPage() {
   } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const ACCEPTED_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
+
   const handlePdfFile = async (file: File) => {
-    if (file.type !== 'application/pdf') {
-      toast('Tylko pliki PDF', 'error')
+    if (!ACCEPTED_TYPES.includes(file.type)) {
+      toast('Obsługiwane formaty: PDF, JPG, PNG, WebP', 'error')
       return
     }
     setParsing(true)
     try {
       const buffer = await file.arrayBuffer()
       const bytes = new Uint8Array(buffer)
-      // Safe base64 conversion for large files
       const CHUNK = 8192
       let binary = ''
       for (let i = 0; i < bytes.length; i += CHUNK) {
@@ -156,6 +157,7 @@ export default function PaintPurchasesPage() {
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
       const { data: { session } } = await supabase.auth.getSession()
 
+      const isPdf = file.type === 'application/pdf'
       const res = await fetch(`${supabaseUrl}/functions/v1/parse-invoice`, {
         method: 'POST',
         headers: {
@@ -163,7 +165,10 @@ export default function PaintPurchasesPage() {
           'Authorization': `Bearer ${session?.access_token ?? supabaseKey}`,
           'apikey': supabaseKey,
         },
-        body: JSON.stringify({ pdf_base64: base64 }),
+        body: JSON.stringify(isPdf
+          ? { pdf_base64: base64 }
+          : { image_base64: base64, media_type: file.type }
+        ),
       })
 
       const data = await res.json()
@@ -351,9 +356,9 @@ export default function PaintPurchasesPage() {
         >
           <Upload className={`h-5 w-5 ${dragging ? 'text-amber-500' : 'text-gray-400'}`} />
           <span className={`text-sm ${dragging ? 'text-amber-600 font-medium' : 'text-gray-500'}`}>
-            Przeciągnij fakturę PDF lub kliknij aby wybrać
+            Przeciągnij fakturę (PDF lub zdjęcie) lub kliknij aby wybrać
           </span>
-          <input ref={fileInputRef} type="file" accept=".pdf" className="hidden"
+          <input ref={fileInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" className="hidden"
             onChange={e => { const f = e.target.files?.[0]; if (f) handlePdfFile(f); e.target.value = '' }} />
         </div>
       )}
