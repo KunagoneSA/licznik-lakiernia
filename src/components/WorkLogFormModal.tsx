@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
 import { useModalKeys } from '../hooks/useModalKeys'
+import { useOperations } from '../hooks/useOperations'
 
 const workerNames = ['Kasia', 'Lukasz', 'Michal', 'Fabian']
-const operations = ['Przygotowanie', 'Podkład', 'Szlifowanie', 'Lakierowanie', 'Pakowanie', 'Sprzątanie', 'Inne']
 const defaultRates: Record<string, number> = { Kasia: 35, Lukasz: 50, Michal: 50, Fabian: 20 }
 
 interface Props {
@@ -13,6 +13,8 @@ interface Props {
 }
 
 export default function WorkLogFormModal({ orderId, onClose, onSave }: Props) {
+  const { operations: ops } = useOperations()
+  const operations = ops.length > 0 ? ops.map(o => o.name) : ['Przygotowanie', 'Podkład', 'Szlifowanie', 'Lakierowanie', 'Pakowanie', 'Sprzątanie', 'Inne']
   const [workerName, setWorkerName] = useState(workerNames[0])
   const [operation, setOperation] = useState(operations[0])
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
