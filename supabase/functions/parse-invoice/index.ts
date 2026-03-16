@@ -70,12 +70,14 @@ Zwróć TYLKO JSON (bez markdown, bez komentarzy) w formacie:
   "supplier": "nazwa dostawcy z faktury",
   "date": "YYYY-MM-DD",
   "invoice_number": "numer faktury/WZ",
+  "total_netto": 722.85,
   "items": [
     {
       "product": "czysta nazwa produktu BEZ koloru",
-      "quantity": 5,
+      "quantity": 2.5,
       "unit": "kg",
       "unit_price": 22.00,
+      "value_netto": 55.00,
       "color": "kod koloru wyciągnięty z nazwy"
     }
   ]
@@ -84,7 +86,10 @@ Zwróć TYLKO JSON (bez markdown, bez komentarzy) w formacie:
 Zasady:
 - unit: "kg", "l", "szt" lub "opak"
 - unit_price: ZAWSZE cena jednostkowa NETTO (bez VAT). Nigdy nie podawaj ceny brutto.
-- quantity: ilość
+- quantity: ilość — UWAGA na liczby z przecinkiem! np. "2,5" to 2.5, "0,3" to 0.3. W JSON użyj kropki.
+- value_netto: wartość netto pozycji (quantity * unit_price) — przepisz z dokumentu, służy do walidacji
+- total_netto: łączna wartość netto z dokumentu (pole "Razem netto" / "Netto" z podsumowania)
+- WALIDACJA: Sprawdź czy suma value_netto wszystkich pozycji = total_netto. Jeśli nie — popraw quantity/unit_price.
 - date: data wystawienia dokumentu
 - WAŻNE — kolory: Dostawcy często wstawiają kolor w kod/nazwę produktu, np.:
   "OPV256BVG10/S1002-Y50R" → product: "Emalia poliuretanowa OPV256BVG10", color: "S1002-Y50R"

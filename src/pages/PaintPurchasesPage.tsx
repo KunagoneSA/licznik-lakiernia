@@ -130,7 +130,7 @@ export default function PaintPurchasesPage() {
   const [dragging, setDragging] = useState(false)
   const [parsing, setParsing] = useState(false)
   const [parsedInvoice, setParsedInvoice] = useState<{
-    supplier: string; date: string; invoice_number: string;
+    supplier: string; date: string; invoice_number: string; total_netto?: number;
     items: { product: string; quantity: number; unit: string; unit_price: number; color: string }[]
   } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -178,19 +178,29 @@ export default function PaintPurchasesPage() {
         throw new Error('Nie udało się odczytać pozycji z dokumentu')
       }
 
+      const items = data.items.map((item: any) => ({
+        product: item.product ?? item.name ?? '',
+        quantity: Number(item.quantity) || 0,
+        unit: item.unit ?? 'szt',
+        unit_price: Number(item.unit_price ?? item.price) || 0,
+        color: item.color ?? '',
+      }))
+      const totalNetto = Number(data.total_netto) || 0
+      const computedTotal = Math.round(items.reduce((s: number, i: any) => s + i.quantity * i.unit_price, 0) * 100) / 100
+
       setParsedInvoice({
         supplier: data.supplier ?? '',
         date: data.date ?? new Date().toISOString().slice(0, 10),
         invoice_number: data.invoice_number ?? '',
-        items: data.items.map((item: any) => ({
-          product: item.product ?? item.name ?? '',
-          quantity: Number(item.quantity) || 0,
-          unit: item.unit ?? 'szt',
-          unit_price: Number(item.unit_price ?? item.price) || 0,
-          color: item.color ?? '',
-        })),
+        total_netto: totalNetto,
+        items,
       })
-      toast('Faktura odczytana!')
+
+      if (totalNetto > 0 && Math.abs(computedTotal - totalNetto) > 0.5) {
+        toast(`⚠️ Uwaga: suma pozycji (${computedTotal.toFixed(2)}) nie zgadza się z sumą na fakturze (${totalNetto.toFixed(2)}). Sprawdź ilości!`, 'error')
+      } else {
+        toast('Faktura odczytana!')
+      }
     } catch (err: any) {
       toast(`Błąd parsowania: ${err.message}`, 'error')
     } finally {
@@ -340,11 +350,20 @@ export default function PaintPurchasesPage() {
                     <td className="px-3 py-1.5 text-gray-600">{item.color || '—'}</td>
                   </tr>
                 ))}
-                <tr className="bg-emerald-50 border-t border-emerald-200">
-                  <td className="px-3 py-2 text-xs font-semibold text-emerald-800" colSpan={3}>Razem netto</td>
-                  <td className="px-3 py-2 text-right text-xs font-bold text-amber-600">{parsedInvoice.items.reduce((s, i) => s + i.quantity * i.unit_price, 0).toFixed(2)} zł</td>
-                  <td></td>
-                </tr>
+                {(() => {
+                  const computed = Math.round(parsedInvoice.items.reduce((s, i) => s + i.quantity * i.unit_price, 0) * 100) / 100
+                  const expected = parsedInvoice.total_netto ?? 0
+                  const mismatch = expected > 0 && Math.abs(computed - expected) > 0.5
+                  return (
+                    <tr className={`border-t ${mismatch ? 'bg-red-50 border-red-200' : 'bg-emerald-50 border-emerald-200'}`}>
+                      <td className={`px-3 py-2 text-xs font-semibold ${mismatch ? 'text-red-700' : 'text-emerald-800'}`} colSpan={3}>
+                        Razem netto {mismatch && <span className="text-red-500 font-normal ml-1">(faktura: {expected.toFixed(2)} zł — nie zgadza się!)</span>}
+                      </td>
+                      <td className={`px-3 py-2 text-right text-xs font-bold ${mismatch ? 'text-red-600' : 'text-amber-600'}`}>{computed.toFixed(2)} zł</td>
+                      <td></td>
+                    </tr>
+                  )
+                })()}
               </tbody>
             </table>
           </div>
