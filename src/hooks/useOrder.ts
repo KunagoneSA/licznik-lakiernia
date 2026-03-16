@@ -11,7 +11,7 @@ export function useOrder(id: string) {
     setLoading(true)
     const { data, error: err } = await supabase
       .from('orders')
-      .select('*, client:clients(id, name)')
+      .select('*, client:clients(id, name, type)')
       .eq('id', id)
       .single()
 

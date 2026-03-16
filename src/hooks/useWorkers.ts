@@ -9,21 +9,48 @@ export interface Worker {
   created_at: string
 }
 
+// Module-level cache
+let cachedWorkers: Worker[] | null = null
+let cachePromise: Promise<Worker[]> | null = null
+
+async function fetchWorkersData(): Promise<Worker[]> {
+  if (cachedWorkers) return cachedWorkers
+  if (cachePromise) return cachePromise
+  cachePromise = supabase
+    .from('workers')
+    .select('*')
+    .order('name')
+    .then(({ data }) => {
+      cachedWorkers = (data as Worker[]) ?? []
+      cachePromise = null
+      return cachedWorkers
+    })
+  return cachePromise
+}
+
 export function useWorkers() {
-  const [workers, setWorkers] = useState<Worker[]>([])
-  const [loading, setLoading] = useState(true)
+  const [workers, setWorkers] = useState<Worker[]>(cachedWorkers ?? [])
+  const [loading, setLoading] = useState(!cachedWorkers)
 
   const fetch = useCallback(async () => {
+    cachedWorkers = null
     setLoading(true)
-    const { data } = await supabase
-      .from('workers')
-      .select('*')
-      .order('name')
-    setWorkers((data as Worker[]) ?? [])
+    const data = await fetchWorkersData()
+    setWorkers(data)
     setLoading(false)
   }, [])
 
-  useEffect(() => { fetch() }, [fetch])
+  useEffect(() => {
+    if (cachedWorkers) {
+      setWorkers(cachedWorkers)
+      setLoading(false)
+      return
+    }
+    fetchWorkersData().then((data) => {
+      setWorkers(data)
+      setLoading(false)
+    })
+  }, [])
 
   const addWorker = useCallback(async (name: string, hourlyRate: number) => {
     const { error } = await supabase

@@ -38,7 +38,7 @@ export default function OrderCard({ order }: { order: Order }) {
             </span>
           </span>
           <p className="text-[11px] text-gray-700 line-clamp-1">{order.description || 'Brak opisu'}</p>
-          {order.color && <p className="flex items-center gap-1 text-[10px] font-medium text-gray-500"><ColorSwatch color={order.color} size="sm" />{order.color}</p>}
+          {order.color && <p className="flex items-center gap-1 text-[10px] font-medium text-gray-500 whitespace-nowrap"><ColorSwatch color={order.color} size="sm" />{order.color}</p>}
         </div>
         <div className="flex flex-col items-end gap-0.5 ml-2 shrink-0">
           {order.planned_date && (() => {
