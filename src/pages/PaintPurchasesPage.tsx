@@ -215,13 +215,29 @@ export default function PaintPurchasesPage() {
     if (file) handlePdfFile(file)
   }
 
+  const normalizeSupplierName = (name: string) =>
+    name.toLowerCase()
+      .replace(/\b(sp\.?\s*z\s*o\.?\s*o\.?|s\.?\s*a\.?|sp\.?\s*j\.?|s\.?\s*c\.?|spółka|z\s*o\.?\s*o\.?|sp\.\s*k\.?|sp\.?\s*z\.?\s*o\.?\s*o\.?\s*sp\.?\s*k\.?)\b/gi, '')
+      .replace(/[.,\-–—"'()]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+
   const acceptParsedInvoice = async () => {
     if (!parsedInvoice) return
-    // Find or match supplier — or create new
-    let matchedSupplier = suppliers.find(s =>
-      s.name.toLowerCase().includes(parsedInvoice.supplier.toLowerCase()) ||
-      parsedInvoice.supplier.toLowerCase().includes(s.name.toLowerCase())
-    )
+    // Find or match supplier — normalize names for better matching
+    const invoiceSupplierNorm = normalizeSupplierName(parsedInvoice.supplier)
+    const invoiceWords = invoiceSupplierNorm.split(' ').filter(w => w.length > 2)
+    let matchedSupplier = suppliers.find(s => {
+      const dbNorm = normalizeSupplierName(s.name)
+      // Exact normalized match
+      if (dbNorm === invoiceSupplierNorm) return true
+      // One contains the other
+      if (dbNorm.includes(invoiceSupplierNorm) || invoiceSupplierNorm.includes(dbNorm)) return true
+      // First significant word matches (e.g. "Kemichal" in both)
+      const dbWords = dbNorm.split(' ').filter(w => w.length > 2)
+      if (invoiceWords.length > 0 && dbWords.length > 0 && invoiceWords[0] === dbWords[0]) return true
+      return false
+    })
     if (!matchedSupplier && parsedInvoice.supplier) {
       const { data: newSupp } = await supabase.from('suppliers').insert({ name: parsedInvoice.supplier }).select('id, name').single()
       if (newSupp) {
@@ -237,10 +253,17 @@ export default function PaintPurchasesPage() {
 
     for (const item of parsedInvoice.items) {
       const itemNameLower = item.product.toLowerCase()
-      let matchedProduct = updatedProducts.find(p =>
-        p.name.toLowerCase().includes(itemNameLower) ||
-        itemNameLower.includes(p.name.toLowerCase())
-      )
+      // Extract catalog code from product name (e.g. "OPV256BVG10" from "Emalia poliuretanowa OPV256BVG10")
+      const itemCodeMatch = item.product.match(/[A-Z]{2,}[\d]+[A-Z]*[\d]*/i)
+      const itemCode = itemCodeMatch?.[0]?.toLowerCase() ?? ''
+      let matchedProduct = updatedProducts.find(p => {
+        const pLower = p.name.toLowerCase()
+        // Direct substring match
+        if (pLower.includes(itemNameLower) || itemNameLower.includes(pLower)) return true
+        // Match by catalog code
+        if (itemCode && pLower.includes(itemCode)) return true
+        return false
+      })
 
       if (!matchedProduct) {
         // Auto-create product
