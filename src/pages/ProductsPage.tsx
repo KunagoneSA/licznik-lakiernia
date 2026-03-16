@@ -54,10 +54,21 @@ export default function ProductsPage() {
   }
 
   const remove = async (id: string) => {
+    const deleted = products.find(p => p.id === id)
     const { error } = await supabase.from('products').delete().eq('id', id)
     if (error) { toast('Nie można usunąć — materiał jest używany', 'error'); return }
     if (editingId === id) setEditingId(null)
     fetchProducts()
+    toast('Materiał usunięty', 'success', {
+      label: 'Cofnij',
+      onClick: async () => {
+        if (!deleted) return
+        const { id: _id, default_supplier, created_at, ...rest } = deleted as any
+        await supabase.from('products').insert(rest)
+        fetchProducts()
+        toast('Materiał przywrócony')
+      },
+    })
   }
 
   const editRowRef = useRef<HTMLTableRowElement>(null)
@@ -130,9 +141,11 @@ export default function ProductsPage() {
                           <option value="rzadziej">rzadziej</option>
                         </select>
                       </td>
-                      <td className="px-1 py-1 flex gap-0.5">
-                        <button onClick={save} className="rounded p-0.5 text-emerald-500 hover:text-emerald-700"><Check className="h-3 w-3" /></button>
-                        <button onClick={() => setEditingId(null)} className="rounded p-0.5 text-gray-400 hover:text-gray-600"><X className="h-3 w-3" /></button>
+                      <td className="px-1 py-1">
+                        <div className="flex gap-0.5">
+                          <button onClick={save} className="rounded p-1 text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50"><Check className="h-3.5 w-3.5" /></button>
+                          <button onClick={() => setEditingId(null)} className="rounded p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100"><X className="h-3.5 w-3.5" /></button>
+                        </div>
                       </td>
                     </tr>
                   )
