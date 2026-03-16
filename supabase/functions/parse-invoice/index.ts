@@ -64,21 +64,30 @@ Zwróć TYLKO JSON (bez markdown, bez komentarzy) w formacie:
   "invoice_number": "numer faktury/WZ",
   "items": [
     {
-      "product": "nazwa produktu",
+      "product": "czysta nazwa produktu BEZ koloru",
       "quantity": 5,
       "unit": "kg",
       "unit_price": 22.00,
-      "color": "RAL9016 lub opis koloru jeśli jest, inaczej pusty string"
+      "color": "kod koloru wyciągnięty z nazwy"
     }
   ]
 }
 
 Zasady:
-- unit: "kg", "l" lub "szt"
+- unit: "kg", "l", "szt" lub "opak"
 - unit_price: cena jednostkowa netto
 - quantity: ilość
-- Jeśli nie ma koloru w pozycji, color = ""
 - date: data wystawienia dokumentu
+- WAŻNE — kolory: Dostawcy często wstawiają kolor w kod/nazwę produktu, np.:
+  "OPV256BVG10/S1002-Y50R" → product: "Emalia poliuretanowa OPV256BVG10", color: "S1002-Y50R"
+  "OPV256BVG10/R9016" → product: "Emalia poliuretanowa OPV256BVG10", color: "RAL9016"
+  "OCV826G20/NERO" → product: "Emalia poliakrylowa OCV826G20", color: "NERO"
+  "IMV1000/ IMC NERO" → product: "Impregnat wodny zewnętrzny IMV1000", color: "NERO"
+  Jeśli kod po "/" to kolor (RAL, NCS, NERO, nazwa koloru), wyciągnij go do color a z product usuń
+  Kody zaczynające się od R + 4 cyfry to RAL, np. R9016 → RAL9016
+  Kody /P oznaczają "bezbarwny" — nie kolor, zostaw color = ""
+- product: czytelna nazwa po polsku, np. "Emalia poliuretanowa", "Utwardzacz do połysków", "Lakier poliakrylowy bezbarwny". Dodaj kod katalogowy producenta (np. OPV256BVG10, C340V). NIE wstawiaj koloru do nazwy produktu.
+- Jeśli nie ma koloru w pozycji, color = ""
 - Zwróć CZYSTY JSON, bez backticks, bez markdown`
               }
             ],

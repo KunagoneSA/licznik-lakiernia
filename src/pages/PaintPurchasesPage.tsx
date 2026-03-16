@@ -202,30 +202,58 @@ export default function PaintPurchasesPage() {
 
   const acceptParsedInvoice = async () => {
     if (!parsedInvoice) return
-    // Find or match supplier
-    const matchedSupplier = suppliers.find(s =>
+    // Find or match supplier — or create new
+    let matchedSupplier = suppliers.find(s =>
       s.name.toLowerCase().includes(parsedInvoice.supplier.toLowerCase()) ||
       parsedInvoice.supplier.toLowerCase().includes(s.name.toLowerCase())
     )
+    if (!matchedSupplier && parsedInvoice.supplier) {
+      const { data: newSupp } = await supabase.from('suppliers').insert({ name: parsedInvoice.supplier }).select('id, name').single()
+      if (newSupp) {
+        matchedSupplier = newSupp as Supplier
+        fetchSuppliers()
+      }
+    }
     const suppId = matchedSupplier?.id ?? ''
 
-    const newLines: ProductLine[] = parsedInvoice.items.map(item => {
-      const matchedProduct = products.find(p =>
-        p.name.toLowerCase().includes(item.product.toLowerCase()) ||
-        item.product.toLowerCase().includes(p.name.toLowerCase())
+    // Auto-create missing products and build lines
+    let updatedProducts = [...products]
+    const newLines: ProductLine[] = []
+
+    for (const item of parsedInvoice.items) {
+      const itemNameLower = item.product.toLowerCase()
+      let matchedProduct = updatedProducts.find(p =>
+        p.name.toLowerCase().includes(itemNameLower) ||
+        itemNameLower.includes(p.name.toLowerCase())
       )
-      return {
+
+      if (!matchedProduct) {
+        // Auto-create product
+        const { data: newProd } = await supabase.from('products').insert({
+          name: item.product,
+          unit: item.unit,
+          default_price: item.unit_price,
+          default_supplier_id: suppId || null,
+        }).select('*').single()
+        if (newProd) {
+          matchedProduct = newProd as Product
+          updatedProducts.push(newProd as Product)
+        }
+      }
+
+      newLines.push({
         productId: matchedProduct?.id ?? '',
         quantity: item.quantity,
         unit: item.unit,
         unitPrice: item.unit_price,
         color: item.color,
-        _originalName: item.product,
-      } as ProductLine & { _originalName?: string }
-    })
+      })
+    }
+
+    // Refresh products list
+    fetchProducts()
 
     setParsedInvoice(null)
-    // Open form modal with pre-filled data
     setPrefillData({
       supplierId: suppId,
       date: parsedInvoice.date,
