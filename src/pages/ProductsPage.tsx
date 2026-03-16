@@ -154,7 +154,7 @@ export default function ProductsPage() {
                   <tr key={p.id} className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer" onClick={() => startEdit(p)}>
                     <td className="px-2 py-1 font-medium text-gray-800">{p.name}</td>
                     <td className="px-2 py-1 text-gray-500">{p.unit ?? 'kg'}</td>
-                    <td className="px-2 py-1 text-right text-gray-500 tabular-nums">{p.default_price ? Number(p.default_price).toFixed(2) : '—'}</td>
+                    <td className="px-2 py-1 text-right text-gray-500 tabular-nums">{p.default_price ? Number(p.default_price).toFixed(2).replace('.', ',') : '—'}</td>
                     <td className="px-2 py-1 text-gray-500">{p.default_supplier?.name ?? '—'}</td>
                     <td className="px-2 py-1 text-gray-500">{p.order_frequency || '—'}</td>
                     <td className="px-1 py-1" onClick={e => e.stopPropagation()}>

@@ -828,11 +828,23 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
       number: numbers[idx],
     }))
     const { error: insertErr } = await supabase.from('paint_purchases').insert(rows)
-    setSaving(false)
     if (insertErr) {
+      setSaving(false)
       onError(`Błąd zapisu: ${insertErr.message}`)
       return
     }
+
+    // Auto-update product prices with latest purchase prices
+    for (const l of lines) {
+      if (l.productId && l.unitPrice > 0) {
+        await supabase.from('products').update({
+          default_price: l.unitPrice,
+          default_supplier_id: supplierId || undefined,
+        }).eq('id', l.productId)
+      }
+    }
+
+    setSaving(false)
     onSaved()
   }
 
