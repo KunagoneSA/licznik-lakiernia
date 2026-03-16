@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Plus, Trash2, X, ChevronDown, ChevronLeft, ChevronRight, Upload, FileText, Loader2 } from 'lucide-react'
+import { Plus, Trash2, X, ChevronDown, ChevronLeft, ChevronRight, Upload, FileText, Loader2, Pencil, Check } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useToast } from '../contexts/ToastContext'
 import { useModalKeys } from '../hooks/useModalKeys'
@@ -278,6 +278,17 @@ export default function PaintPurchasesPage() {
     setShowForm(true)
   }
 
+  // Editing parsed invoice items
+  const [editingParsedIdx, setEditingParsedIdx] = useState<number | null>(null)
+
+  const updateParsedItem = (idx: number, field: Partial<{ product: string; quantity: number; unit_price: number; color: string }>) => {
+    if (!parsedInvoice) return
+    setParsedInvoice({
+      ...parsedInvoice,
+      items: parsedInvoice.items.map((item, i) => i === idx ? { ...item, ...field } : item),
+    })
+  }
+
   // Prefill data for modal
   const [prefillData, setPrefillData] = useState<{
     supplierId: string; date: string; lines: ProductLine[];
@@ -338,16 +349,51 @@ export default function PaintPurchasesPage() {
                   <th className="px-3 py-1.5 text-right text-emerald-700">Cena</th>
                   <th className="px-3 py-1.5 text-right text-emerald-700">Suma</th>
                   <th className="px-3 py-1.5 text-left text-emerald-700">Kolor</th>
+                  <th className="px-3 py-1.5 w-8"></th>
                 </tr>
               </thead>
               <tbody>
                 {parsedInvoice.items.map((item, i) => (
                   <tr key={i} className="border-b border-gray-100">
-                    <td className="px-3 py-1.5 text-gray-800">{item.product}</td>
-                    <td className="px-3 py-1.5 text-right text-gray-600">{item.quantity} {item.unit}</td>
-                    <td className="px-3 py-1.5 text-right text-gray-600">{item.unit_price.toFixed(2)}</td>
-                    <td className="px-3 py-1.5 text-right font-medium text-amber-600">{(item.quantity * item.unit_price).toFixed(2)} zł</td>
-                    <td className="px-3 py-1.5 text-gray-600">{item.color || '—'}</td>
+                    {editingParsedIdx === i ? (
+                      <>
+                        <td className="px-1 py-1">
+                          <input type="text" value={item.product} onChange={e => updateParsedItem(i, { product: e.target.value })}
+                            className="w-full px-2 py-0.5 border rounded text-xs text-gray-800" />
+                        </td>
+                        <td className="px-1 py-1">
+                          <input type="number" step="0.01" value={item.quantity} onChange={e => updateParsedItem(i, { quantity: parseFloat(e.target.value) || 0 })}
+                            className="w-20 px-2 py-0.5 border rounded text-xs text-right text-gray-600" />
+                        </td>
+                        <td className="px-1 py-1">
+                          <input type="number" step="0.01" value={item.unit_price} onChange={e => updateParsedItem(i, { unit_price: parseFloat(e.target.value) || 0 })}
+                            className="w-20 px-2 py-0.5 border rounded text-xs text-right text-gray-600" />
+                        </td>
+                        <td className="px-3 py-1.5 text-right font-medium text-amber-600">{(item.quantity * item.unit_price).toFixed(2)} zł</td>
+                        <td className="px-1 py-1">
+                          <input type="text" value={item.color} onChange={e => updateParsedItem(i, { color: e.target.value })}
+                            className="w-24 px-2 py-0.5 border rounded text-xs text-gray-600" />
+                        </td>
+                        <td className="px-1 py-1 text-center">
+                          <button onClick={() => setEditingParsedIdx(null)} className="text-emerald-600 hover:text-emerald-800">
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="px-3 py-1.5 text-gray-800">{item.product}</td>
+                        <td className="px-3 py-1.5 text-right text-gray-600">{item.quantity} {item.unit}</td>
+                        <td className="px-3 py-1.5 text-right text-gray-600">{item.unit_price.toFixed(2)}</td>
+                        <td className="px-3 py-1.5 text-right font-medium text-amber-600">{(item.quantity * item.unit_price).toFixed(2)} zł</td>
+                        <td className="px-3 py-1.5 text-gray-600">{item.color || '—'}</td>
+                        <td className="px-1 py-1.5 text-center">
+                          <button onClick={() => setEditingParsedIdx(i)} className="text-gray-400 hover:text-amber-600">
+                            <Pencil className="w-3 h-3" />
+                          </button>
+                        </td>
+                      </>
+                    )}
                   </tr>
                 ))}
                 {(() => {
@@ -360,6 +406,7 @@ export default function PaintPurchasesPage() {
                         Razem netto {mismatch && <span className="text-red-500 font-normal ml-1">(faktura: {expected.toFixed(2)} zł — nie zgadza się!)</span>}
                       </td>
                       <td className={`px-3 py-2 text-right text-xs font-bold ${mismatch ? 'text-red-600' : 'text-amber-600'}`}>{computed.toFixed(2)} zł</td>
+                      <td></td>
                       <td></td>
                     </tr>
                   )
