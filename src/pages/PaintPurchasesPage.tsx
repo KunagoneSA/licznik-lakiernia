@@ -749,7 +749,7 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onClick={onClose}>
-      <div className="w-full max-w-3xl rounded-xl bg-white border border-gray-200 shadow-lg p-6 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+      <div className="w-full max-w-5xl rounded-xl bg-white border border-gray-200 shadow-lg p-6 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900">Nowe zamówienie</h2>
           <button onClick={onClose} className="rounded-md p-1 text-gray-500 hover:bg-gray-100"><X className="h-5 w-5" /></button>
@@ -815,8 +815,8 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
               {lines.map((line, i) => {
                 const fieldCls = "w-full h-[38px] rounded-lg border border-gray-300 px-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-500/30"
                 return (
-                  <div key={i} className="flex items-start gap-2 rounded-lg bg-gray-50 p-3">
-                    <div className="flex-1 min-w-0">
+                  <div key={i} className="flex items-start gap-3 rounded-lg bg-gray-50 p-3">
+                    <div className="flex-[3] min-w-0">
                       <label className="block text-[10px] text-gray-400 mb-1">
                         Produkt
                         {!line.productId && prefill?.invoiceItems?.[i] && (
