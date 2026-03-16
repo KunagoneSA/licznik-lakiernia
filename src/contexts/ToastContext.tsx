@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useState, type ReactNode } from 'react'
-import { CheckCircle, XCircle, X } from 'lucide-react'
+import { CheckCircle, XCircle, X, Undo2 } from 'lucide-react'
 
 type ToastType = 'success' | 'error'
 
@@ -7,10 +7,11 @@ interface Toast {
   id: number
   message: string
   type: ToastType
+  action?: { label: string; onClick: () => void }
 }
 
 interface ToastContextType {
-  toast: (message: string, type?: ToastType) => void
+  toast: (message: string, type?: ToastType, action?: { label: string; onClick: () => void }) => void
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined)
@@ -20,12 +21,12 @@ let nextId = 0
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([])
 
-  const toast = useCallback((message: string, type: ToastType = 'success') => {
+  const toast = useCallback((message: string, type: ToastType = 'success', action?: { label: string; onClick: () => void }) => {
     const id = nextId++
-    setToasts((prev) => [...prev, { id, message, type }])
+    setToasts((prev) => [...prev, { id, message, type, action }])
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id))
-    }, type === 'error' ? 20000 : 3000)
+    }, action ? 6000 : type === 'error' ? 20000 : 3000)
   }, [])
 
   const dismiss = useCallback((id: number) => {
@@ -52,6 +53,15 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               <XCircle className="h-4 w-4 shrink-0" />
             )}
             {t.message}
+            {t.action && (
+              <button
+                onClick={() => { t.action!.onClick(); dismiss(t.id) }}
+                className="ml-2 shrink-0 flex items-center gap-1 rounded px-2 py-0.5 bg-white/20 hover:bg-white/30 text-xs font-semibold"
+              >
+                <Undo2 className="h-3 w-3" />
+                {t.action.label}
+              </button>
+            )}
             <button onClick={() => dismiss(t.id)} className="ml-2 shrink-0 rounded p-0.5 hover:bg-white/20">
               <X className="h-3.5 w-3.5" />
             </button>

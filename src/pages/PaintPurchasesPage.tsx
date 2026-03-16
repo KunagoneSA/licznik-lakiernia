@@ -120,10 +120,20 @@ export default function PaintPurchasesPage() {
   }
 
   const deletePurchase = async (id: string) => {
+    const deleted = purchases.find(p => p.id === id)
     await supabase.from('paint_purchases').delete().eq('id', id)
     if (editingId === id) setEditingId(null)
-    toast('Zamówienie usunięte')
     fetchPurchases()
+    toast('Zamówienie usunięte', 'success', {
+      label: 'Cofnij',
+      onClick: async () => {
+        if (!deleted) return
+        const { id: _id, supplier, product_ref, ...rest } = deleted as any
+        await supabase.from('paint_purchases').insert(rest)
+        fetchPurchases()
+        toast('Zamówienie przywrócone')
+      },
+    })
   }
 
   // PDF drop zone
@@ -298,6 +308,7 @@ export default function PaintPurchasesPage() {
       date: parsedInvoice.date,
       lines: newLines,
       invoiceItems: parsedInvoice.items,
+      status: 'dostarczone' as PurchaseStatus,
     })
     setShowForm(true)
   }
@@ -316,7 +327,8 @@ export default function PaintPurchasesPage() {
   // Prefill data for modal
   const [prefillData, setPrefillData] = useState<{
     supplierId: string; date: string; lines: ProductLine[];
-    invoiceItems: { product: string; quantity: number; unit: string; unit_price: number; color: string }[]
+    invoiceItems: { product: string; quantity: number; unit: string; unit_price: number; color: string }[];
+    status?: PurchaseStatus;
   } | null>(null)
 
   const [tab, setTab] = useState<string>('wszystkie')
@@ -734,7 +746,8 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
   onError: (msg: string) => void
   prefill?: {
     supplierId: string; date: string; lines: ProductLine[];
-    invoiceItems: { product: string; quantity: number; unit: string; unit_price: number; color: string }[]
+    invoiceItems: { product: string; quantity: number; unit: string; unit_price: number; color: string }[];
+    status?: PurchaseStatus;
   } | null
 }) {
   const [date, setDate] = useState(prefill?.date ?? new Date().toISOString().slice(0, 10))
@@ -743,7 +756,7 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
   const [showNewSupplier, setShowNewSupplier] = useState(false)
   const [lines, setLines] = useState<ProductLine[]>(prefill?.lines?.length ? prefill.lines : [emptyLine()])
   const [notes, setNotes] = useState('')
-  const [status, setStatus] = useState<PurchaseStatus>('do_zamowienia')
+  const [status, setStatus] = useState<PurchaseStatus>(prefill?.status ?? 'do_zamowienia')
   const [saving, setSaving] = useState(false)
   const [showNewProduct, setShowNewProduct] = useState(false)
   const [newProductName, setNewProductName] = useState('')
