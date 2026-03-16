@@ -144,17 +144,29 @@ export default function PaintPurchasesPage() {
     try {
       const buffer = await file.arrayBuffer()
       const bytes = new Uint8Array(buffer)
+      // Safe base64 conversion for large files
+      const CHUNK = 8192
       let binary = ''
-      for (let i = 0; i < bytes.length; i++) {
-        binary += String.fromCharCode(bytes[i])
+      for (let i = 0; i < bytes.length; i += CHUNK) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK))
       }
       const base64 = btoa(binary)
 
-      const { data, error } = await supabase.functions.invoke('parse-invoice', {
-        body: { pdf_base64: base64 },
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+      const { data: { session } } = await supabase.auth.getSession()
+
+      const res = await fetch(`${supabaseUrl}/functions/v1/parse-invoice`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token ?? supabaseKey}`,
+          'apikey': supabaseKey,
+        },
+        body: JSON.stringify({ pdf_base64: base64 }),
       })
 
-      if (error) throw new Error(error.message)
+      const data = await res.json()
       if (data?.error) throw new Error(data.error)
 
       setParsedInvoice(data)
