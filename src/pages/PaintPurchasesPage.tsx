@@ -168,8 +168,23 @@ export default function PaintPurchasesPage() {
 
       const data = await res.json()
       if (data?.error) throw new Error(data.error)
+      if (!data?.items || !Array.isArray(data.items)) {
+        console.error('Unexpected response:', data)
+        throw new Error('Nieoczekiwany format odpowiedzi — brak pozycji')
+      }
 
-      setParsedInvoice(data)
+      setParsedInvoice({
+        supplier: data.supplier ?? '',
+        date: data.date ?? new Date().toISOString().slice(0, 10),
+        invoice_number: data.invoice_number ?? '',
+        items: data.items.map((item: any) => ({
+          product: item.product ?? item.name ?? '',
+          quantity: Number(item.quantity) || 0,
+          unit: item.unit ?? 'szt',
+          unit_price: Number(item.unit_price ?? item.price) || 0,
+          color: item.color ?? '',
+        })),
+      })
       toast('Faktura odczytana!')
     } catch (err: any) {
       toast(`Błąd parsowania: ${err.message}`, 'error')
