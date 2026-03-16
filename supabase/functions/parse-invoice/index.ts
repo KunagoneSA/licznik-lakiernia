@@ -83,7 +83,7 @@ Zwróć TYLKO JSON (bez markdown, bez komentarzy) w formacie:
 
 Zasady:
 - unit: "kg", "l", "szt" lub "opak"
-- unit_price: cena jednostkowa netto
+- unit_price: ZAWSZE cena jednostkowa NETTO (bez VAT). Nigdy nie podawaj ceny brutto.
 - quantity: ilość
 - date: data wystawienia dokumentu
 - WAŻNE — kolory: Dostawcy często wstawiają kolor w kod/nazwę produktu, np.:

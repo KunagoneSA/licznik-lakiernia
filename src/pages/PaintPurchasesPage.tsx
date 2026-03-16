@@ -305,7 +305,7 @@ export default function PaintPurchasesPage() {
             <div className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-emerald-600" />
               <span className="text-sm font-medium text-emerald-800">
-                Faktura odczytana: {parsedInvoice.supplier} — {parsedInvoice.invoice_number}
+                Faktura odczytana: {parsedInvoice.supplier} — {parsedInvoice.invoice_number} — Netto: <span className="text-amber-600 font-bold">{parsedInvoice.items.reduce((s, i) => s + i.quantity * i.unit_price, 0).toFixed(2)} zł</span>
               </span>
             </div>
             <div className="flex gap-2">
@@ -340,6 +340,11 @@ export default function PaintPurchasesPage() {
                     <td className="px-3 py-1.5 text-gray-600">{item.color || '—'}</td>
                   </tr>
                 ))}
+                <tr className="bg-emerald-50 border-t border-emerald-200">
+                  <td className="px-3 py-2 text-xs font-semibold text-emerald-800" colSpan={3}>Razem netto</td>
+                  <td className="px-3 py-2 text-right text-xs font-bold text-amber-600">{parsedInvoice.items.reduce((s, i) => s + i.quantity * i.unit_price, 0).toFixed(2)} zł</td>
+                  <td></td>
+                </tr>
               </tbody>
             </table>
           </div>
