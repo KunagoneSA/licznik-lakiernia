@@ -78,8 +78,8 @@ export function ncsToHex(colorStr: string | null | undefined): string | null {
   if (!colorStr) return null
   // Match many NCS formats:
   // "NCS S 1050-Y90R", "S 1050-Y90R", "NCS S1050-Y90R", "NCS 1050-Y90R",
-  // "S1050-Y90R", "1050-Y90R" (if preceded by NCS), "S 0500-N"
-  const m = colorStr.match(/(?:NCS\s*)?S?\s*(\d{2})(\d{2})\s*-\s*(N|[YRBG]\d{0,2}[YRBG]?)/i)
+  // "S1050-Y90R", "NCS S 1502 R", "NCS S 1502-R", "S 0500-N"
+  const m = colorStr.match(/(?:NCS\s*)?S?\s*(\d{2})(\d{2})\s*[-\s]\s*(N|[YRBG]\d{0,2}[YRBG]?)/i)
   if (!m) return null
 
   const blackness = parseInt(m[1]) / 100 // 0..0.99
@@ -170,9 +170,39 @@ function rgbToHex(r: number, g: number, b: number): string {
   return '#' + [r, g, b].map(c => c.toString(16).padStart(2, '0')).join('')
 }
 
+/** Common Polish/English color keywords → HEX */
+const KEYWORDS: Record<string, string> = {
+  biały: '#FFFFFF', bialy: '#FFFFFF', white: '#FFFFFF',
+  czarny: '#0A0A0A', black: '#0A0A0A',
+  czerwony: '#CC0605', red: '#CC0605',
+  niebieski: '#2271B3', blue: '#2271B3',
+  zielony: '#287233', green: '#287233',
+  żółty: '#E5BE01', zolty: '#E5BE01', yellow: '#E5BE01',
+  szary: '#909090', grey: '#909090', gray: '#909090',
+  brązowy: '#6C3B2A', brazowy: '#6C3B2A', brown: '#6C3B2A',
+  pomarańczowy: '#ED760E', pomaranczowy: '#ED760E', orange: '#ED760E',
+  fioletowy: '#6D3461', violet: '#6D3461', purple: '#6D3461',
+  różowy: '#EA899A', rozowy: '#EA899A', pink: '#EA899A',
+  beżowy: '#C2B078', bezowy: '#C2B078', beige: '#C2B078',
+  kremowy: '#EAE6CA', cream: '#EAE6CA',
+  grafitowy: '#293133', graphite: '#293133',
+  antracyt: '#293133', anthracite: '#293133',
+  srebrny: '#A5A5A5', silver: '#A5A5A5',
+  złoty: '#CDA434', zloty: '#CDA434', gold: '#CDA434',
+}
+
+function keywordToHex(colorStr: string | null | undefined): string | null {
+  if (!colorStr) return null
+  const lower = colorStr.toLowerCase().trim()
+  for (const [keyword, hex] of Object.entries(KEYWORDS)) {
+    if (lower.includes(keyword)) return hex
+  }
+  return null
+}
+
 /**
- * Get HEX color from any color string (RAL or NCS)
+ * Get HEX color from any color string (RAL, NCS, or keyword)
  */
 export function getColorHex(colorStr: string | null | undefined): string | null {
-  return ralToHex(colorStr) ?? ncsToHex(colorStr)
+  return ralToHex(colorStr) ?? ncsToHex(colorStr) ?? keywordToHex(colorStr)
 }
