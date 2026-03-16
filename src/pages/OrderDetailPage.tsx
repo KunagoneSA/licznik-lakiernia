@@ -11,6 +11,7 @@ import type _WorkLogFormModal from '../components/WorkLogFormModal'
 import { useToast } from '../contexts/ToastContext'
 import { useWorkers } from '../hooks/useWorkers'
 import type { OrderStatus } from '../types/database'
+import ColorSwatch from '../components/ColorSwatch'
 
 /** Polish number formatting: comma as decimal, space as thousand separator */
 const fmtPL = (n: number, decimals = 2) => {
@@ -461,6 +462,7 @@ export default function OrderDetailPage() {
       {order.color && !editing && (
         <div className="inline-flex items-center gap-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-1.5">
           <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">Kolor</span>
+          <ColorSwatch color={order.color} size="lg" />
           <span className="text-sm font-bold text-gray-900">{order.color}</span>
         </div>
       )}

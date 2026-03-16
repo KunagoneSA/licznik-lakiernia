@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Plus, Search, ChevronUp, ChevronDown, Building2, User } from 'lucide-react'
 import { useOrders } from '../hooks/useOrders'
 import type { OrderStatus } from '../types/database'
+import ColorSwatch from '../components/ColorSwatch'
 import NewOrderModal from '../components/NewOrderModal'
 
 const statusLabels: Record<OrderStatus, string> = {
@@ -212,7 +213,7 @@ export default function OrdersListPage() {
                       </span>
                     </td>
                     <td className="px-2 py-0.5 text-gray-600 max-w-[180px] truncate">{order.description || '—'}</td>
-                    <td className="px-2 py-0.5 text-gray-600">{order.color || '—'}</td>
+                    <td className="px-2 py-0.5 text-gray-600"><span className="flex items-center gap-1"><ColorSwatch color={order.color} size="sm" />{order.color || '—'}</span></td>
                     <td className="px-2 py-0.5">
                       <span className={`inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-medium ${statusColors[order.status]}`}>
                         {statusLabels[order.status]}

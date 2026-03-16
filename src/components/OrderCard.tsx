@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Calendar, Building2, User } from 'lucide-react'
 import type { Order } from '../types/database'
+import ColorSwatch from './ColorSwatch'
 
 function getUrgencyClass(plannedDate: string | null, status: string): string {
   if (status === 'gotowe' || status === 'wydane' || status === 'fv_wystawiona' || status === 'zapłacone') return 'border-l-emerald-500'
@@ -37,7 +38,7 @@ export default function OrderCard({ order }: { order: Order }) {
             </span>
           </span>
           <p className="text-[11px] text-gray-700 line-clamp-1">{order.description || 'Brak opisu'}</p>
-          {order.color && <p className="text-[10px] font-medium text-gray-500">{order.color}</p>}
+          {order.color && <p className="flex items-center gap-1 text-[10px] font-medium text-gray-500"><ColorSwatch color={order.color} size="sm" />{order.color}</p>}
         </div>
         <div className="flex flex-col items-end gap-0.5 ml-2 shrink-0">
           {order.planned_date && (() => {
