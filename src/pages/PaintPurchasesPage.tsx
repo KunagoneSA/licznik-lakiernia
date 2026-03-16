@@ -463,7 +463,7 @@ export default function PaintPurchasesPage() {
                 <th className="px-2.5 py-2 text-right text-xs font-medium text-gray-500 w-20">Ilość</th>
                 <th className="px-2.5 py-2 text-right text-xs font-medium text-gray-500 w-20">Cena</th>
                 <th className="px-2.5 py-2 text-right text-xs font-medium text-gray-500 w-24">Suma</th>
-                <th className="px-2.5 py-2 text-center text-xs font-medium text-gray-500 w-28">Status</th>
+                <th className="px-2.5 py-2 text-center text-xs font-medium text-gray-500 w-36">Status</th>
                 <th className="px-2.5 py-2 text-left text-xs font-medium text-gray-500 w-24">Kolor</th>
                 <th className="px-2.5 py-2 text-left text-xs font-medium text-gray-500">Komentarz</th>
                 <th className="px-1 py-2 w-8"></th>
@@ -614,7 +614,7 @@ function StatusDropdown({ value, onChange }: { value: PurchaseStatus; onChange: 
     <div className="relative inline-block" onClick={e => e.stopPropagation()}>
       <button
         onClick={() => setOpen(!open)}
-        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${config.color}`}
+        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium whitespace-nowrap ${config.color}`}
       >
         {config.label}
         <ChevronDown className="h-3 w-3" />
