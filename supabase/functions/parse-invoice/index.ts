@@ -37,12 +37,16 @@ Zwróć TYLKO JSON (bez markdown, bez komentarzy) w formacie:
   ]
 }
 
-Zasady:
+NAJWAŻNIEJSZA ZASADA — NETTO:
+⚠️ WSZYSTKIE ceny i wartości MUSZĄ być NETTO (bez VAT)!
+- unit_price = cena jednostkowa NETTO. NIE brutto! Jeśli na fakturze jest kolumna "Cena netto" — bierz z niej. Jeśli jest tylko "Cena brutto" — podziel przez (1 + stawka VAT), np. brutto/1.23 dla 23% VAT.
+- value_netto = wartość netto pozycji z kolumny "Wartość netto" (NIE "Wartość brutto")
+- total_netto = suma netto z podsumowania dokumentu (pole "Razem netto" / "Suma netto"). NIE brutto!
+- Jeśli na dokumencie widać ZARÓWNO netto jak i brutto — ZAWSZE wybieraj NETTO.
+
+Pozostałe zasady:
 - unit: "kg", "l", "szt" lub "opak"
-- unit_price: ZAWSZE cena jednostkowa NETTO (bez VAT). Nigdy nie podawaj ceny brutto.
 - quantity: ilość — UWAGA na liczby z przecinkiem! np. "2,5" to 2.5, "0,3" to 0.3. W JSON użyj kropki.
-- value_netto: wartość netto pozycji — przepisz DOKŁADNIE z kolumny "Wartość netto" z dokumentu
-- total_netto: łączna wartość netto z dokumentu (pole "Razem netto" / "Netto" z podsumowania)
 - date: data wystawienia dokumentu
 - WAŻNE — kolory: Dostawcy często wstawiają kolor w kod/nazwę produktu, np.:
   "OPV256BVG10/S1002-Y50R" → product: "Emalia poliuretanowa OPV256BVG10", color: "S1002-Y50R"
