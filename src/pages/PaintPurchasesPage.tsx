@@ -783,6 +783,21 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
     }
   }
 
+  const addProductFromInvoice = async (lineIdx: number) => {
+    const invoiceName = prefill?.invoiceItems?.[lineIdx]?.product
+    if (!invoiceName) return
+    const { data } = await supabase.from('products').insert({
+      name: invoiceName,
+      unit: lines[lineIdx]?.unit ?? 'kg',
+      default_price: lines[lineIdx]?.unitPrice || null,
+      default_supplier_id: supplierId || null,
+    }).select('id').single()
+    if (data) {
+      updateLine(lineIdx, { productId: data.id })
+      onProductAdded()
+    }
+  }
+
   const canSave = supplierId && lines.every(l => l.productId && l.quantity > 0)
 
   const handleSave = async () => {
@@ -894,7 +909,7 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
                       <label className="block text-[10px] text-gray-400 mb-1">
                         Produkt
                         {!line.productId && prefill?.invoiceItems?.[i] && (
-                          <span className="ml-1 text-red-500 font-medium">⚠ {prefill.invoiceItems[i].product} — wybierz z listy lub dodaj nowy</span>
+                          <span className="ml-1 text-red-500 font-medium">⚠ {prefill.invoiceItems[i].product}</span>
                         )}
                       </label>
                       <select value={line.productId} onChange={e => {
@@ -911,6 +926,12 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
                         <option value="">— wybierz —</option>
                         {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                       </select>
+                      {!line.productId && prefill?.invoiceItems?.[i] && (
+                        <button onClick={() => addProductFromInvoice(i)}
+                          className="mt-1 text-[10px] text-amber-600 hover:text-amber-700 font-semibold">
+                          + Dodaj „{prefill.invoiceItems[i].product}" jako nowy materiał
+                        </button>
+                      )}
                     </div>
                     <div className="w-20">
                       <label className="block text-[10px] text-gray-400 mb-1">Ilość</label>
