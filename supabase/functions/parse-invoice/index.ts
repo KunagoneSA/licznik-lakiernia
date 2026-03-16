@@ -36,6 +36,7 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json',
         'x-api-key': ANTHROPIC_API_KEY,
         'anthropic-version': '2023-06-01',
+        'anthropic-beta': 'pdfs-2024-09-25',
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
@@ -88,8 +89,8 @@ Zasady:
 
     if (!response.ok) {
       const errText = await response.text()
-      return new Response(JSON.stringify({ error: `Claude API error: ${errText}` }), {
-        status: 500,
+      return new Response(JSON.stringify({ error: `Claude API error (${response.status}): ${errText}` }), {
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
@@ -105,7 +106,7 @@ Zasady:
       parsed = JSON.parse(jsonMatch ? jsonMatch[1].trim() : text.trim())
     } catch {
       return new Response(JSON.stringify({ error: 'Nie udało się sparsować odpowiedzi', raw: text }), {
-        status: 422,
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
@@ -115,7 +116,7 @@ Zasady:
     })
   } catch (err) {
     return new Response(JSON.stringify({ error: String(err) }), {
-      status: 500,
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }
