@@ -1,4 +1,4 @@
-import { ralToHex } from '../lib/ralColors'
+import { getColorHex } from '../lib/ralColors'
 
 interface ColorSwatchProps {
   color: string | null | undefined
@@ -13,7 +13,7 @@ const sizes = {
 }
 
 export default function ColorSwatch({ color, size = 'md', className = '' }: ColorSwatchProps) {
-  const hex = ralToHex(color)
+  const hex = getColorHex(color)
   if (!hex) return null
 
   const isLight = isLightColor(hex)

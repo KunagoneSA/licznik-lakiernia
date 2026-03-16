@@ -71,8 +71,106 @@ export function ralToHex(colorStr: string | null | undefined): string | null {
 }
 
 /**
- * Color swatch component props
+ * Approximate NCS (Natural Color System) to HEX conversion.
+ * Format: "NCS S 1050-Y90R", "S 2030-B", "NCS S 0500-N", etc.
+ */
+export function ncsToHex(colorStr: string | null | undefined): string | null {
+  if (!colorStr) return null
+  // Match patterns like "S 1050-Y90R", "S 0500-N", "S 2030-B"
+  const m = colorStr.match(/S\s*(\d{2})(\d{2})-(N|[YRbg][^,\s]*)/i)
+  if (!m) return null
+
+  const blackness = parseInt(m[1]) / 100 // 0..0.99
+  const chromaticness = parseInt(m[2]) / 100 // 0..0.99
+  const huePart = m[3].toUpperCase()
+
+  // Neutral (gray)
+  if (huePart === 'N') {
+    const gray = Math.round(255 * (1 - blackness))
+    return rgbToHex(gray, gray, gray)
+  }
+
+  // Parse hue into angle on color circle: Y=0, R=90, B=180, G=270
+  const hueAngle = parseNcsHue(huePart)
+  if (hueAngle === null) return null
+
+  // Convert NCS to approximate RGB
+  // 1. Get the full-chroma color at this hue
+  const [hr, hg, hb] = hueToRgb(hueAngle)
+
+  // 2. Mix with white based on chromaticness (low chroma = more white)
+  const wr = hr + (255 - hr) * (1 - chromaticness)
+  const wg = hg + (255 - hg) * (1 - chromaticness)
+  const wb = hb + (255 - hb) * (1 - chromaticness)
+
+  // 3. Apply blackness (darken)
+  const r = Math.round(wr * (1 - blackness))
+  const g = Math.round(wg * (1 - blackness))
+  const b = Math.round(wb * (1 - blackness))
+
+  return rgbToHex(
+    Math.max(0, Math.min(255, r)),
+    Math.max(0, Math.min(255, g)),
+    Math.max(0, Math.min(255, b))
+  )
+}
+
+function parseNcsHue(hue: string): number | null {
+  // NCS hue circle: Y(0°) → R(90°) → B(180°) → G(270°) → Y(360°)
+  const bases: Record<string, number> = { Y: 0, R: 90, B: 180, G: 270 }
+
+  // Simple hue: "Y", "R", "B", "G"
+  if (hue.length === 1 && bases[hue] !== undefined) return bases[hue]
+
+  // Compound hue: "Y90R" = 90% from Y towards R = 0 + 90*0.9 = 81°
+  // "R50B" = 50% from R towards B = 90 + 90*0.5 = 135°
+  const cm = hue.match(/^([YRBG])(\d{2})([YRBG])$/)
+  if (!cm) return null
+
+  const from = bases[cm[1]]
+  const pct = parseInt(cm[2]) / 100
+  const to = bases[cm[3]]
+
+  if (from === undefined || to === undefined) return null
+
+  // Calculate angle (handle wrap-around G→Y)
+  let diff = to - from
+  if (diff < 0) diff += 360
+
+  return (from + diff * pct) % 360
+}
+
+function hueToRgb(angle: number): [number, number, number] {
+  // Map NCS hue angle to RGB
+  // Y(0°)=[255,210,0], R(90°)=[200,0,0], B(180°)=[0,80,180], G(270°)=[0,150,60]
+  const stops: [number, number, number, number][] = [
+    [0,   255, 210, 0],    // Yellow
+    [90,  200, 0,   0],    // Red
+    [180, 0,   80,  180],  // Blue
+    [270, 0,   150, 60],   // Green
+    [360, 255, 210, 0],    // Yellow (wrap)
+  ]
+
+  for (let i = 0; i < stops.length - 1; i++) {
+    if (angle >= stops[i][0] && angle <= stops[i + 1][0]) {
+      const t = (angle - stops[i][0]) / (stops[i + 1][0] - stops[i][0])
+      return [
+        Math.round(stops[i][1] + (stops[i + 1][1] - stops[i][1]) * t),
+        Math.round(stops[i][2] + (stops[i + 1][2] - stops[i][2]) * t),
+        Math.round(stops[i][3] + (stops[i + 1][3] - stops[i][3]) * t),
+      ]
+    }
+  }
+  return [255, 210, 0]
+}
+
+function rgbToHex(r: number, g: number, b: number): string {
+  return '#' + [r, g, b].map(c => c.toString(16).padStart(2, '0')).join('')
+}
+
+/**
+ * Get HEX color from any color string (RAL or NCS)
  */
 export function getColorHex(colorStr: string | null | undefined): string | null {
-  return ralToHex(colorStr)
+  return ralToHex(colorStr) ?? ncsToHex(colorStr)
 }
