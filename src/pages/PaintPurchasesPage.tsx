@@ -5,6 +5,9 @@ import { useToast } from '../contexts/ToastContext'
 import { useModalKeys } from '../hooks/useModalKeys'
 import type { PaintPurchase, Supplier, Product, PurchaseStatus } from '../types/database'
 
+/** Format number with comma as decimal separator (Polish style) */
+const fmt = (n: number, decimals = 2) => n.toFixed(decimals).replace('.', ',')
+
 const STATUS_CONFIG: Record<PurchaseStatus, { label: string; color: string }> = {
   do_zamowienia: { label: 'Do zamówienia', color: 'bg-orange-100 text-orange-700' },
   zamowione: { label: 'Zamówione', color: 'bg-blue-100 text-blue-700' },
@@ -208,7 +211,7 @@ export default function PaintPurchasesPage() {
       })
 
       if (totalNetto > 0 && Math.abs(computedTotal - totalNetto) > 0.5) {
-        toast(`⚠️ Uwaga: suma pozycji (${computedTotal.toFixed(2)}) nie zgadza się z sumą na fakturze (${totalNetto.toFixed(2)}). Sprawdź ilości!`, 'error')
+        toast(`⚠️ Uwaga: suma pozycji (${fmt(computedTotal)}) nie zgadza się z sumą na fakturze (${fmt(totalNetto)}). Sprawdź ilości!`, 'error')
       } else {
         toast('Faktura odczytana!')
       }
@@ -362,7 +365,7 @@ export default function PaintPurchasesPage() {
             <div className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-emerald-600" />
               <span className="text-sm font-medium text-emerald-800">
-                Faktura odczytana: {parsedInvoice.supplier} — {parsedInvoice.invoice_number} — Netto: <span className="text-amber-600 font-bold">{parsedInvoice.items.reduce((s, i) => s + i.quantity * i.unit_price, 0).toFixed(2)} zł</span>
+                Faktura odczytana: {parsedInvoice.supplier} — {parsedInvoice.invoice_number} — Netto: <span className="text-amber-600 font-bold">{fmt(parsedInvoice.items.reduce((s, i) => s + i.quantity * i.unit_price, 0))} zł</span>
               </span>
             </div>
             <div className="flex gap-2">
@@ -405,7 +408,7 @@ export default function PaintPurchasesPage() {
                           <input type="number" step="0.01" value={item.unit_price} onChange={e => updateParsedItem(i, { unit_price: parseFloat(e.target.value) || 0 })}
                             className="w-20 px-2 py-0.5 border rounded text-xs text-right text-gray-600" />
                         </td>
-                        <td className="px-3 py-1.5 text-right font-medium text-amber-600">{(item.quantity * item.unit_price).toFixed(2)} zł</td>
+                        <td className="px-3 py-1.5 text-right font-medium text-amber-600">{fmt(item.quantity * item.unit_price)} zł</td>
                         <td className="px-1 py-1">
                           <input type="text" value={item.color} onChange={e => updateParsedItem(i, { color: e.target.value })}
                             className="w-24 px-2 py-0.5 border rounded text-xs text-gray-600" />
@@ -419,9 +422,9 @@ export default function PaintPurchasesPage() {
                     ) : (
                       <>
                         <td className="px-3 py-1.5 text-gray-800">{item.product}</td>
-                        <td className="px-3 py-1.5 text-right text-gray-600">{item.quantity} {item.unit}</td>
-                        <td className="px-3 py-1.5 text-right text-gray-600">{item.unit_price.toFixed(2)}</td>
-                        <td className="px-3 py-1.5 text-right font-medium text-amber-600">{(item.quantity * item.unit_price).toFixed(2)} zł</td>
+                        <td className="px-3 py-1.5 text-right text-gray-600">{String(item.quantity).replace('.', ',')} {item.unit}</td>
+                        <td className="px-3 py-1.5 text-right text-gray-600">{fmt(item.unit_price)}</td>
+                        <td className="px-3 py-1.5 text-right font-medium text-amber-600">{fmt(item.quantity * item.unit_price)} zł</td>
                         <td className="px-3 py-1.5 text-gray-600">{item.color || '—'}</td>
                         <td className="px-1 py-1.5 text-center">
                           <button onClick={() => setEditingParsedIdx(i)} className="text-gray-400 hover:text-amber-600">
@@ -439,9 +442,9 @@ export default function PaintPurchasesPage() {
                   return (
                     <tr className={`border-t ${mismatch ? 'bg-red-50 border-red-200' : 'bg-emerald-50 border-emerald-200'}`}>
                       <td className={`px-3 py-2 text-xs font-semibold ${mismatch ? 'text-red-700' : 'text-emerald-800'}`} colSpan={3}>
-                        Razem netto {mismatch && <span className="text-red-500 font-normal ml-1">(faktura: {expected.toFixed(2)} zł — nie zgadza się!)</span>}
+                        Razem netto {mismatch && <span className="text-red-500 font-normal ml-1">(faktura: {fmt(expected)} zł — nie zgadza się!)</span>}
                       </td>
-                      <td className={`px-3 py-2 text-right text-xs font-bold ${mismatch ? 'text-red-600' : 'text-amber-600'}`}>{computed.toFixed(2)} zł</td>
+                      <td className={`px-3 py-2 text-right text-xs font-bold ${mismatch ? 'text-red-600' : 'text-amber-600'}`}>{fmt(computed)} zł</td>
                       <td></td>
                       <td></td>
                     </tr>
@@ -602,7 +605,7 @@ export default function PaintPurchasesPage() {
                           className={ic + " w-16 text-right"} />
                       </td>
                       <td className="px-2.5 py-1.5 text-right text-xs font-medium text-amber-600">
-                        {(qty * price).toFixed(2)} zł
+                        {fmt(qty * price)} zł
                       </td>
                       <td className="px-1.5 py-1">
                         <select value={eStatus} onChange={e => setEStatus(e.target.value as PurchaseStatus)} className={ic}>
@@ -634,9 +637,9 @@ export default function PaintPurchasesPage() {
                     <td className="px-2.5 py-1.5 text-xs text-gray-500">{p.date}</td>
                     <td className="px-2.5 py-1.5 text-xs font-medium text-gray-800 max-w-[160px] truncate" title={p.supplier?.name ?? ''}>{p.supplier?.name ?? '—'}</td>
                     <td className="px-2.5 py-1.5 text-xs text-gray-600">{(p as any).product_ref?.name ?? p.product}</td>
-                    <td className="px-2.5 py-1.5 text-right text-xs text-gray-600">{p.quantity} {p.unit}</td>
-                    <td className="px-2.5 py-1.5 text-right text-xs text-gray-500">{Number(p.unit_price).toFixed(2)}</td>
-                    <td className="px-2.5 py-1.5 text-right text-xs font-medium text-amber-600">{Number(p.total).toFixed(2)} zł</td>
+                    <td className="px-2.5 py-1.5 text-right text-xs text-gray-600">{String(p.quantity).replace('.', ',')} {p.unit}</td>
+                    <td className="px-2.5 py-1.5 text-right text-xs text-gray-500">{fmt(Number(p.unit_price))}</td>
+                    <td className="px-2.5 py-1.5 text-right text-xs font-medium text-amber-600">{fmt(Number(p.total))} zł</td>
                     <td className="px-2.5 py-1.5 text-center">
                       <StatusDropdown value={p.status} onChange={s => {
                         supabase.from('paint_purchases').update({ status: s }).eq('id', p.id).then(() => fetchPurchases())
@@ -662,7 +665,7 @@ export default function PaintPurchasesPage() {
                 <tr className="bg-gray-50 font-medium">
                   <td className="px-2.5 py-2 text-xs text-gray-600" colSpan={6}>Razem</td>
                   <td className="px-2.5 py-2 text-right text-xs font-medium text-amber-600">
-                    {filtered.reduce((s, p) => s + Number(p.total), 0).toFixed(2)} zł
+                    {fmt(filtered.reduce((s, p) => s + Number(p.total), 0))} zł
                   </td>
                   <td colSpan={4}></td>
                 </tr>
@@ -946,7 +949,7 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
                     </div>
                     <div className="w-20 text-right shrink-0">
                       <label className="block text-[10px] text-gray-400 mb-1">Suma</label>
-                      <div className="h-[38px] flex items-center justify-end text-sm font-semibold text-amber-600">{(line.quantity * line.unitPrice).toFixed(2)} zł</div>
+                      <div className="h-[38px] flex items-center justify-end text-sm font-semibold text-amber-600">{fmt(line.quantity * line.unitPrice)} zł</div>
                     </div>
                     {lines.length > 1 && (
                       <div className="pt-[18px]">
@@ -973,7 +976,7 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
           </div>
 
           <div className="rounded-lg bg-gray-50 p-3 text-sm">
-            <span className="text-gray-500">Suma:</span> <span className="text-amber-600 font-bold">{grandTotal.toFixed(2)} zł</span>
+            <span className="text-gray-500">Suma:</span> <span className="text-amber-600 font-bold">{fmt(grandTotal)} zł</span>
           </div>
         </div>
         <div className="mt-4 flex justify-end gap-2">
