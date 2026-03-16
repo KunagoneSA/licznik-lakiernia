@@ -100,16 +100,16 @@ export default function ProductsPage() {
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-amber-500" />
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white max-w-3xl">
-          <table className="w-full text-xs">
+        <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white max-w-5xl">
+          <table className="w-full text-xs table-fixed">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500">Nazwa</th>
-                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 w-16">Jedn.</th>
-                <th className="px-2 py-1.5 text-right text-[10px] font-medium text-gray-500 w-24">Cena</th>
-                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500">Dostawca</th>
-                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 w-28">Częstotl.</th>
-                <th className="px-1 py-1.5 w-12"></th>
+                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 w-[35%]">Nazwa</th>
+                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 w-[7%]">Jedn.</th>
+                <th className="px-2 py-1.5 text-right text-[10px] font-medium text-gray-500 w-[12%]">Cena</th>
+                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 w-[25%]">Dostawca</th>
+                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 w-[14%]">Częstotl.</th>
+                <th className="px-1 py-1.5 w-[7%]"></th>
               </tr>
             </thead>
             <tbody>
@@ -119,20 +119,20 @@ export default function ProductsPage() {
                   const kd = (e: React.KeyboardEvent) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setEditingId(null) }
                   return (
                     <tr key={p.id} ref={editRowRef} className="border-b border-gray-100 bg-amber-50/30" onBlur={handleRowBlur}>
-                      <td className="px-2 py-1"><input value={pName} onChange={e => setPName(e.target.value)} className={ic} onKeyDown={kd} autoFocus /></td>
-                      <td className="px-2 py-1">
+                      <td className="px-2 py-0.5"><input value={pName} onChange={e => setPName(e.target.value)} className={ic} onKeyDown={kd} autoFocus /></td>
+                      <td className="px-2 py-0.5">
                         <select value={pUnit} onChange={e => setPUnit(e.target.value)} className={ic} onKeyDown={kd}>
                           <option value="kg">kg</option><option value="l">l</option><option value="szt">szt</option>
                         </select>
                       </td>
-                      <td className="px-2 py-1"><input type="number" step="0.01" value={pPrice} onChange={e => setPPrice(e.target.value)} className={`${ic} text-right`} onKeyDown={kd} placeholder="0.00" /></td>
-                      <td className="px-2 py-1">
+                      <td className="px-2 py-0.5"><input type="number" step="0.01" value={pPrice} onChange={e => setPPrice(e.target.value)} className={`${ic} text-right`} onKeyDown={kd} placeholder="0,00" /></td>
+                      <td className="px-2 py-0.5">
                         <select value={pSupplierId} onChange={e => setPSupplierId(e.target.value)} className={ic} onKeyDown={kd}>
                           <option value="">— brak —</option>
                           {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                         </select>
                       </td>
-                      <td className="px-2 py-1">
+                      <td className="px-2 py-0.5">
                         <select value={pFreq} onChange={e => setPFreq(e.target.value)} className={ic} onKeyDown={kd}>
                           <option value="">— brak —</option>
                           <option value="co tydzień">co tydzień</option>
@@ -141,7 +141,7 @@ export default function ProductsPage() {
                           <option value="rzadziej">rzadziej</option>
                         </select>
                       </td>
-                      <td className="px-1 py-1">
+                      <td className="px-1 py-0.5">
                         <div className="flex gap-0.5">
                           <button onMouseDown={e => { e.preventDefault(); save() }} className="rounded p-1 text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50"><Check className="h-3.5 w-3.5" /></button>
                           <button onMouseDown={e => { e.preventDefault(); setEditingId(null) }} className="rounded p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100"><X className="h-3.5 w-3.5" /></button>
@@ -152,10 +152,10 @@ export default function ProductsPage() {
                 }
                 return (
                   <tr key={p.id} className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer" onClick={() => startEdit(p)}>
-                    <td className="px-2 py-1 font-medium text-gray-800">{p.name}</td>
+                    <td className="px-2 py-1 font-medium text-gray-800 truncate">{p.name}</td>
                     <td className="px-2 py-1 text-gray-500">{p.unit ?? 'kg'}</td>
                     <td className="px-2 py-1 text-right text-gray-500 tabular-nums">{p.default_price ? Number(p.default_price).toFixed(2).replace('.', ',') : '—'}</td>
-                    <td className="px-2 py-1 text-gray-500">{p.default_supplier?.name ?? '—'}</td>
+                    <td className="px-2 py-1 text-gray-500 truncate">{p.default_supplier?.name ?? '—'}</td>
                     <td className="px-2 py-1 text-gray-500">{p.order_frequency || '—'}</td>
                     <td className="px-1 py-1" onClick={e => e.stopPropagation()}>
                       <button onMouseDown={e => { e.preventDefault(); e.stopPropagation(); remove(p.id) }} className="rounded p-0.5 text-gray-300 hover:text-red-500 hover:bg-red-50">
