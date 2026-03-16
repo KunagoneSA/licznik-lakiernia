@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Plus, Trash2, X, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, Trash2, X, ChevronDown, ChevronLeft, ChevronRight, Upload, FileText, Loader2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useToast } from '../contexts/ToastContext'
 import { useModalKeys } from '../hooks/useModalKeys'
@@ -126,6 +126,89 @@ export default function PaintPurchasesPage() {
     fetchPurchases()
   }
 
+  // PDF drop zone
+  const [dragging, setDragging] = useState(false)
+  const [parsing, setParsing] = useState(false)
+  const [parsedInvoice, setParsedInvoice] = useState<{
+    supplier: string; date: string; invoice_number: string;
+    items: { product: string; quantity: number; unit: string; unit_price: number; color: string }[]
+  } | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handlePdfFile = async (file: File) => {
+    if (file.type !== 'application/pdf') {
+      toast('Tylko pliki PDF', 'error')
+      return
+    }
+    setParsing(true)
+    try {
+      const buffer = await file.arrayBuffer()
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)))
+
+      const { data, error } = await supabase.functions.invoke('parse-invoice', {
+        body: { pdf_base64: base64 },
+      })
+
+      if (error) throw new Error(error.message)
+      if (data?.error) throw new Error(data.error)
+
+      setParsedInvoice(data)
+      toast('Faktura odczytana!')
+    } catch (err: any) {
+      toast(`Błąd parsowania: ${err.message}`, 'error')
+    } finally {
+      setParsing(false)
+    }
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setDragging(false)
+    const file = e.dataTransfer.files[0]
+    if (file) handlePdfFile(file)
+  }
+
+  const acceptParsedInvoice = async () => {
+    if (!parsedInvoice) return
+    // Find or match supplier
+    const matchedSupplier = suppliers.find(s =>
+      s.name.toLowerCase().includes(parsedInvoice.supplier.toLowerCase()) ||
+      parsedInvoice.supplier.toLowerCase().includes(s.name.toLowerCase())
+    )
+    const suppId = matchedSupplier?.id ?? ''
+
+    const newLines: ProductLine[] = parsedInvoice.items.map(item => {
+      const matchedProduct = products.find(p =>
+        p.name.toLowerCase().includes(item.product.toLowerCase()) ||
+        item.product.toLowerCase().includes(p.name.toLowerCase())
+      )
+      return {
+        productId: matchedProduct?.id ?? '',
+        quantity: item.quantity,
+        unit: item.unit,
+        unitPrice: item.unit_price,
+        color: item.color,
+        _originalName: item.product,
+      } as ProductLine & { _originalName?: string }
+    })
+
+    setParsedInvoice(null)
+    // Open form modal with pre-filled data
+    setPrefillData({
+      supplierId: suppId,
+      date: parsedInvoice.date,
+      lines: newLines,
+      invoiceItems: parsedInvoice.items,
+    })
+    setShowForm(true)
+  }
+
+  // Prefill data for modal
+  const [prefillData, setPrefillData] = useState<{
+    supplierId: string; date: string; lines: ProductLine[];
+    invoiceItems: { product: string; quantity: number; unit: string; unit_price: number; color: string }[]
+  } | null>(null)
+
   const [tab, setTab] = useState<string>('wszystkie')
 
   const filtered = purchases.filter(p => {
@@ -144,6 +227,76 @@ export default function PaintPurchasesPage() {
           <Plus className="h-4 w-4" /> Dodaj zamówienie
         </button>
       </div>
+
+      {/* PDF Drop Zone */}
+      {parsing ? (
+        <div className="flex items-center justify-center gap-3 rounded-xl border-2 border-amber-300 bg-amber-50 p-6">
+          <Loader2 className="h-6 w-6 animate-spin text-amber-500" />
+          <span className="text-sm font-medium text-amber-700">Odczytuję fakturę...</span>
+        </div>
+      ) : parsedInvoice ? (
+        <div className="rounded-xl border-2 border-emerald-300 bg-emerald-50 p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-emerald-600" />
+              <span className="text-sm font-medium text-emerald-800">
+                Faktura odczytana: {parsedInvoice.supplier} — {parsedInvoice.invoice_number}
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={acceptParsedInvoice}
+                className="rounded-lg bg-emerald-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-emerald-400">
+                Dodaj pozycje
+              </button>
+              <button onClick={() => setParsedInvoice(null)}
+                className="rounded-lg px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-100">
+                Anuluj
+              </button>
+            </div>
+          </div>
+          <div className="rounded-lg bg-white border border-emerald-200 overflow-hidden">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="bg-emerald-50 border-b border-emerald-200">
+                  <th className="px-3 py-1.5 text-left text-emerald-700">Produkt</th>
+                  <th className="px-3 py-1.5 text-right text-emerald-700">Ilość</th>
+                  <th className="px-3 py-1.5 text-right text-emerald-700">Cena</th>
+                  <th className="px-3 py-1.5 text-right text-emerald-700">Suma</th>
+                  <th className="px-3 py-1.5 text-left text-emerald-700">Kolor</th>
+                </tr>
+              </thead>
+              <tbody>
+                {parsedInvoice.items.map((item, i) => (
+                  <tr key={i} className="border-b border-gray-100">
+                    <td className="px-3 py-1.5 text-gray-800">{item.product}</td>
+                    <td className="px-3 py-1.5 text-right text-gray-600">{item.quantity} {item.unit}</td>
+                    <td className="px-3 py-1.5 text-right text-gray-600">{item.unit_price.toFixed(2)}</td>
+                    <td className="px-3 py-1.5 text-right font-medium text-amber-600">{(item.quantity * item.unit_price).toFixed(2)} zł</td>
+                    <td className="px-3 py-1.5 text-gray-600">{item.color || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+        <div
+          onDragOver={e => { e.preventDefault(); setDragging(true) }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={handleDrop}
+          onClick={() => fileInputRef.current?.click()}
+          className={`flex items-center justify-center gap-3 rounded-xl border-2 border-dashed p-4 cursor-pointer transition-colors ${
+            dragging ? 'border-amber-400 bg-amber-50' : 'border-gray-300 bg-gray-50 hover:border-amber-300 hover:bg-amber-50/50'
+          }`}
+        >
+          <Upload className={`h-5 w-5 ${dragging ? 'text-amber-500' : 'text-gray-400'}`} />
+          <span className={`text-sm ${dragging ? 'text-amber-600 font-medium' : 'text-gray-500'}`}>
+            Przeciągnij fakturę PDF lub kliknij aby wybrać
+          </span>
+          <input ref={fileInputRef} type="file" accept=".pdf" className="hidden"
+            onChange={e => { const f = e.target.files?.[0]; if (f) handlePdfFile(f); e.target.value = '' }} />
+        </div>
+      )}
 
       {/* Date filters with month shift */}
       <div className="flex items-center gap-2">
@@ -353,9 +506,10 @@ export default function PaintPurchasesPage() {
           products={products}
           onSupplierAdded={fetchSuppliers}
           onProductAdded={fetchProducts}
-          onClose={() => setShowForm(false)}
-          onSaved={() => { setShowForm(false); toast('Zamówienie dodane'); fetchPurchases() }}
+          onClose={() => { setShowForm(false); setPrefillData(null) }}
+          onSaved={() => { setShowForm(false); setPrefillData(null); toast('Zamówienie dodane'); fetchPurchases() }}
           onError={(msg) => toast(msg, 'error')}
+          prefill={prefillData}
         />
       )}
 
@@ -410,7 +564,7 @@ function emptyLine(): ProductLine {
   return { productId: '', quantity: 0, unit: 'kg', unitPrice: 0, color: '' }
 }
 
-function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdded, onClose, onSaved, onError }: {
+function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdded, onClose, onSaved, onError, prefill }: {
   suppliers: Supplier[]
   products: Product[]
   onSupplierAdded: () => void
@@ -418,12 +572,16 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
   onClose: () => void
   onSaved: () => void
   onError: (msg: string) => void
+  prefill?: {
+    supplierId: string; date: string; lines: ProductLine[];
+    invoiceItems: { product: string; quantity: number; unit: string; unit_price: number; color: string }[]
+  } | null
 }) {
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
-  const [supplierId, setSupplierId] = useState('')
+  const [date, setDate] = useState(prefill?.date ?? new Date().toISOString().slice(0, 10))
+  const [supplierId, setSupplierId] = useState(prefill?.supplierId ?? '')
   const [newSupplierName, setNewSupplierName] = useState('')
   const [showNewSupplier, setShowNewSupplier] = useState(false)
-  const [lines, setLines] = useState<ProductLine[]>([emptyLine()])
+  const [lines, setLines] = useState<ProductLine[]>(prefill?.lines?.length ? prefill.lines : [emptyLine()])
   const [notes, setNotes] = useState('')
   const [status, setStatus] = useState<PurchaseStatus>('do_zamowienia')
   const [saving, setSaving] = useState(false)
@@ -570,7 +728,12 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
                 return (
                   <div key={i} className="flex items-start gap-2 rounded-lg bg-gray-50 p-3">
                     <div className="flex-1 min-w-0">
-                      <label className="block text-[10px] text-gray-400 mb-1">Produkt</label>
+                      <label className="block text-[10px] text-gray-400 mb-1">
+                        Produkt
+                        {!line.productId && prefill?.invoiceItems?.[i] && (
+                          <span className="ml-1 text-amber-500 font-medium">({prefill.invoiceItems[i].product})</span>
+                        )}
+                      </label>
                       <select value={line.productId} onChange={e => {
                         const pid = e.target.value
                         const prod = products.find(p => p.id === pid)
