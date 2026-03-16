@@ -12,6 +12,13 @@ import { useToast } from '../contexts/ToastContext'
 import { useWorkers } from '../hooks/useWorkers'
 import type { OrderStatus } from '../types/database'
 
+/** Polish number formatting: comma as decimal, space as thousand separator */
+const fmtPL = (n: number, decimals = 2) => {
+  const [int, dec] = n.toFixed(decimals).split('.')
+  const intFormatted = int.replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
+  return dec ? intFormatted + ',' + dec : intFormatted
+}
+
 const statusLabels: Record<OrderStatus, string> = {
   nowe: 'Nowe', w_trakcie: 'W trakcie', gotowe: 'Gotowe', wydane: 'Wydane', fv_wystawiona: 'FV wystawiona', 'zapłacone': 'Zapłacone',
 }
@@ -644,7 +651,7 @@ export default function OrderDetailPage() {
                           <option value="__custom__">✏️ Inne...</option>
                         </select>
                       </td>
-                      <td className="px-2 py-1 text-right text-gray-400 tabular-nums">{l && w ? m2.toFixed(3) : ''}</td>
+                      <td className="px-2 py-1 text-right text-gray-400 tabular-nums">{l && w ? fmtPL(m2, 3) : ''}</td>
                       <td className="px-2 py-1"><input type="number" value={eiPrice} onChange={(e) => setEiPrice(e.target.value)} className="w-14 bg-transparent border-b border-gray-300 px-1 py-0.5 text-right text-xs text-gray-800 outline-none focus:border-amber-500 tabular-nums" onKeyDown={kd} /></td>
                       <td className="px-2 py-1 text-center"><input type="checkbox" checked={eiHandle} onChange={(e) => setEiHandle(e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-amber-500 focus:ring-amber-500/30" /></td>
                       <td className="px-2 py-1 text-center"><input type="checkbox" checked={eiColorSurcharge} onChange={(e) => setEiColorSurcharge(e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-amber-500 focus:ring-amber-500/30" /></td>
@@ -665,8 +672,8 @@ export default function OrderDetailPage() {
                     <td className="px-2 py-1.5 text-gray-800 tabular-nums">{item.width_mm || '—'}</td>
                     <td className="px-2 py-1.5 text-gray-800 tabular-nums">{item.quantity}</td>
                     <td className="px-2 py-1.5 text-gray-600">{(item.variant as { name: string } | undefined)?.name ?? '—'}</td>
-                    <td className="px-2 py-1.5 text-right text-gray-600 tabular-nums">{item.length_mm && item.width_mm ? Number(item.m2).toFixed(3) : '—'}</td>
-                    <td className="px-2 py-1.5 text-right text-gray-600 tabular-nums">{Number(item.price_per_m2).toFixed(0)}{item.length_mm === 0 && item.width_mm === 0 ? '/szt' : ''}</td>
+                    <td className="px-2 py-1.5 text-right text-gray-600 tabular-nums">{item.length_mm && item.width_mm ? fmtPL(Number(item.m2), 3) : '—'}</td>
+                    <td className="px-2 py-1.5 text-right text-gray-600 tabular-nums">{fmtPL(Number(item.price_per_m2), 0)}{item.length_mm === 0 && item.width_mm === 0 ? '/szt' : ''}</td>
                     <td className="px-2 py-1.5 text-center">{item.has_handle ? <span className="text-base font-bold text-emerald-600">✓</span> : ''}</td>
                     <td className="px-2 py-1.5 text-center">{item.color_surcharge ? <span className="text-base font-bold text-amber-600">✓</span> : ''}</td>
                     <td className="px-2 py-1.5 text-center">{item.has_wplyka ? <span className="text-base font-bold text-violet-600">✓</span> : ''}</td>
@@ -725,7 +732,7 @@ export default function OrderDetailPage() {
                         <option value="__custom__">✏️ Inne...</option>
                       </select>
                     </td>
-                    <td className="px-2 py-1 text-right text-gray-400 tabular-nums">{l && w ? m2.toFixed(3) : ''}</td>
+                    <td className="px-2 py-1 text-right text-gray-400 tabular-nums">{l && w ? fmtPL(m2, 3) : ''}</td>
                     <td className="px-2 py-1">
                       <input type="number" value={newPrice} onChange={(e) => setNewPrice(e.target.value)}
                         placeholder={String(pricePerM2 || '')}
@@ -842,25 +849,25 @@ export default function OrderDetailPage() {
       <div className="flex gap-2 items-start">
         <div className="rounded-lg bg-white shadow-sm px-2 py-2">
           <p className="text-[10px] text-gray-500 uppercase">Lakier m²</p>
-          <p className="text-sm font-bold tabular-nums text-gray-800">{totalM2.toFixed(2)}</p>
+          <p className="text-sm font-bold tabular-nums text-gray-800">{fmtPL(totalM2)}</p>
         </div>
         <div className="rounded-lg bg-white shadow-sm px-2 py-2">
           <p className="text-[10px] text-gray-500 uppercase">Bejca m²</p>
           <p className="text-sm font-bold tabular-nums text-gray-800">
-            {items.filter((i) => (i.variant as { name: string } | undefined)?.name === 'Bejca').reduce((s, i) => s + Number(i.m2), 0).toFixed(2)}
+            {fmtPL(items.filter((i) => (i.variant as { name: string } | undefined)?.name === 'Bejca').reduce((s, i) => s + Number(i.m2), 0))}
           </p>
         </div>
         <div className="rounded-lg bg-white shadow-sm px-2 py-2">
           <p className="text-[10px] text-gray-500 uppercase">Uchwyty ({items.filter((i) => i.has_handle).reduce((s, i) => s + i.quantity, 0)} szt)</p>
-          <p className="text-sm font-bold tabular-nums text-gray-800">{totalHandleCost.toFixed(2)}</p>
+          <p className="text-sm font-bold tabular-nums text-gray-800">{fmtPL(totalHandleCost)}</p>
         </div>
         <div className="rounded-lg bg-white shadow-sm px-2 py-2">
           <p className="text-[10px] text-gray-500 uppercase">Wpyłka ({items.filter((i) => i.has_wplyka).reduce((s, i) => s + i.quantity, 0)} szt)</p>
-          <p className="text-sm font-bold tabular-nums text-gray-800">{totalWplykaCost.toFixed(2)}</p>
+          <p className="text-sm font-bold tabular-nums text-gray-800">{fmtPL(totalWplykaCost)}</p>
         </div>
         <div className="rounded-lg bg-white shadow-sm px-2 py-2">
           <p className="text-[10px] text-gray-500 uppercase">Wartość</p>
-          <p className="text-sm font-bold tabular-nums text-amber-600">{totalValue.toFixed(2)}</p>
+          <p className="text-sm font-bold tabular-nums text-amber-600">{fmtPL(totalValue)}</p>
         </div>
         <div className="flex-1 rounded-lg bg-white shadow-sm px-2 py-2">
           <p className="text-[10px] text-gray-500 uppercase">Komentarz</p>
