@@ -165,10 +165,11 @@ export default function PaintPurchasesPage() {
           'Authorization': `Bearer ${session?.access_token ?? supabaseKey}`,
           'apikey': supabaseKey,
         },
-        body: JSON.stringify(isPdf
-          ? { pdf_base64: base64 }
-          : { image_base64: base64, media_type: file.type }
-        ),
+        body: JSON.stringify({
+          ...(isPdf ? { pdf_base64: base64 } : { image_base64: base64, media_type: file.type }),
+          existing_suppliers: suppliers.map(s => s.name),
+          existing_products: products.map(p => p.name),
+        }),
       })
 
       const data = await res.json()

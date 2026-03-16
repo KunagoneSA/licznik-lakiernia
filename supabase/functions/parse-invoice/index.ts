@@ -8,11 +8,20 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-const PARSE_PROMPT = `Przeanalizuj tę fakturę/WZ i wyciągnij pozycje zakupowe.
+function buildPrompt(existingSuppliers: string[], existingProducts: string[]) {
+  let supplierRule = ''
+  if (existingSuppliers.length > 0) {
+    supplierRule = `\n- DOSTAWCA — w bazie istnieją już dostawcy: [${existingSuppliers.map(s => `"${s}"`).join(', ')}]. Jeśli dostawca z faktury pasuje do któregoś z listy (ta sama firma, nawet jeśli inna forma prawna np. "Sp. z o.o." vs ""), UŻYJ DOKŁADNIE nazwy z listy. Jeśli żaden nie pasuje — wpisz nazwę z faktury.`
+  }
+  let productRule = ''
+  if (existingProducts.length > 0) {
+    productRule = `\n- PRODUKTY — w bazie istnieją już produkty: [${existingProducts.map(p => `"${p}"`).join(', ')}]. Jeśli produkt z faktury pasuje do któregoś z listy (ten sam produkt/kod katalogowy), UŻYJ DOKŁADNIE nazwy z listy. Jeśli żaden nie pasuje — wpisz nową nazwę.`
+  }
+  return `Przeanalizuj tę fakturę/WZ i wyciągnij pozycje zakupowe.
 
 Zwróć TYLKO JSON (bez markdown, bez komentarzy) w formacie:
 {
-  "supplier": "nazwa dostawcy z faktury",
+  "supplier": "nazwa dostawcy — DOKŁADNIE z listy istniejących jeśli pasuje",
   "date": "YYYY-MM-DD",
   "invoice_number": "numer faktury/WZ",
   "total_netto": 722.85,
@@ -44,8 +53,9 @@ Zasady:
   Kody zaczynające się od R + 4 cyfry to RAL, np. R9016 → RAL9016
   Kody /P oznaczają "bezbarwny" — nie kolor, zostaw color = ""
 - product: czytelna nazwa po polsku, np. "Emalia poliuretanowa", "Utwardzacz do połysków", "Lakier poliakrylowy bezbarwny". Dodaj kod katalogowy producenta (np. OPV256BVG10, C340V). NIE wstawiaj koloru do nazwy produktu.
-- Jeśli nie ma koloru w pozycji, color = ""
+- Jeśli nie ma koloru w pozycji, color = ""${supplierRule}${productRule}
 - Zwróć CZYSTY JSON, bez backticks, bez markdown`
+}
 
 function parseJson(text: string) {
   const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/)
@@ -117,7 +127,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { pdf_base64, image_base64, media_type } = await req.json()
+    const { pdf_base64, image_base64, media_type, existing_suppliers, existing_products } = await req.json()
 
     if (!pdf_base64 && !image_base64) {
       return new Response(JSON.stringify({ error: 'Brak pliku' }), {
@@ -147,10 +157,11 @@ Deno.serve(async (req) => {
         }
 
     // === KROK 1: Parsowanie faktury ===
+    const prompt = buildPrompt(existing_suppliers ?? [], existing_products ?? [])
     const messages: any[] = [
       {
         role: 'user',
-        content: [fileContent, { type: 'text', text: PARSE_PROMPT }],
+        content: [fileContent, { type: 'text', text: prompt }],
       },
     ]
 
