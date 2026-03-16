@@ -89,7 +89,7 @@ async function callClaude(headers: Record<string, string>, messages: any[]) {
     method: 'POST',
     headers,
     body: JSON.stringify({
-      model: 'claude-haiku-3-5-20241022',
+      model: 'claude-3-5-haiku-20241022',
       max_tokens: 4096,
       messages,
     }),
