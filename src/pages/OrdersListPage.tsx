@@ -107,8 +107,7 @@ export default function OrdersListPage() {
         <h1 className="text-xl font-bold text-gray-900">Zamówienia</h1>
         <button
           onClick={() => setShowNew(true)}
-          className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white"
-          style={{ background: 'linear-gradient(135deg, #f59e0b, #ef4444, #a855f7, #3b82f6, #10b981)' }}
+          className="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-400"
         >
           <Plus className="h-4 w-4" />
           Nowe zamówienie
