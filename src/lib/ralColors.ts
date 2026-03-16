@@ -76,8 +76,10 @@ export function ralToHex(colorStr: string | null | undefined): string | null {
  */
 export function ncsToHex(colorStr: string | null | undefined): string | null {
   if (!colorStr) return null
-  // Match patterns like "S 1050-Y90R", "S 0500-N", "S 2030-B"
-  const m = colorStr.match(/S\s*(\d{2})(\d{2})-(N|[YRbg][^,\s]*)/i)
+  // Match many NCS formats:
+  // "NCS S 1050-Y90R", "S 1050-Y90R", "NCS S1050-Y90R", "NCS 1050-Y90R",
+  // "S1050-Y90R", "1050-Y90R" (if preceded by NCS), "S 0500-N"
+  const m = colorStr.match(/(?:NCS\s*)?S?\s*(\d{2})(\d{2})\s*-\s*(N|[YRBG]\d{0,2}[YRBG]?)/i)
   if (!m) return null
 
   const blackness = parseInt(m[1]) / 100 // 0..0.99
