@@ -261,37 +261,23 @@ export default function PaintPurchasesPage() {
     }
     const suppId = matchedSupplier?.id ?? ''
 
-    // Auto-create missing products and build lines
-    let updatedProducts = [...products]
+    // Match products — don't auto-create, leave empty for user to pick
     const newLines: ProductLine[] = []
+    let unmatchedCount = 0
 
     for (const item of parsedInvoice.items) {
       const itemNameLower = item.product.toLowerCase()
       // Extract catalog code from product name (e.g. "OPV256BVG10" from "Emalia poliuretanowa OPV256BVG10")
       const itemCodeMatch = item.product.match(/[A-Z]{2,}[\d]+[A-Z]*[\d]*/i)
       const itemCode = itemCodeMatch?.[0]?.toLowerCase() ?? ''
-      let matchedProduct = updatedProducts.find(p => {
+      const matchedProduct = products.find(p => {
         const pLower = p.name.toLowerCase()
-        // Direct substring match
         if (pLower.includes(itemNameLower) || itemNameLower.includes(pLower)) return true
-        // Match by catalog code
         if (itemCode && pLower.includes(itemCode)) return true
         return false
       })
 
-      if (!matchedProduct) {
-        // Auto-create product
-        const { data: newProd } = await supabase.from('products').insert({
-          name: item.product,
-          unit: item.unit,
-          default_price: item.unit_price,
-          default_supplier_id: suppId || null,
-        }).select('*').single()
-        if (newProd) {
-          matchedProduct = newProd as Product
-          updatedProducts.push(newProd as Product)
-        }
-      }
+      if (!matchedProduct) unmatchedCount++
 
       newLines.push({
         productId: matchedProduct?.id ?? '',
@@ -302,8 +288,9 @@ export default function PaintPurchasesPage() {
       })
     }
 
-    // Refresh products list
-    fetchProducts()
+    if (unmatchedCount > 0) {
+      toast(`${unmatchedCount} ${unmatchedCount === 1 ? 'produkt wymaga' : 'produktów wymaga'} ręcznego przypisania`, 'error')
+    }
 
     setParsedInvoice(null)
     setPrefillData({
@@ -902,12 +889,12 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
               {lines.map((line, i) => {
                 const fieldCls = "w-full h-[38px] rounded-lg border border-gray-300 px-2.5 text-sm outline-none focus:ring-2 focus:ring-amber-500/30"
                 return (
-                  <div key={i} className="flex items-start gap-3 rounded-lg bg-gray-50 p-3">
+                  <div key={i} className={`flex items-start gap-3 rounded-lg p-3 ${!line.productId ? 'bg-red-50 ring-1 ring-red-200' : 'bg-gray-50'}`}>
                     <div className="flex-[3] min-w-0">
                       <label className="block text-[10px] text-gray-400 mb-1">
                         Produkt
                         {!line.productId && prefill?.invoiceItems?.[i] && (
-                          <span className="ml-1 text-amber-500 font-medium">({prefill.invoiceItems[i].product})</span>
+                          <span className="ml-1 text-red-500 font-medium">⚠ {prefill.invoiceItems[i].product} — wybierz z listy lub dodaj nowy</span>
                         )}
                       </label>
                       <select value={line.productId} onChange={e => {
