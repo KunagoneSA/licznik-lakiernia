@@ -143,8 +143,8 @@ export default function ProductsPage() {
                       </td>
                       <td className="px-1 py-1">
                         <div className="flex gap-0.5">
-                          <button onClick={save} className="rounded p-1 text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50"><Check className="h-3.5 w-3.5" /></button>
-                          <button onClick={() => setEditingId(null)} className="rounded p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100"><X className="h-3.5 w-3.5" /></button>
+                          <button onMouseDown={e => { e.preventDefault(); save() }} className="rounded p-1 text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50"><Check className="h-3.5 w-3.5" /></button>
+                          <button onMouseDown={e => { e.preventDefault(); setEditingId(null) }} className="rounded p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100"><X className="h-3.5 w-3.5" /></button>
                         </div>
                       </td>
                     </tr>
@@ -158,7 +158,7 @@ export default function ProductsPage() {
                     <td className="px-2 py-1 text-gray-500">{p.default_supplier?.name ?? '—'}</td>
                     <td className="px-2 py-1 text-gray-500">{p.order_frequency || '—'}</td>
                     <td className="px-1 py-1" onClick={e => e.stopPropagation()}>
-                      <button onClick={() => remove(p.id)} className="rounded p-0.5 text-gray-300 hover:text-red-500 hover:bg-red-50">
+                      <button onMouseDown={e => { e.preventDefault(); e.stopPropagation(); remove(p.id) }} className="rounded p-0.5 text-gray-300 hover:text-red-500 hover:bg-red-50">
                         <Trash2 className="h-3 w-3" />
                       </button>
                     </td>
