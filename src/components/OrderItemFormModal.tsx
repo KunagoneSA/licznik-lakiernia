@@ -22,7 +22,7 @@ export default function OrderItemFormModal({ variants, getPrice, onClose, onSave
   const variant = variants.find((v) => v.id === variantId)
   const sides = variant?.sides ?? 1
   const pricePerM2 = getPrice(variantId)
-  const m2 = (lengthMm * widthMm * quantity * sides) / 1_000_000
+  const m2 = (lengthMm * widthMm * quantity) / 1_000_000
   const totalPrice = m2 * pricePerM2
 
   const handleSave = () => {

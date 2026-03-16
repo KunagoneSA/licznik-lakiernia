@@ -189,7 +189,7 @@ export default function OrderDetailPage() {
     const sides = variant?.sides ?? 1
     const parsedPrice = Number(newPrice)
     const pricePerM2 = newPrice !== '' && !isNaN(parsedPrice) ? parsedPrice : getDefaultPrice(vid)
-    const m2 = (l * w * q * sides) / 1_000_000
+    const m2 = (l * w * q) / 1_000_000
     const totalPrice = m2 * pricePerM2
     const err = await addItem({
       length_mm: l,
@@ -340,7 +340,7 @@ export default function OrderDetailPage() {
       const variant = variants.find((v) => v.id === vid)
       const sides = variant?.sides ?? 1
       const pricePerM2 = eiPrice !== '' && !isNaN(pricePerUnit) ? pricePerUnit : getDefaultPrice(vid)
-      const m2 = (l * w * q * sides) / 1_000_000
+      const m2 = (l * w * q) / 1_000_000
       const totalPrice = m2 * pricePerM2
       await updateItem(editingItemId, {
         length_mm: l,
@@ -617,7 +617,7 @@ export default function OrderDetailPage() {
                   const l = Number(eiLength) || 0
                   const w = Number(eiWidth) || 0
                   const q = Number(eiQty) || 1
-                  const m2 = (l * w * q * sides) / 1_000_000
+                  const m2 = (l * w * q) / 1_000_000
                   const ic = "w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500 tabular-nums"
                   const kd = (e: React.KeyboardEvent) => { if (e.key === 'Enter') saveEditItem(); if (e.key === 'Escape') setEditingItemId(null) }
                   return (
@@ -687,7 +687,7 @@ export default function OrderDetailPage() {
                 const l = Number(newLength) || 0
                 const w = Number(newWidth) || 0
                 const q = Number(newQty) || 1
-                const m2 = (l * w * q * sides) / 1_000_000
+                const m2 = (l * w * q) / 1_000_000
                 const inputClass = "w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500 tabular-nums"
                 return (
                   <tr ref={itemRowRef} onBlur={handleRowBlur(itemRowRef, handleInlineAdd, () => { if (!Number(newLength) || !Number(newWidth)) setShowInlineAdd(false) })} className="border-b border-gray-100 bg-amber-50/30">
