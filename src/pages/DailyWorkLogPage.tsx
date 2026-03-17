@@ -48,8 +48,7 @@ export default function DailyWorkLogPage() {
 
   const getWorkerRate = (name: string) => workers.find(w => w.name === name)?.hourly_rate ?? 35
 
-  // Add form
-  const [showAdd, setShowAdd] = useState(false)
+  // Add form (always visible at bottom of table)
   const [newWorker, setNewWorker] = useState('')
   const [newOp, setNewOp] = useState('')
   const [newHours, setNewHours] = useState('')
@@ -78,12 +77,18 @@ export default function DailyWorkLogPage() {
 
   useEffect(() => { fetchLogs() }, [fetchLogs])
 
-  // Set defaults when workers load
+  // Set defaults when workers/operations load
   useEffect(() => {
     if (activeWorkers.length > 0 && !newWorker) {
       setNewWorker(activeWorkers[0].name)
     }
   }, [activeWorkers.length])
+
+  useEffect(() => {
+    if (operations.length > 0 && !newOp) {
+      setNewOp(operations[0])
+    }
+  }, [operations.length])
 
   const resetAdd = () => {
     setNewHours('')
@@ -198,9 +203,9 @@ export default function DailyWorkLogPage() {
     setSelectedDate(d.toISOString().slice(0, 10))
   }
 
-  const kd = (e: React.KeyboardEvent, action: () => void, cancel?: () => void) => {
+  const kd = (e: React.KeyboardEvent, action: () => void) => {
     if (e.key === 'Enter') action()
-    if (e.key === 'Escape') { cancel ? cancel() : setEditId(null) }
+    if (e.key === 'Escape') setEditId(null)
   }
 
   // Summary per worker (only workers with entries)
@@ -240,12 +245,6 @@ export default function DailyWorkLogPage() {
           <button onClick={copyPreviousDay} className="flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-50">
             <Copy className="h-3 w-3" /> Kopiuj z {copyFromDayShort.toLowerCase()}
           </button>
-          {!showAdd && (
-            <button onClick={() => { setShowAdd(true); if (!newOp && operations.length > 0) setNewOp(operations[0]) }}
-              className="flex items-center gap-1 rounded-md bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-600 hover:bg-amber-100">
-              <Plus className="h-3 w-3" /> Dodaj
-            </button>
-          )}
         </div>
       </div>
 
@@ -308,17 +307,17 @@ export default function DailyWorkLogPage() {
                   if (editId === log.id) return (
                     <tr key={log.id} className="border-b border-gray-100 bg-blue-50/30">
                       <td className="px-2 py-1">
-                        <select value={editWorker} onChange={(e) => setEditWorker(e.target.value)} className={ic} onKeyDown={(e) => kd(e, saveEdit, () => setEditId(null))}>
+                        <select value={editWorker} onChange={(e) => setEditWorker(e.target.value)} className={ic} onKeyDown={(e) => kd(e, saveEdit)}>
                           {activeWorkers.map(w => <option key={w.id} value={w.name}>{w.name}</option>)}
                         </select>
                       </td>
                       <td className="px-2 py-1">
-                        <select value={editOp} onChange={(e) => setEditOp(e.target.value)} className={ic} onKeyDown={(e) => kd(e, saveEdit, () => setEditId(null))}>
+                        <select value={editOp} onChange={(e) => setEditOp(e.target.value)} className={ic} onKeyDown={(e) => kd(e, saveEdit)}>
                           {operations.map(o => <option key={o} value={o}>{o}</option>)}
                         </select>
                       </td>
-                      <td className="px-2 py-1"><input type="number" step="0.5" value={editHours} onChange={(e) => setEditHours(e.target.value)} className={`${ic} text-right tabular-nums w-12`} onKeyDown={(e) => kd(e, saveEdit, () => setEditId(null))} /></td>
-                      <td className="px-2 py-1"><input type="text" value={editNotes} onChange={(e) => setEditNotes(e.target.value)} className="w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-[10px] text-gray-600 outline-none focus:border-amber-500" onKeyDown={(e) => kd(e, saveEdit, () => setEditId(null))} /></td>
+                      <td className="px-2 py-1"><input type="number" step="0.5" value={editHours} onChange={(e) => setEditHours(e.target.value)} className={`${ic} text-right tabular-nums w-12`} onKeyDown={(e) => kd(e, saveEdit)} /></td>
+                      <td className="px-2 py-1"><input type="text" value={editNotes} onChange={(e) => setEditNotes(e.target.value)} className="w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-[10px] text-gray-600 outline-none focus:border-amber-500" onKeyDown={(e) => kd(e, saveEdit)} /></td>
                       <td className="px-1 py-1 flex gap-0.5">
                         <button onClick={saveEdit} className="rounded p-0.5 text-emerald-500 hover:text-emerald-700"><Check className="h-3 w-3" /></button>
                         <button onClick={() => setEditId(null)} className="rounded p-0.5 text-gray-400 hover:text-gray-600"><X className="h-3 w-3" /></button>
@@ -340,56 +339,44 @@ export default function DailyWorkLogPage() {
                   )
                 })}
 
-                {/* Add row */}
-                {showAdd && (
-                  <tr className="border-b border-gray-100 bg-amber-50/30">
-                    <td className="px-2 py-1">
-                      <select value={newWorker} onChange={(e) => setNewWorker(e.target.value)} className={ic} autoFocus onKeyDown={(e) => kd(e, handleAdd, () => setShowAdd(false))}>
-                        {activeWorkers.map(w => <option key={w.id} value={w.name}>{w.name}</option>)}
-                      </select>
-                    </td>
-                    <td className="px-2 py-1">
-                      <select value={newOp} onChange={(e) => setNewOp(e.target.value)} className={ic} onKeyDown={(e) => kd(e, handleAdd, () => setShowAdd(false))}>
-                        {operations.map(o => <option key={o} value={o}>{o}</option>)}
-                      </select>
-                    </td>
-                    <td className="px-2 py-1">
-                      <input type="number" step="0.5" value={newHours} onChange={(e) => setNewHours(e.target.value)}
-                        placeholder="0" className={`${ic} text-right tabular-nums w-12`} onKeyDown={(e) => kd(e, handleAdd, () => setShowAdd(false))} />
-                    </td>
-                    <td className="px-2 py-1">
-                      <input type="text" value={newNotes} onChange={(e) => setNewNotes(e.target.value)}
-                        placeholder="uwagi"
-                        className="w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-[10px] text-gray-600 outline-none focus:border-amber-500"
-                        onKeyDown={(e) => kd(e, handleAdd, () => setShowAdd(false))} />
-                    </td>
-                    <td className="px-1 py-1">
-                      <button onClick={() => setShowAdd(false)} className="rounded p-0.5 text-gray-400 hover:text-gray-600">
-                        <X className="h-3 w-3" />
-                      </button>
-                    </td>
-                  </tr>
-                )}
-
-                {/* Empty state */}
-                {!loading && logs.length === 0 && !showAdd && (
-                  <tr><td colSpan={5} className="px-2 py-6 text-center text-xs text-gray-400">
-                    Brak wpisów na ten dzień
-                  </td></tr>
-                )}
+                {/* Always-visible add row */}
+                <tr className="border-b border-gray-100 bg-amber-50/20">
+                  <td className="px-2 py-1">
+                    <select value={newWorker} onChange={(e) => setNewWorker(e.target.value)} className={ic} onKeyDown={(e) => kd(e, handleAdd)}>
+                      {activeWorkers.map(w => <option key={w.id} value={w.name}>{w.name}</option>)}
+                    </select>
+                  </td>
+                  <td className="px-2 py-1">
+                    <select value={newOp} onChange={(e) => setNewOp(e.target.value)} className={ic} onKeyDown={(e) => kd(e, handleAdd)}>
+                      {operations.map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  </td>
+                  <td className="px-2 py-1">
+                    <input type="number" step="0.5" value={newHours} onChange={(e) => setNewHours(e.target.value)}
+                      placeholder="0" className={`${ic} text-right tabular-nums w-12`} onKeyDown={(e) => kd(e, handleAdd)} />
+                  </td>
+                  <td className="px-2 py-1">
+                    <input type="text" value={newNotes} onChange={(e) => setNewNotes(e.target.value)}
+                      placeholder="uwagi"
+                      className="w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-[10px] text-gray-600 outline-none focus:border-amber-500"
+                      onKeyDown={(e) => kd(e, handleAdd)} />
+                  </td>
+                  <td className="px-1 py-1">
+                    <button onClick={handleAdd} disabled={!Number(newHours)} className="rounded p-0.5 text-amber-500 hover:text-amber-700 disabled:opacity-30">
+                      <Plus className="h-3 w-3" />
+                    </button>
+                  </td>
+                </tr>
               </>
             )}
           </tbody>
         </table>
       </div>
 
-      {showAdd && (
-        <div className="flex gap-2 text-[10px] text-gray-400">
-          <span>TAB = następne pole</span>
-          <span>Enter = dodaj</span>
-          <span>Esc = zamknij</span>
-        </div>
-      )}
+      <div className="flex gap-2 text-[10px] text-gray-400">
+        <span>Enter = dodaj wpis</span>
+        <span>TAB = następne pole</span>
+      </div>
     </div>
   )
 }
