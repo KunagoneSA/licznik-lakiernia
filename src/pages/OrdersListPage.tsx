@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Search, ChevronUp, ChevronDown, Building2, User } from 'lucide-react'
 import { useOrders } from '../hooks/useOrders'
+import { usePaintingVariants } from '../hooks/usePaintingVariants'
 import type { OrderStatus } from '../types/database'
 import ColorSwatch from '../components/ColorSwatch'
 import NewOrderModal from '../components/NewOrderModal'
@@ -33,9 +34,24 @@ function getClientNameStr(order: Record<string, unknown>): string {
   return getClient(order)?.name ?? '—'
 }
 
-function getOrderValue(order: Record<string, unknown>): number {
-  const items = order.order_items as { total_price: number }[] | undefined
-  return items?.reduce((s, i) => s + Number(i.total_price), 0) ?? 0
+interface OrderItem {
+  total_price: number
+  m2: number
+  quantity: number
+  has_handle: boolean
+  has_wplyka: boolean
+  color_surcharge: boolean
+  painting_variant_id: string | null
+}
+
+function getOrderValue(order: Record<string, unknown>, handlePrice: number, wplykaPrice: number, colorSurchargePrice: number): number {
+  const items = order.order_items as OrderItem[] | undefined
+  if (!items) return 0
+  const base = items.reduce((s, i) => s + Number(i.total_price), 0)
+  const handles = items.filter(i => i.has_handle).reduce((s, i) => s + handlePrice * Number(i.quantity), 0)
+  const wplyka = items.filter(i => i.has_wplyka).reduce((s, i) => s + wplykaPrice * Number(i.quantity), 0)
+  const colorSurcharge = items.filter(i => i.color_surcharge).reduce((s, i) => s + colorSurchargePrice * Number(i.m2), 0)
+  return base + handles + wplyka + colorSurcharge
 }
 
 function isOverdue(order: { planned_date: string | null; status: string }): boolean {
@@ -50,10 +66,25 @@ type SortDir = 'asc' | 'desc'
 export default function OrdersListPage() {
   const navigate = useNavigate()
   const { orders, loading, refetch } = useOrders()
+  const { variants } = usePaintingVariants()
   const [search, setSearch] = useState('')
   const [tab, setTab] = useState<string>('wszystkie')
   const [showNew, setShowNew] = useState(false)
   const [sortKey, setSortKey] = useState<SortKey>('number')
+
+  // Surcharge prices from variants
+  const handlePrice = useMemo(() => {
+    const v = variants.find(v => v.name === 'Uchwyt frezowany')
+    return v?.default_price_per_m2 ?? 0
+  }, [variants])
+  const wplykaPrice = useMemo(() => {
+    const v = variants.find(v => v.name.toLowerCase().includes('wpyłka') || v.name.toLowerCase().includes('wpłyka') || v.name.toLowerCase().includes('wypłka'))
+    return v?.default_price_per_m2 ?? 0
+  }, [variants])
+  const colorSurchargePrice = useMemo(() => {
+    const v = variants.find(v => v.name === 'Dopłata do koloru')
+    return v?.default_price_per_m2 ?? 0
+  }, [variants])
   const [sortDir, setSortDir] = useState<SortDir>('asc')
 
   const toggleSort = (key: SortKey) => {
@@ -92,15 +123,15 @@ export default function OrdersListPage() {
           return da.localeCompare(db) * dir
         }
         case 'ready_date': return (a.ready_date ?? '').localeCompare(b.ready_date ?? '') * dir
-        case 'value': return (getOrderValue(a as unknown as Record<string, unknown>) - getOrderValue(b as unknown as Record<string, unknown>)) * dir
+        case 'value': return (getOrderValue(a as unknown as Record<string, unknown>, handlePrice, wplykaPrice, colorSurchargePrice) - getOrderValue(b as unknown as Record<string, unknown>, handlePrice, wplykaPrice, colorSurchargePrice)) * dir
         default: return 0
       }
     })
-  }, [orders, tab, search, sortKey, sortDir])
+  }, [orders, tab, search, sortKey, sortDir, handlePrice, wplykaPrice, colorSurchargePrice])
 
   const totalValue = useMemo(() => {
-    return filtered.reduce((sum, o) => sum + getOrderValue(o as unknown as Record<string, unknown>), 0)
-  }, [filtered])
+    return filtered.reduce((sum, o) => sum + getOrderValue(o as unknown as Record<string, unknown>, handlePrice, wplykaPrice, colorSurchargePrice), 0)
+  }, [filtered, handlePrice, wplykaPrice, colorSurchargePrice])
 
   return (
     <div className="space-y-4">
@@ -196,7 +227,7 @@ export default function OrdersListPage() {
             </thead>
             <tbody>
               {filtered.map((order) => {
-                const value = getOrderValue(order as unknown as Record<string, unknown>)
+                const value = getOrderValue(order as unknown as Record<string, unknown>, handlePrice, wplykaPrice, colorSurchargePrice)
                 const overdue = isOverdue(order)
                 return (
                   <tr key={order.id} onClick={() => navigate(`/zamowienia/${order.id}`)} className={`border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${overdue ? 'bg-red-50/50' : ''}`}>
