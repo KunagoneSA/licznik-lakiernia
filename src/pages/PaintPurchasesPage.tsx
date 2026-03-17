@@ -131,8 +131,9 @@ export default function PaintPurchasesPage() {
       label: 'Cofnij',
       onClick: async () => {
         if (!deleted) return
-        const { id: _id, supplier, product_ref, ...rest } = deleted as any
-        await supabase.from('paint_purchases').insert(rest)
+        const { id: _id, supplier, product_ref, created_at, ...rest } = deleted as any
+        const { error } = await supabase.from('paint_purchases').insert({ ...rest, id: _id })
+        if (error) { toast('Błąd przywracania: ' + error.message, 'error'); return }
         fetchPurchases()
         toast('Zamówienie przywrócone')
       },
