@@ -41,7 +41,6 @@ interface OrderItem {
   has_handle: boolean
   has_wplyka: boolean
   color_surcharge: boolean
-  painting_variant_id: string | null
 }
 
 function getOrderValue(order: Record<string, unknown>, handlePrice: number, wplykaPrice: number, colorSurchargePrice: number): number {

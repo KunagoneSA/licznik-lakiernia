@@ -25,7 +25,7 @@ export function useOrders() {
     if (orders.length === 0) setLoading(true)
     const { data, error: err } = await supabase
       .from('orders')
-      .select('*, client:clients(name, type), order_items(total_price, m2, quantity, has_handle, has_wplyka, color_surcharge, painting_variant_id)')
+      .select('*, client:clients(name, type), order_items(total_price, m2, quantity, has_handle, has_wplyka, color_surcharge)')
       .order('number', { ascending: false })
 
     if (err) {
