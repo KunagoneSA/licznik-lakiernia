@@ -147,6 +147,7 @@ export default function PaintPurchasesPage() {
     supplier: string; date: string; invoice_number: string; total_netto?: number;
     items: { product: string; quantity: number; unit: string; unit_price: number; color: string }[]
   } | null>(null)
+  const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const ACCEPTED_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
@@ -203,13 +204,47 @@ export default function PaintPurchasesPage() {
       const totalNetto = Number(data.total_netto) || 0
       const computedTotal = Math.round(items.reduce((s: number, i: any) => s + i.quantity * i.unit_price, 0) * 100) / 100
 
+      const parsedDate = data.date ?? new Date().toISOString().slice(0, 10)
+      const parsedSupplier = data.supplier ?? ''
+
       setParsedInvoice({
-        supplier: data.supplier ?? '',
-        date: data.date ?? new Date().toISOString().slice(0, 10),
+        supplier: parsedSupplier,
+        date: parsedDate,
         invoice_number: data.invoice_number ?? '',
         total_netto: totalNetto,
         items,
       })
+
+      // Duplicate detection — check if similar purchases already exist
+      setDuplicateWarning(null)
+      try {
+        const dupReasons: string[] = []
+        // Check by date + supplier name similarity + similar total
+        const { data: existing } = await supabase
+          .from('paint_purchases')
+          .select('id, date, supplier_id, product, quantity, unit_price, total, supplier:suppliers(name)')
+          .gte('date', parsedDate)
+          .lte('date', parsedDate)
+        if (existing && existing.length > 0) {
+          const supplierNorm = normalizeSupplierName(parsedSupplier)
+          const matching = existing.filter((e: any) => {
+            const eName = normalizeSupplierName(e.supplier?.name ?? '')
+            return eName === supplierNorm || eName.includes(supplierNorm) || supplierNorm.includes(eName)
+              || (supplierNorm.split(' ').filter((w: string) => w.length > 2)[0] && eName.includes(supplierNorm.split(' ').filter((w: string) => w.length > 2)[0]))
+          })
+          if (matching.length > 0) {
+            const existingTotal = Math.round(matching.reduce((s: number, e: any) => s + Number(e.total), 0) * 100) / 100
+            if (Math.abs(existingTotal - computedTotal) < 1) {
+              dupReasons.push(`Znaleziono ${matching.length} pozycji z ${parsedDate} od tego dostawcy na tę samą kwotę (${fmt(existingTotal)} zł)`)
+            } else {
+              dupReasons.push(`Znaleziono ${matching.length} pozycji z ${parsedDate} od tego dostawcy (suma: ${fmt(existingTotal)} zł)`)
+            }
+          }
+        }
+        if (dupReasons.length > 0) {
+          setDuplicateWarning(dupReasons.join('. '))
+        }
+      } catch { /* ignore duplicate check errors */ }
 
       if (totalNetto > 0 && Math.abs(computedTotal - totalNetto) > 0.5) {
         toast(`⚠️ Uwaga: suma pozycji (${fmt(computedTotal)}) nie zgadza się z sumą na fakturze (${fmt(totalNetto)}). Sprawdź ilości!`, 'error')
@@ -294,6 +329,7 @@ export default function PaintPurchasesPage() {
     }
 
     setParsedInvoice(null)
+    setDuplicateWarning(null)
     setPrefillData({
       supplierId: suppId,
       date: parsedInvoice.date,
@@ -348,11 +384,20 @@ export default function PaintPurchasesPage() {
           <span className="text-sm font-medium text-amber-700">Odczytuję fakturę...</span>
         </div>
       ) : parsedInvoice ? (
-        <div className="rounded-xl border-2 border-emerald-300 bg-emerald-50 p-4 space-y-3">
+        <div className={`rounded-xl border-2 ${duplicateWarning ? 'border-red-400 bg-red-50' : 'border-emerald-300 bg-emerald-50'} p-4 space-y-3`}>
+          {duplicateWarning && (
+            <div className="flex items-center gap-2 rounded-lg bg-red-100 border border-red-300 px-4 py-2.5">
+              <span className="text-lg">⚠️</span>
+              <div>
+                <span className="text-sm font-semibold text-red-800">Możliwy duplikat!</span>
+                <span className="text-sm text-red-700 ml-1">{duplicateWarning}</span>
+              </div>
+            </div>
+          )}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-emerald-600" />
-              <span className="text-sm font-medium text-emerald-800">
+              <FileText className={`h-5 w-5 ${duplicateWarning ? 'text-red-600' : 'text-emerald-600'}`} />
+              <span className={`text-sm font-medium ${duplicateWarning ? 'text-red-800' : 'text-emerald-800'}`}>
                 Faktura odczytana: {parsedInvoice.supplier} — {parsedInvoice.invoice_number} — Netto: <span className="text-amber-600 font-bold">{fmt(parsedInvoice.items.reduce((s, i) => s + i.quantity * i.unit_price, 0))} zł</span>
               </span>
             </div>
@@ -361,7 +406,7 @@ export default function PaintPurchasesPage() {
                 className="rounded-lg bg-emerald-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-emerald-400">
                 Dodaj pozycje
               </button>
-              <button onClick={() => setParsedInvoice(null)}
+              <button onClick={() => { setParsedInvoice(null); setDuplicateWarning(null) }}
                 className="rounded-lg px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-100">
                 Anuluj
               </button>
