@@ -24,8 +24,8 @@ async function fetchOpsData(): Promise<Operation[]> {
       cachedOps = (data as Operation[]) ?? []
       cachePromise = null
       return cachedOps
-    })
-  return cachePromise
+    }) as Promise<Operation[]>
+  return cachePromise!
 }
 
 export function useOperations() {

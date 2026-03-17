@@ -17,8 +17,8 @@ async function fetchVariants(): Promise<PaintingVariant[]> {
       cachedVariants = (data as PaintingVariant[]) ?? []
       cachePromise = null
       return cachedVariants
-    })
-  return cachePromise
+    }) as Promise<PaintingVariant[]>
+  return cachePromise!
 }
 
 export function usePaintingVariants() {

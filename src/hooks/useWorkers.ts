@@ -24,8 +24,8 @@ async function fetchWorkersData(): Promise<Worker[]> {
       cachedWorkers = (data as Worker[]) ?? []
       cachePromise = null
       return cachedWorkers
-    })
-  return cachePromise
+    }) as Promise<Worker[]>
+  return cachePromise!
 }
 
 export function useWorkers() {

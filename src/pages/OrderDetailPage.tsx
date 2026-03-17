@@ -193,8 +193,6 @@ export default function OrderDetailPage() {
     const q = Number(newQty) || 1
     const vid = newVariantId || selectableVariants[0]?.id
     if (!l || !w || !vid) return
-    const variant = selectableVariants.find((v) => v.id === vid)
-    const sides = variant?.sides ?? 1
     const parsedPrice = Number(newPrice)
     const pricePerM2 = newPrice !== '' && !isNaN(parsedPrice) ? parsedPrice : getDefaultPrice(vid)
     const m2 = (l * w * q) / 1_000_000
@@ -345,8 +343,6 @@ export default function OrderDetailPage() {
         total_price: Math.round(pricePerUnit * q * 100) / 100,
       })
     } else {
-      const variant = variants.find((v) => v.id === vid)
-      const sides = variant?.sides ?? 1
       const pricePerM2 = eiPrice !== '' && !isNaN(pricePerUnit) ? pricePerUnit : getDefaultPrice(vid)
       const m2 = (l * w * q) / 1_000_000
       const totalPrice = m2 * pricePerM2
@@ -620,9 +616,6 @@ export default function OrderDetailPage() {
               {items.map((item, idx) => {
                 const isEditing = editingItemId === item.id
                 if (isEditing) {
-                  const vid = eiVariantId
-                  const variant = variants.find((v) => v.id === vid)
-                  const sides = variant?.sides ?? 1
                   const l = Number(eiLength) || 0
                   const w = Number(eiWidth) || 0
                   const q = Number(eiQty) || 1
@@ -690,8 +683,6 @@ export default function OrderDetailPage() {
               })}
               {showInlineAdd && (() => {
                 const vid = newVariantId || selectableVariants[0]?.id
-                const variant = selectableVariants.find((v) => v.id === vid)
-                const sides = variant?.sides ?? 1
                 const pricePerM2 = vid ? getPriceForVariant(vid, variants) : 0
                 const l = Number(newLength) || 0
                 const w = Number(newWidth) || 0
