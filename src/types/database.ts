@@ -37,6 +37,8 @@ export interface Order {
   accepted_date: string | null
   planned_date: string | null
   ready_date: string | null
+  invoice_number: string | null
+  paid_date: string | null
   material_provided: boolean
   paints_provided: boolean
   dimensions_entered: boolean

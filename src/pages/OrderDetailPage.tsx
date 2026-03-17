@@ -244,6 +244,10 @@ export default function OrderDetailPage() {
   const [editNotes, setEditNotes] = useState('')
   const [showReadyDatePicker, setShowReadyDatePicker] = useState(false)
   const [readyDateValue, setReadyDateValue] = useState('')
+  const [showInvoicePicker, setShowInvoicePicker] = useState(false)
+  const [invoiceNumberValue, setInvoiceNumberValue] = useState('')
+  const [showPaidDatePicker, setShowPaidDatePicker] = useState(false)
+  const [paidDateValue, setPaidDateValue] = useState('')
   const [commentValue, setCommentValue] = useState<string | null>(null)
   const commentText = commentValue ?? order?.notes ?? ''
 
@@ -272,6 +276,16 @@ export default function OrderDetailPage() {
       setShowReadyDatePicker(true)
       return
     }
+    if (newStatus === 'fv_wystawiona') {
+      setInvoiceNumberValue('')
+      setShowInvoicePicker(true)
+      return
+    }
+    if (newStatus === 'zapłacone') {
+      setPaidDateValue(new Date().toISOString().slice(0, 10))
+      setShowPaidDatePicker(true)
+      return
+    }
     await updateOrder({ status: newStatus })
     toast(`Status zmieniony na: ${statusLabels[newStatus]}`)
   }
@@ -280,6 +294,18 @@ export default function OrderDetailPage() {
     await updateOrder({ status: 'gotowe' as OrderStatus, ready_date: readyDateValue || new Date().toISOString().slice(0, 10) })
     setShowReadyDatePicker(false)
     toast('Status zmieniony na: Gotowe')
+  }
+
+  const confirmInvoice = async () => {
+    await updateOrder({ status: 'fv_wystawiona' as OrderStatus, invoice_number: invoiceNumberValue || null })
+    setShowInvoicePicker(false)
+    toast('Status zmieniony na: FV wystawiona')
+  }
+
+  const confirmPaid = async () => {
+    await updateOrder({ status: 'zapłacone' as OrderStatus, paid_date: paidDateValue || new Date().toISOString().slice(0, 10) })
+    setShowPaidDatePicker(false)
+    toast('Status zmieniony na: Zapłacone')
   }
 
   const handleCheckbox = async (field: string, value: boolean) => {
@@ -440,6 +466,12 @@ export default function OrderDetailPage() {
             {order.ready_date && (
               <tr><td className="text-gray-500 pr-2 text-right py-px">Gotowe:</td><td className="font-medium text-emerald-600 tabular-nums py-px">{new Date(order.ready_date).toLocaleDateString('pl-PL')}</td></tr>
             )}
+            {order.invoice_number && (
+              <tr><td className="text-gray-500 pr-2 text-right py-px">FV:</td><td className="font-medium text-pink-600 py-px">{order.invoice_number}</td></tr>
+            )}
+            {order.paid_date && (
+              <tr><td className="text-gray-500 pr-2 text-right py-px">Zapłacone:</td><td className="font-medium text-gray-600 tabular-nums py-px">{new Date(order.paid_date).toLocaleDateString('pl-PL')}</td></tr>
+            )}
           </tbody>
         </table>
         <div className="flex items-center gap-1">
@@ -572,6 +604,42 @@ export default function OrderDetailPage() {
             <Check className="h-3 w-3 inline mr-1" />Potwierdź
           </button>
           <button onClick={() => setShowReadyDatePicker(false)}
+            className="rounded-md px-2 py-1 text-xs text-gray-500 hover:bg-gray-100">
+            Anuluj
+          </button>
+        </div>
+      )}
+
+      {/* Invoice number picker */}
+      {showInvoicePicker && (
+        <div className="flex items-center gap-3 rounded-lg bg-pink-50 border border-pink-200 p-3">
+          <span className="text-xs font-medium text-pink-700">Numer faktury:</span>
+          <input type="text" value={invoiceNumberValue} onChange={(e) => setInvoiceNumberValue(e.target.value)}
+            placeholder="np. FV/2026/03/001"
+            autoFocus
+            className="rounded bg-white border border-pink-300 px-2 py-1 text-xs text-gray-800 outline-none focus:ring-2 focus:ring-pink-500/30 w-48" />
+          <button onClick={confirmInvoice}
+            className="rounded-md bg-pink-500 px-3 py-1 text-xs font-medium text-white hover:bg-pink-600">
+            <Check className="h-3 w-3 inline mr-1" />Potwierdź
+          </button>
+          <button onClick={() => setShowInvoicePicker(false)}
+            className="rounded-md px-2 py-1 text-xs text-gray-500 hover:bg-gray-100">
+            Anuluj
+          </button>
+        </div>
+      )}
+
+      {/* Paid date picker */}
+      {showPaidDatePicker && (
+        <div className="flex items-center gap-3 rounded-lg bg-gray-50 border border-gray-300 p-3">
+          <span className="text-xs font-medium text-gray-700">Data zapłaty:</span>
+          <input type="date" value={paidDateValue} onChange={(e) => setPaidDateValue(e.target.value)}
+            className="rounded bg-white border border-gray-300 px-2 py-1 text-xs text-gray-800 outline-none focus:ring-2 focus:ring-gray-500/30" />
+          <button onClick={confirmPaid}
+            className="rounded-md bg-gray-500 px-3 py-1 text-xs font-medium text-white hover:bg-gray-600">
+            <Check className="h-3 w-3 inline mr-1" />Potwierdź
+          </button>
+          <button onClick={() => setShowPaidDatePicker(false)}
             className="rounded-md px-2 py-1 text-xs text-gray-500 hover:bg-gray-100">
             Anuluj
           </button>
