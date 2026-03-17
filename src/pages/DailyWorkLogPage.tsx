@@ -6,12 +6,6 @@ import { useOperations } from '../hooks/useOperations'
 import { useToast } from '../contexts/ToastContext'
 import type { WorkLog } from '../types/database'
 
-const fmtPL = (n: number, decimals = 2) => {
-  const [int, dec] = n.toFixed(decimals).split('.')
-  const intFormatted = int.replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
-  return dec ? intFormatted + ',' + dec : intFormatted
-}
-
 const dayNames = ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota']
 
 function getWeekDates(dateStr: string) {
@@ -39,13 +33,13 @@ export default function DailyWorkLogPage() {
   const operations = ops.length > 0 ? ops.map(o => o.name) : ['Przygotowanie', 'Podkład', 'Szlifowanie', 'Lakierowanie', 'Pakowanie', 'Sprzątanie', 'Inne']
   const activeWorkers = workers.filter(w => w.active)
 
+  const getWorkerRate = (name: string) => workers.find(w => w.name === name)?.hourly_rate ?? 35
+
   // Add form
   const [showAdd, setShowAdd] = useState(false)
   const [newWorker, setNewWorker] = useState('')
   const [newOp, setNewOp] = useState('')
   const [newHours, setNewHours] = useState('')
-  const [newRate, setNewRate] = useState('')
-  const [newM2, setNewM2] = useState('')
   const [newNotes, setNewNotes] = useState('')
 
   // Edit
@@ -53,8 +47,6 @@ export default function DailyWorkLogPage() {
   const [editWorker, setEditWorker] = useState('')
   const [editOp, setEditOp] = useState('')
   const [editHours, setEditHours] = useState('')
-  const [editRate, setEditRate] = useState('')
-  const [editM2, setEditM2] = useState('')
   const [editNotes, setEditNotes] = useState('')
 
   // Week dates
@@ -77,25 +69,11 @@ export default function DailyWorkLogPage() {
   useEffect(() => {
     if (activeWorkers.length > 0 && !newWorker) {
       setNewWorker(activeWorkers[0].name)
-      setNewRate(String(activeWorkers[0].hourly_rate))
     }
   }, [activeWorkers.length])
 
-  const handleWorkerChange = (name: string) => {
-    setNewWorker(name)
-    const w = workers.find(w => w.name === name)
-    if (w) setNewRate(String(w.hourly_rate))
-  }
-
-  const handleEditWorkerChange = (name: string) => {
-    setEditWorker(name)
-    const w = workers.find(w => w.name === name)
-    if (w) setEditRate(String(w.hourly_rate))
-  }
-
   const resetAdd = () => {
     setNewHours('')
-    setNewM2('')
     setNewNotes('')
     if (operations.length > 0) setNewOp(operations[0])
   }
@@ -103,7 +81,7 @@ export default function DailyWorkLogPage() {
   const handleAdd = async () => {
     const h = Number(newHours)
     if (!h || !newWorker) return
-    const rate = Number(newRate) || 35
+    const rate = getWorkerRate(newWorker)
     const { error } = await supabase.from('work_logs').insert({
       order_id: null,
       worker_name: newWorker,
@@ -112,7 +90,7 @@ export default function DailyWorkLogPage() {
       hours: h,
       hourly_rate: rate,
       cost: Math.round(h * rate * 100) / 100,
-      m2_painted: newM2 ? Number(newM2) : null,
+      m2_painted: null,
       notes: newNotes || null,
     })
     if (!error) {
@@ -129,8 +107,6 @@ export default function DailyWorkLogPage() {
     setEditWorker(log.worker_name)
     setEditOp(log.operation)
     setEditHours(String(log.hours))
-    setEditRate(String(log.hourly_rate))
-    setEditM2(log.m2_painted != null ? String(log.m2_painted) : '')
     setEditNotes(log.notes ?? '')
   }
 
@@ -138,14 +114,13 @@ export default function DailyWorkLogPage() {
     if (!editId) return
     const h = Number(editHours)
     if (!h) return
-    const rate = Number(editRate) || 35
+    const rate = getWorkerRate(editWorker)
     const { error } = await supabase.from('work_logs').update({
       worker_name: editWorker,
       operation: editOp,
       hours: h,
       hourly_rate: rate,
       cost: Math.round(h * rate * 100) / 100,
-      m2_painted: editM2 ? Number(editM2) : null,
       notes: editNotes || null,
     }).eq('id', editId)
     if (!error) {
@@ -211,24 +186,14 @@ export default function DailyWorkLogPage() {
     setSelectedDate(d.toISOString().slice(0, 10))
   }
 
-  const kd = (e: React.KeyboardEvent, action: () => void) => {
+  const kd = (e: React.KeyboardEvent, action: () => void, cancel?: () => void) => {
     if (e.key === 'Enter') action()
-    if (e.key === 'Escape') { setEditId(null); setShowAdd(false) }
+    if (e.key === 'Escape') { cancel ? cancel() : setEditId(null) }
   }
 
-  // Group logs by worker for summary
-  const byWorker = logs.reduce<Record<string, { hours: number; cost: number }>>((acc, l) => {
-    if (!acc[l.worker_name]) acc[l.worker_name] = { hours: 0, cost: 0 }
-    acc[l.worker_name].hours += l.hours
-    acc[l.worker_name].cost += l.cost
-    return acc
-  }, {})
-
   const totalHours = logs.reduce((s, l) => s + l.hours, 0)
-  const totalCost = logs.reduce((s, l) => s + l.cost, 0)
 
   const ic = 'w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500'
-  const sc = 'w-full bg-transparent border-b border-gray-300 px-0.5 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500'
 
   const selectedDayName = dayNames[new Date(selectedDate).getDay()]
   const isToday = selectedDate === today
@@ -259,8 +224,8 @@ export default function DailyWorkLogPage() {
           </button>
           {!showAdd && (
             <button onClick={() => { setShowAdd(true); if (!newOp && operations.length > 0) setNewOp(operations[0]) }}
-              className="flex items-center gap-1 rounded-md bg-amber-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-amber-400">
-              <Plus className="h-3 w-3" /> Dodaj wpis
+              className="flex items-center gap-1 rounded-md bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-600 hover:bg-amber-100">
+              <Plus className="h-3 w-3" /> Dodaj
             </button>
           )}
         </div>
@@ -286,24 +251,21 @@ export default function DailyWorkLogPage() {
         })}
       </div>
 
-      {/* Table */}
+      {/* Table — identical style to OrderDetailPage "Etapy pracy" */}
       <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
         <table className="w-full text-xs">
           <thead>
             <tr className="border-b border-gray-200 bg-gray-50">
-              <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 uppercase">Pracownik</th>
-              <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 uppercase">Operacja</th>
-              <th className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-500 uppercase">Godziny</th>
-              <th className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-500 uppercase">Stawka</th>
-              <th className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-500 uppercase">Koszt</th>
-              <th className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-500 uppercase">m²</th>
-              <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 uppercase">Uwagi</th>
-              <th className="px-1 py-1.5 w-8"></th>
+              <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 w-28">Pracownik</th>
+              <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 w-1/4">Operacja</th>
+              <th className="px-2 py-1.5 text-right text-[10px] font-medium text-gray-500 w-16">Godz</th>
+              <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 w-1/3">Uwagi</th>
+              <th className="px-1 py-1.5 w-6"></th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-400">
+              <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-400">
                 <div className="flex justify-center"><div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-300 border-t-amber-500" /></div>
               </td></tr>
             ) : (
@@ -312,20 +274,17 @@ export default function DailyWorkLogPage() {
                   if (editId === log.id) return (
                     <tr key={log.id} className="border-b border-gray-100 bg-blue-50/30">
                       <td className="px-2 py-1">
-                        <select value={editWorker} onChange={(e) => handleEditWorkerChange(e.target.value)} className={sc}>
+                        <select value={editWorker} onChange={(e) => setEditWorker(e.target.value)} className={ic} onKeyDown={(e) => kd(e, saveEdit, () => setEditId(null))}>
                           {activeWorkers.map(w => <option key={w.id} value={w.name}>{w.name}</option>)}
                         </select>
                       </td>
                       <td className="px-2 py-1">
-                        <select value={editOp} onChange={(e) => setEditOp(e.target.value)} className={sc}>
+                        <select value={editOp} onChange={(e) => setEditOp(e.target.value)} className={ic} onKeyDown={(e) => kd(e, saveEdit, () => setEditId(null))}>
                           {operations.map(o => <option key={o} value={o}>{o}</option>)}
                         </select>
                       </td>
-                      <td className="px-2 py-1"><input type="number" step="0.5" value={editHours} onChange={(e) => setEditHours(e.target.value)} className={`${ic} text-center w-16`} onKeyDown={(e) => kd(e, saveEdit)} /></td>
-                      <td className="px-2 py-1"><input type="number" value={editRate} onChange={(e) => setEditRate(e.target.value)} className={`${ic} text-center w-16`} onKeyDown={(e) => kd(e, saveEdit)} /></td>
-                      <td className="px-2 py-1 text-center text-amber-600 font-medium">{fmtPL(Number(editHours || 0) * Number(editRate || 0))}</td>
-                      <td className="px-2 py-1"><input type="number" step="0.01" value={editM2} onChange={(e) => setEditM2(e.target.value)} className={`${ic} text-center w-16`} onKeyDown={(e) => kd(e, saveEdit)} /></td>
-                      <td className="px-2 py-1"><input type="text" value={editNotes} onChange={(e) => setEditNotes(e.target.value)} className={ic} onKeyDown={(e) => kd(e, saveEdit)} /></td>
+                      <td className="px-2 py-1"><input type="number" step="0.5" value={editHours} onChange={(e) => setEditHours(e.target.value)} className={`${ic} text-right tabular-nums`} onKeyDown={(e) => kd(e, saveEdit, () => setEditId(null))} /></td>
+                      <td className="px-2 py-1"><input type="text" value={editNotes} onChange={(e) => setEditNotes(e.target.value)} className="w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-[10px] text-gray-600 outline-none focus:border-amber-500" onKeyDown={(e) => kd(e, saveEdit, () => setEditId(null))} /></td>
                       <td className="px-1 py-1 flex gap-0.5">
                         <button onClick={saveEdit} className="rounded p-0.5 text-emerald-500 hover:text-emerald-700"><Check className="h-3 w-3" /></button>
                         <button onClick={() => setEditId(null)} className="rounded p-0.5 text-gray-400 hover:text-gray-600"><X className="h-3 w-3" /></button>
@@ -336,13 +295,12 @@ export default function DailyWorkLogPage() {
                     <tr key={log.id} className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer" onClick={() => startEdit(log)}>
                       <td className="px-2 py-1.5 font-medium text-gray-800">{log.worker_name}</td>
                       <td className="px-2 py-1.5 text-gray-600">{log.operation}</td>
-                      <td className="px-2 py-1.5 text-center text-gray-800">{log.hours}h</td>
-                      <td className="px-2 py-1.5 text-center text-gray-500">{log.hourly_rate} zł</td>
-                      <td className="px-2 py-1.5 text-center text-amber-600 font-medium">{fmtPL(log.cost)} zł</td>
-                      <td className="px-2 py-1.5 text-center text-gray-500">{log.m2_painted != null ? fmtPL(log.m2_painted) : '—'}</td>
-                      <td className="px-2 py-1.5 text-gray-400 truncate max-w-[120px]">{log.notes || ''}</td>
+                      <td className="px-2 py-1.5 text-right text-gray-600 tabular-nums">{log.hours}</td>
+                      <td className="px-2 py-1.5 text-gray-400 text-[10px]">{log.notes || ''}</td>
                       <td className="px-1 py-1.5" onClick={(e) => e.stopPropagation()}>
-                        <button onClick={() => handleDelete(log.id)} className="rounded p-0.5 text-gray-300 hover:text-red-500 hover:bg-red-50"><Trash2 className="h-3 w-3" /></button>
+                        <button onClick={() => handleDelete(log.id)} className="rounded p-0.5 text-gray-400 hover:text-red-600 hover:bg-gray-100">
+                          <Trash2 className="h-3 w-3" />
+                        </button>
                       </td>
                     </tr>
                   )
@@ -352,46 +310,48 @@ export default function DailyWorkLogPage() {
                 {showAdd && (
                   <tr className="border-b border-gray-100 bg-amber-50/30">
                     <td className="px-2 py-1">
-                      <select value={newWorker} onChange={(e) => handleWorkerChange(e.target.value)} className={sc} autoFocus>
+                      <select value={newWorker} onChange={(e) => setNewWorker(e.target.value)} className={ic} autoFocus onKeyDown={(e) => kd(e, handleAdd, () => setShowAdd(false))}>
                         {activeWorkers.map(w => <option key={w.id} value={w.name}>{w.name}</option>)}
                       </select>
                     </td>
                     <td className="px-2 py-1">
-                      <select value={newOp} onChange={(e) => setNewOp(e.target.value)} className={sc}>
+                      <select value={newOp} onChange={(e) => setNewOp(e.target.value)} className={ic} onKeyDown={(e) => kd(e, handleAdd, () => setShowAdd(false))}>
                         {operations.map(o => <option key={o} value={o}>{o}</option>)}
                       </select>
                     </td>
-                    <td className="px-2 py-1"><input type="number" step="0.5" value={newHours} onChange={(e) => setNewHours(e.target.value)} placeholder="0" className={`${ic} text-center w-16`} onKeyDown={(e) => kd(e, handleAdd)} /></td>
-                    <td className="px-2 py-1"><input type="number" value={newRate} onChange={(e) => setNewRate(e.target.value)} className={`${ic} text-center w-16`} onKeyDown={(e) => kd(e, handleAdd)} /></td>
-                    <td className="px-2 py-1 text-center text-amber-600 font-medium">{fmtPL(Number(newHours || 0) * Number(newRate || 0))}</td>
-                    <td className="px-2 py-1"><input type="number" step="0.01" value={newM2} onChange={(e) => setNewM2(e.target.value)} placeholder="—" className={`${ic} text-center w-16`} onKeyDown={(e) => kd(e, handleAdd)} /></td>
-                    <td className="px-2 py-1"><input type="text" value={newNotes} onChange={(e) => setNewNotes(e.target.value)} placeholder="Uwagi..." className={ic} onKeyDown={(e) => kd(e, handleAdd)} /></td>
-                    <td className="px-1 py-1 flex gap-0.5">
-                      <button onClick={handleAdd} className="rounded p-0.5 text-emerald-500 hover:text-emerald-700"><Check className="h-3 w-3" /></button>
-                      <button onClick={() => setShowAdd(false)} className="rounded p-0.5 text-gray-400 hover:text-gray-600"><X className="h-3 w-3" /></button>
+                    <td className="px-2 py-1">
+                      <input type="number" step="0.5" value={newHours} onChange={(e) => setNewHours(e.target.value)}
+                        placeholder="0" className={`${ic} text-right tabular-nums`} onKeyDown={(e) => kd(e, handleAdd, () => setShowAdd(false))} />
+                    </td>
+                    <td className="px-2 py-1">
+                      <input type="text" value={newNotes} onChange={(e) => setNewNotes(e.target.value)}
+                        placeholder="uwagi"
+                        className="w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-[10px] text-gray-600 outline-none focus:border-amber-500"
+                        onKeyDown={(e) => kd(e, handleAdd, () => setShowAdd(false))} />
+                    </td>
+                    <td className="px-1 py-1">
+                      <button onClick={() => setShowAdd(false)} className="rounded p-0.5 text-gray-400 hover:text-gray-600">
+                        <X className="h-3 w-3" />
+                      </button>
                     </td>
                   </tr>
                 )}
 
                 {/* Empty state */}
                 {!loading && logs.length === 0 && !showAdd && (
-                  <tr><td colSpan={8} className="px-4 py-6 text-center text-gray-400 text-xs">
+                  <tr><td colSpan={5} className="px-2 py-6 text-center text-xs text-gray-400">
                     Brak wpisów na ten dzień
                   </td></tr>
                 )}
               </>
             )}
           </tbody>
-          {/* Footer totals */}
           {logs.length > 0 && (
             <tfoot>
               <tr className="border-t border-gray-200 bg-gray-50 font-medium">
                 <td className="px-2 py-1.5 text-gray-700">Razem</td>
                 <td className="px-2 py-1.5"></td>
-                <td className="px-2 py-1.5 text-center text-gray-800">{totalHours}h</td>
-                <td className="px-2 py-1.5"></td>
-                <td className="px-2 py-1.5 text-center text-amber-600 font-bold">{fmtPL(totalCost)} zł</td>
-                <td className="px-2 py-1.5"></td>
+                <td className="px-2 py-1.5 text-right text-gray-800 tabular-nums">{totalHours}h</td>
                 <td className="px-2 py-1.5" colSpan={2}></td>
               </tr>
             </tfoot>
@@ -399,18 +359,11 @@ export default function DailyWorkLogPage() {
         </table>
       </div>
 
-      {/* Summary per worker */}
-      {Object.keys(byWorker).length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {Object.entries(byWorker).map(([name, data]) => (
-            <div key={name} className="rounded-lg border border-gray-200 bg-white p-3">
-              <div className="text-xs font-medium text-gray-800">{name}</div>
-              <div className="mt-1 flex items-baseline gap-2">
-                <span className="text-sm font-bold text-amber-600">{fmtPL(data.cost)} zł</span>
-                <span className="text-[10px] text-gray-400">{data.hours}h</span>
-              </div>
-            </div>
-          ))}
+      {showAdd && (
+        <div className="mt-1 flex gap-2 text-[10px] text-gray-400">
+          <span>TAB = następne pole</span>
+          <span>Enter = dodaj</span>
+          <span>Esc = zamknij</span>
         </div>
       )}
     </div>
