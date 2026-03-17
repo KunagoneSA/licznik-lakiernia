@@ -14,6 +14,7 @@ import CennikPage from './pages/CennikPage'
 import WorkersPage from './pages/WorkersPage'
 import SuppliersPage from './pages/SuppliersPage'
 import ProductsPage from './pages/ProductsPage'
+import DailyWorkLogPage from './pages/DailyWorkLogPage'
 
 export const router = createBrowserRouter([
   {
@@ -39,6 +40,7 @@ export const router = createBrowserRouter([
           { path: 'dostawcy', element: <SuppliersPage /> },
           { path: 'materialy', element: <ProductsPage /> },
           { path: 'pracownicy', element: <WorkersPage /> },
+          { path: 'dziennik-pracy', element: <DailyWorkLogPage /> },
         ],
       },
     ],
