@@ -93,7 +93,7 @@ export default function DailyWorkLogPage() {
   const resetAdd = () => {
     setNewHours('')
     setNewNotes('')
-    if (operations.length > 0) setNewOp(operations[0])
+    // zachowaj ostatniego pracownika — nie resetuj newWorker
   }
 
   const handleAdd = async () => {
