@@ -22,6 +22,18 @@ function getWeekDates(dateStr: string) {
   return dates
 }
 
+/** Returns the previous working day — Friday if current is Monday, otherwise day-1 */
+function getPreviousWorkday(dateStr: string): string {
+  const d = new Date(dateStr)
+  const day = d.getDay()
+  // Monday (1) → go back 3 days to Friday
+  // Sunday (0) → go back 2 days to Friday
+  // Saturday (6) → go back 1 day to Friday
+  const daysBack = day === 1 ? 3 : day === 0 ? 2 : 1
+  d.setDate(d.getDate() - daysBack)
+  return d.toISOString().slice(0, 10)
+}
+
 export default function DailyWorkLogPage() {
   const today = new Date().toISOString().slice(0, 10)
   const [selectedDate, setSelectedDate] = useState(today)
@@ -148,16 +160,15 @@ export default function DailyWorkLogPage() {
   }
 
   const copyPreviousDay = async () => {
-    const prevDate = new Date(selectedDate)
-    prevDate.setDate(prevDate.getDate() - 1)
-    const prevDateStr = prevDate.toISOString().slice(0, 10)
+    const prevDateStr = getPreviousWorkday(selectedDate)
+    const prevDayName = dayNames[new Date(prevDateStr).getDay()]
     const { data } = await supabase
       .from('work_logs')
       .select('*')
       .eq('date', prevDateStr)
       .is('order_id', null)
     if (!data || data.length === 0) {
-      toast('Brak wpisów z poprzedniego dnia', 'error')
+      toast(`Brak wpisów z ${prevDayName.toLowerCase()} (${prevDateStr})`, 'error')
       return
     }
     const inserts = data.map((log: WorkLog) => ({
@@ -174,7 +185,7 @@ export default function DailyWorkLogPage() {
     const { error } = await supabase.from('work_logs').insert(inserts)
     if (!error) {
       await fetchLogs()
-      toast(`Skopiowano ${inserts.length} wpisów`)
+      toast(`Skopiowano ${inserts.length} wpisów z ${prevDayName.toLowerCase()}`)
     } else {
       toast('Błąd kopiowania', 'error')
     }
@@ -191,15 +202,21 @@ export default function DailyWorkLogPage() {
     if (e.key === 'Escape') { cancel ? cancel() : setEditId(null) }
   }
 
+  // Summary per worker (only workers with entries)
+  const byWorker = logs.reduce<Record<string, number>>((acc, l) => {
+    acc[l.worker_name] = (acc[l.worker_name] ?? 0) + l.hours
+    return acc
+  }, {})
   const totalHours = logs.reduce((s, l) => s + l.hours, 0)
 
   const ic = 'w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500'
 
   const selectedDayName = dayNames[new Date(selectedDate).getDay()]
   const isToday = selectedDate === today
+  const copyFromDay = dayNames[new Date(getPreviousWorkday(selectedDate)).getDay()]
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Header with date navigation */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
@@ -220,7 +237,7 @@ export default function DailyWorkLogPage() {
         </div>
         <div className="flex items-center gap-2">
           <button onClick={copyPreviousDay} className="flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-50">
-            <Copy className="h-3 w-3" /> Kopiuj z wczoraj
+            <Copy className="h-3 w-3" /> Kopiuj z {copyFromDay.toLowerCase().slice(0, 2)}.
           </button>
           {!showAdd && (
             <button onClick={() => { setShowAdd(true); if (!newOp && operations.length > 0) setNewOp(operations[0]) }}
@@ -251,15 +268,31 @@ export default function DailyWorkLogPage() {
         })}
       </div>
 
+      {/* Worker summary — only workers with entries today */}
+      {Object.keys(byWorker).length > 0 && (
+        <div className="flex items-center gap-3 flex-wrap">
+          {Object.entries(byWorker).map(([name, hours]) => (
+            <div key={name} className="flex items-center gap-1.5 rounded-md bg-white border border-gray-200 px-2.5 py-1">
+              <span className="text-xs font-medium text-gray-700">{name}</span>
+              <span className="text-xs font-bold text-amber-600 tabular-nums">{hours}h</span>
+            </div>
+          ))}
+          <div className="flex items-center gap-1.5 rounded-md bg-gray-100 px-2.5 py-1">
+            <span className="text-[10px] font-medium text-gray-500 uppercase">Razem</span>
+            <span className="text-xs font-bold text-gray-800 tabular-nums">{totalHours}h</span>
+          </div>
+        </div>
+      )}
+
       {/* Table — identical style to OrderDetailPage "Etapy pracy" */}
       <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
         <table className="w-full text-xs">
           <thead>
             <tr className="border-b border-gray-200 bg-gray-50">
-              <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 w-28">Pracownik</th>
-              <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 w-1/4">Operacja</th>
-              <th className="px-2 py-1.5 text-right text-[10px] font-medium text-gray-500 w-16">Godz</th>
-              <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 w-1/3">Uwagi</th>
+              <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500">Pracownik</th>
+              <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500">Operacja</th>
+              <th className="px-2 py-1.5 text-right text-[10px] font-medium text-gray-500 w-10">Godz</th>
+              <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 w-1/2">Uwagi</th>
               <th className="px-1 py-1.5 w-6"></th>
             </tr>
           </thead>
@@ -283,7 +316,7 @@ export default function DailyWorkLogPage() {
                           {operations.map(o => <option key={o} value={o}>{o}</option>)}
                         </select>
                       </td>
-                      <td className="px-2 py-1"><input type="number" step="0.5" value={editHours} onChange={(e) => setEditHours(e.target.value)} className={`${ic} text-right tabular-nums`} onKeyDown={(e) => kd(e, saveEdit, () => setEditId(null))} /></td>
+                      <td className="px-2 py-1"><input type="number" step="0.5" value={editHours} onChange={(e) => setEditHours(e.target.value)} className={`${ic} text-right tabular-nums w-12`} onKeyDown={(e) => kd(e, saveEdit, () => setEditId(null))} /></td>
                       <td className="px-2 py-1"><input type="text" value={editNotes} onChange={(e) => setEditNotes(e.target.value)} className="w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-[10px] text-gray-600 outline-none focus:border-amber-500" onKeyDown={(e) => kd(e, saveEdit, () => setEditId(null))} /></td>
                       <td className="px-1 py-1 flex gap-0.5">
                         <button onClick={saveEdit} className="rounded p-0.5 text-emerald-500 hover:text-emerald-700"><Check className="h-3 w-3" /></button>
@@ -321,7 +354,7 @@ export default function DailyWorkLogPage() {
                     </td>
                     <td className="px-2 py-1">
                       <input type="number" step="0.5" value={newHours} onChange={(e) => setNewHours(e.target.value)}
-                        placeholder="0" className={`${ic} text-right tabular-nums`} onKeyDown={(e) => kd(e, handleAdd, () => setShowAdd(false))} />
+                        placeholder="0" className={`${ic} text-right tabular-nums w-12`} onKeyDown={(e) => kd(e, handleAdd, () => setShowAdd(false))} />
                     </td>
                     <td className="px-2 py-1">
                       <input type="text" value={newNotes} onChange={(e) => setNewNotes(e.target.value)}
@@ -346,21 +379,11 @@ export default function DailyWorkLogPage() {
               </>
             )}
           </tbody>
-          {logs.length > 0 && (
-            <tfoot>
-              <tr className="border-t border-gray-200 bg-gray-50 font-medium">
-                <td className="px-2 py-1.5 text-gray-700">Razem</td>
-                <td className="px-2 py-1.5"></td>
-                <td className="px-2 py-1.5 text-right text-gray-800 tabular-nums">{totalHours}h</td>
-                <td className="px-2 py-1.5" colSpan={2}></td>
-              </tr>
-            </tfoot>
-          )}
         </table>
       </div>
 
       {showAdd && (
-        <div className="mt-1 flex gap-2 text-[10px] text-gray-400">
+        <div className="flex gap-2 text-[10px] text-gray-400">
           <span>TAB = następne pole</span>
           <span>Enter = dodaj</span>
           <span>Esc = zamknij</span>
