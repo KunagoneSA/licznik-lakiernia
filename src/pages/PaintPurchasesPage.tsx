@@ -155,6 +155,9 @@ export default function PaintPurchasesPage() {
     items: { product: string; quantity: number; unit: string; unit_price: number; color: string }[]
   } | null>(null)
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null)
+  // Confirmation panels for status changes (like ready_date on orders)
+  const [confirmInvoice, setConfirmInvoice] = useState<{ id: string; value: string } | null>(null)
+  const [confirmPaid, setConfirmPaid] = useState<{ id: string; value: string } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const ACCEPTED_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
@@ -574,6 +577,61 @@ export default function PaintPurchasesPage() {
         })}
       </div>
 
+      {/* Confirmation panel: Invoice number */}
+      {confirmInvoice && (
+        <div className="flex items-center gap-3 rounded-lg bg-violet-50 border border-violet-200 p-3">
+          <span className="text-xs font-medium text-violet-700">Numer faktury:</span>
+          <input type="text" value={confirmInvoice.value} onChange={e => setConfirmInvoice({ ...confirmInvoice, value: e.target.value })}
+            placeholder="np. FV/2026/03/001" autoFocus
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                supabase.from('paint_purchases').update({ status: 'faktura' as PurchaseStatus, invoice_number: confirmInvoice.value.trim() || null }).eq('id', confirmInvoice.id).then(() => fetchPurchases())
+                setConfirmInvoice(null)
+              }
+              if (e.key === 'Escape') setConfirmInvoice(null)
+            }}
+            className="rounded bg-white border border-violet-300 px-3 py-1.5 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-violet-500/30 w-64" />
+          <button onClick={() => {
+            supabase.from('paint_purchases').update({ status: 'faktura' as PurchaseStatus, invoice_number: confirmInvoice.value.trim() || null }).eq('id', confirmInvoice.id).then(() => fetchPurchases())
+            setConfirmInvoice(null)
+          }}
+            className="rounded-md bg-violet-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-violet-600">
+            <Check className="h-3 w-3 inline mr-1" />Potwierdź
+          </button>
+          <button onClick={() => setConfirmInvoice(null)}
+            className="rounded-md px-2 py-1.5 text-xs text-gray-500 hover:bg-gray-100">
+            Anuluj
+          </button>
+        </div>
+      )}
+
+      {/* Confirmation panel: Paid date */}
+      {confirmPaid && (
+        <div className="flex items-center gap-3 rounded-lg bg-green-50 border border-green-200 p-3">
+          <span className="text-xs font-medium text-green-700">Data zapłaty:</span>
+          <input type="date" value={confirmPaid.value} onChange={e => setConfirmPaid({ ...confirmPaid, value: e.target.value })}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                supabase.from('paint_purchases').update({ status: 'zaplacone' as PurchaseStatus, paid_date: confirmPaid.value || new Date().toISOString().slice(0, 10) }).eq('id', confirmPaid.id).then(() => fetchPurchases())
+                setConfirmPaid(null)
+              }
+              if (e.key === 'Escape') setConfirmPaid(null)
+            }}
+            className="rounded bg-white border border-green-300 px-3 py-1.5 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-green-500/30" />
+          <button onClick={() => {
+            supabase.from('paint_purchases').update({ status: 'zaplacone' as PurchaseStatus, paid_date: confirmPaid.value || new Date().toISOString().slice(0, 10) }).eq('id', confirmPaid.id).then(() => fetchPurchases())
+            setConfirmPaid(null)
+          }}
+            className="rounded-md bg-green-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-600">
+            <Check className="h-3 w-3 inline mr-1" />Potwierdź
+          </button>
+          <button onClick={() => setConfirmPaid(null)}
+            className="rounded-md px-2 py-1.5 text-xs text-gray-500 hover:bg-gray-100">
+            Anuluj
+          </button>
+        </div>
+      )}
+
       {loading ? (
         <div className="flex justify-center py-12">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-amber-500" />
@@ -696,15 +754,17 @@ export default function PaintPurchasesPage() {
                     <td className="px-2.5 py-1.5 text-right text-xs font-medium text-amber-600">{fmt(Number(p.total))} zł</td>
                     <td className="px-2.5 py-1.5 text-center">
                       <StatusDropdown value={p.status} onChange={s => {
-                        const updates: Record<string, any> = { status: s }
-                        if (s === 'faktura' && !p.invoice_number) {
-                          const nr = prompt('Podaj numer faktury:')
-                          if (nr) updates.invoice_number = nr
+                        if (s === 'faktura') {
+                          setConfirmInvoice({ id: p.id, value: p.invoice_number ?? '' })
+                          setConfirmPaid(null)
+                          return
                         }
-                        if (s === 'zaplacone' && !p.paid_date) {
-                          updates.paid_date = new Date().toISOString().slice(0, 10)
+                        if (s === 'zaplacone') {
+                          setConfirmPaid({ id: p.id, value: new Date().toISOString().slice(0, 10) })
+                          setConfirmInvoice(null)
+                          return
                         }
-                        supabase.from('paint_purchases').update(updates).eq('id', p.id).then(() => fetchPurchases())
+                        supabase.from('paint_purchases').update({ status: s }).eq('id', p.id).then(() => fetchPurchases())
                       }} />
                     </td>
                     <td className="px-2.5 py-1.5 text-xs text-gray-600">{p.invoice_number || '—'}</td>
