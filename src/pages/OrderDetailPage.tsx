@@ -242,6 +242,8 @@ export default function OrderDetailPage() {
   const [editDate, setEditDate] = useState('')
   const [editColor, setEditColor] = useState('')
   const [editNotes, setEditNotes] = useState('')
+  const [editInvoiceNumber, setEditInvoiceNumber] = useState('')
+  const [editPaidDate, setEditPaidDate] = useState('')
   const [showReadyDatePicker, setShowReadyDatePicker] = useState(false)
   const [readyDateValue, setReadyDateValue] = useState('')
   const [showInvoicePicker, setShowInvoicePicker] = useState(false)
@@ -318,6 +320,8 @@ export default function OrderDetailPage() {
     setEditAcceptedDate(order.accepted_date ?? '')
     setEditDate(order.planned_date ?? '')
     setEditNotes(order.notes ?? '')
+    setEditInvoiceNumber(order.invoice_number ?? '')
+    setEditPaidDate(order.paid_date ?? '')
     setEditing(true)
   }
 
@@ -328,6 +332,8 @@ export default function OrderDetailPage() {
       accepted_date: editAcceptedDate || null,
       planned_date: editDate || null,
       notes: editNotes || null,
+      invoice_number: editInvoiceNumber || null,
+      paid_date: editPaidDate || null,
     })
     setEditing(false)
     toast('Zamówienie zaktualizowane')
@@ -497,7 +503,7 @@ export default function OrderDetailPage() {
 
       {/* Editable fields */}
       {editing && (
-        <div className="grid grid-cols-5 gap-2 rounded-lg bg-gray-50 p-3"
+        <div className="grid grid-cols-7 gap-2 rounded-lg bg-gray-50 p-3"
           onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) saveEdit() }}>
           <div>
             <label className="block text-[10px] font-medium text-gray-500 uppercase mb-0.5">Opis</label>
@@ -525,6 +531,16 @@ export default function OrderDetailPage() {
             <label className="block text-[10px] font-medium text-gray-500 uppercase mb-0.5">Planowana data</label>
             <input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)}
               className="w-full rounded bg-white border border-gray-300 px-2 py-1 text-xs text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30" />
+          </div>
+          <div>
+            <label className="block text-[10px] font-medium text-gray-500 uppercase mb-0.5">Nr faktury</label>
+            <input type="text" value={editInvoiceNumber} onChange={(e) => setEditInvoiceNumber(e.target.value)} placeholder="FV/..."
+              className="w-full rounded bg-white border border-gray-300 px-2 py-1 text-xs text-gray-800 outline-none focus:ring-2 focus:ring-pink-500/30" />
+          </div>
+          <div>
+            <label className="block text-[10px] font-medium text-gray-500 uppercase mb-0.5">Data zapłaty</label>
+            <input type="date" value={editPaidDate} onChange={(e) => setEditPaidDate(e.target.value)}
+              className="w-full rounded bg-white border border-gray-300 px-2 py-1 text-xs text-gray-800 outline-none focus:ring-2 focus:ring-gray-500/30" />
           </div>
           <div>
             <label className="block text-[10px] font-medium text-gray-500 uppercase mb-0.5">Notatki</label>
