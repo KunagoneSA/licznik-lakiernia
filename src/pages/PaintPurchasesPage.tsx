@@ -13,6 +13,7 @@ const STATUS_CONFIG: Record<PurchaseStatus, { label: string; color: string }> = 
   zamowione: { label: 'Zamówione', color: 'bg-blue-100 text-blue-700' },
   dostarczone: { label: 'Dostarczone', color: 'bg-emerald-100 text-emerald-700' },
   faktura: { label: 'Faktura', color: 'bg-violet-100 text-violet-700' },
+  zaplacone: { label: 'Zapłacone', color: 'bg-green-100 text-green-700' },
 }
 
 export default function PaintPurchasesPage() {
@@ -40,6 +41,8 @@ export default function PaintPurchasesPage() {
   const [eStatus, setEStatus] = useState<PurchaseStatus>('zamowione')
   const [eColor, setEColor] = useState('')
   const [eNotes, setENotes] = useState('')
+  const [eInvoiceNumber, setEInvoiceNumber] = useState('')
+  const [ePaidDate, setEPaidDate] = useState('')
   const editRowRef = useRef<HTMLTableRowElement>(null)
 
   const fetchSuppliers = useCallback(async () => {
@@ -80,6 +83,8 @@ export default function PaintPurchasesPage() {
     setEStatus(p.status)
     setEColor(p.color ?? '')
     setENotes(p.notes ?? '')
+    setEInvoiceNumber(p.invoice_number ?? '')
+    setEPaidDate(p.paid_date ?? '')
   }
 
   const saveEdit = useCallback(async () => {
@@ -100,10 +105,12 @@ export default function PaintPurchasesPage() {
       status: eStatus,
       color: eColor.trim() || null,
       notes: eNotes.trim() || null,
+      invoice_number: eInvoiceNumber.trim() || null,
+      paid_date: ePaidDate || null,
     }).eq('id', editingId)
     setEditingId(null)
     fetchPurchases()
-  }, [editingId, eDate, eSupplierId, eProductId, eProductName, eQuantity, eUnit, eUnitPrice, eStatus, eColor, eNotes, products, fetchPurchases])
+  }, [editingId, eDate, eSupplierId, eProductId, eProductName, eQuantity, eUnit, eUnitPrice, eStatus, eColor, eNotes, eInvoiceNumber, ePaidDate, products, fetchPurchases])
 
   const cancelEdit = () => { setEditingId(null) }
 
@@ -542,13 +549,14 @@ export default function PaintPurchasesPage() {
 
       {/* Status filter tabs */}
       <div className="flex gap-1">
-        {(['wszystkie', 'do_zamowienia', 'zamowione', 'dostarczone', 'faktura'] as const).map(t => {
+        {(['wszystkie', 'do_zamowienia', 'zamowione', 'dostarczone', 'faktura', 'zaplacone'] as const).map(t => {
           const tabColors: Record<string, { active: string; inactive: string }> = {
             wszystkie: { active: 'bg-gray-700 text-white', inactive: 'bg-gray-100 text-gray-600 hover:bg-gray-200' },
             do_zamowienia: { active: 'bg-orange-500 text-white', inactive: 'bg-orange-50 text-orange-600 hover:bg-orange-100' },
             zamowione: { active: 'bg-blue-500 text-white', inactive: 'bg-blue-50 text-blue-600 hover:bg-blue-100' },
             dostarczone: { active: 'bg-emerald-500 text-white', inactive: 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' },
             faktura: { active: 'bg-violet-500 text-white', inactive: 'bg-violet-50 text-violet-600 hover:bg-violet-100' },
+            zaplacone: { active: 'bg-green-500 text-white', inactive: 'bg-green-50 text-green-600 hover:bg-green-100' },
           }
           const colors = tabColors[t]
           const label = t === 'wszystkie' ? 'Wszystkie' : STATUS_CONFIG[t as PurchaseStatus].label
@@ -583,6 +591,8 @@ export default function PaintPurchasesPage() {
                 <th className="px-2.5 py-2 text-right text-xs font-medium text-gray-500 w-20">Cena</th>
                 <th className="px-2.5 py-2 text-right text-xs font-medium text-gray-500 w-24">Suma</th>
                 <th className="px-2.5 py-2 text-center text-xs font-medium text-gray-500 w-36">Status</th>
+                <th className="px-2.5 py-2 text-left text-xs font-medium text-gray-500 w-28">Nr faktury</th>
+                <th className="px-2.5 py-2 text-left text-xs font-medium text-gray-500 w-24">Zapłacono</th>
                 <th className="px-2.5 py-2 text-left text-xs font-medium text-gray-500 w-24">Kolor</th>
                 <th className="px-2.5 py-2 text-left text-xs font-medium text-gray-500">Komentarz</th>
                 <th className="px-1 py-2 w-8"></th>
@@ -641,12 +651,23 @@ export default function PaintPurchasesPage() {
                         {fmt(qty * price)} zł
                       </td>
                       <td className="px-1.5 py-1">
-                        <select value={eStatus} onChange={e => setEStatus(e.target.value as PurchaseStatus)} className={ic}>
+                        <select value={eStatus} onChange={e => {
+                          const newStatus = e.target.value as PurchaseStatus
+                          setEStatus(newStatus)
+                          if (newStatus === 'zaplacone' && !ePaidDate) setEPaidDate(new Date().toISOString().slice(0, 10))
+                        }} className={ic}>
                           <option value="do_zamowienia">Do zamówienia</option>
                           <option value="zamowione">Zamówione</option>
                           <option value="dostarczone">Dostarczone</option>
                           <option value="faktura">Faktura</option>
+                          <option value="zaplacone">Zapłacone</option>
                         </select>
+                      </td>
+                      <td className="px-1.5 py-1">
+                        <input value={eInvoiceNumber} onChange={e => setEInvoiceNumber(e.target.value)} className={ic} placeholder="Nr faktury..." />
+                      </td>
+                      <td className="px-1.5 py-1">
+                        <input type="date" value={ePaidDate} onChange={e => setEPaidDate(e.target.value)} className={ic} />
                       </td>
                       <td className="px-1.5 py-1">
                         <input value={eColor} onChange={e => setEColor(e.target.value)} className={ic} placeholder="Kolor..." />
@@ -675,9 +696,19 @@ export default function PaintPurchasesPage() {
                     <td className="px-2.5 py-1.5 text-right text-xs font-medium text-amber-600">{fmt(Number(p.total))} zł</td>
                     <td className="px-2.5 py-1.5 text-center">
                       <StatusDropdown value={p.status} onChange={s => {
-                        supabase.from('paint_purchases').update({ status: s }).eq('id', p.id).then(() => fetchPurchases())
+                        const updates: Record<string, any> = { status: s }
+                        if (s === 'faktura' && !p.invoice_number) {
+                          const nr = prompt('Podaj numer faktury:')
+                          if (nr) updates.invoice_number = nr
+                        }
+                        if (s === 'zaplacone' && !p.paid_date) {
+                          updates.paid_date = new Date().toISOString().slice(0, 10)
+                        }
+                        supabase.from('paint_purchases').update(updates).eq('id', p.id).then(() => fetchPurchases())
                       }} />
                     </td>
+                    <td className="px-2.5 py-1.5 text-xs text-gray-600">{p.invoice_number || '—'}</td>
+                    <td className="px-2.5 py-1.5 text-xs text-gray-500">{p.paid_date || '—'}</td>
                     <td className="px-2.5 py-1.5 text-xs text-gray-600">{p.color || '—'}</td>
                     <td className="px-2.5 py-1.5 text-xs text-gray-400 max-w-[150px] truncate" title={p.notes ?? ''}>
                       {p.notes || '—'}
@@ -692,7 +723,7 @@ export default function PaintPurchasesPage() {
                 )
               })}
               {filtered.length === 0 && (
-                <tr><td colSpan={11} className="px-4 py-8 text-center text-gray-400">Brak zamówień</td></tr>
+                <tr><td colSpan={13} className="px-4 py-8 text-center text-gray-400">Brak zamówień</td></tr>
               )}
               {filtered.length > 0 && (
                 <tr className="bg-gray-50 font-medium">
@@ -700,7 +731,7 @@ export default function PaintPurchasesPage() {
                   <td className="px-2.5 py-2 text-right text-xs font-medium text-amber-600">
                     {fmt(filtered.reduce((s, p) => s + Number(p.total), 0))} zł
                   </td>
-                  <td colSpan={4}></td>
+                  <td colSpan={6}></td>
                 </tr>
               )}
             </tbody>
@@ -914,6 +945,7 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
                 <option value="zamowione">Zamówione</option>
                 <option value="dostarczone">Dostarczone</option>
                 <option value="faktura">Faktura</option>
+                <option value="zaplacone">Zapłacone</option>
               </select>
             </div>
           </div>
