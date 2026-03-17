@@ -9,16 +9,16 @@ let cachePromise: Promise<PaintingVariant[]> | null = null
 async function fetchVariants(): Promise<PaintingVariant[]> {
   if (cachedVariants) return cachedVariants
   if (cachePromise) return cachePromise
-  cachePromise = supabase
-    .from('painting_variants')
-    .select('*')
-    .order('sort_order', { ascending: true, nullsFirst: false })
-    .then(({ data }) => {
-      cachedVariants = (data as PaintingVariant[]) ?? []
-      cachePromise = null
-      return cachedVariants
-    }) as Promise<PaintingVariant[]>
-  return cachePromise!
+  cachePromise = new Promise<PaintingVariant[]>(async (resolve) => {
+    const { data } = await supabase
+      .from('painting_variants')
+      .select('*')
+      .order('sort_order', { ascending: true, nullsFirst: false })
+    cachedVariants = (data as PaintingVariant[]) ?? []
+    cachePromise = null
+    resolve(cachedVariants)
+  })
+  return cachePromise
 }
 
 export function usePaintingVariants() {

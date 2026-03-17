@@ -16,16 +16,16 @@ let cachePromise: Promise<Operation[]> | null = null
 async function fetchOpsData(): Promise<Operation[]> {
   if (cachedOps) return cachedOps
   if (cachePromise) return cachePromise
-  cachePromise = supabase
-    .from('operations')
-    .select('*')
-    .order('sort_order', { ascending: true })
-    .then(({ data }) => {
-      cachedOps = (data as Operation[]) ?? []
-      cachePromise = null
-      return cachedOps
-    }) as Promise<Operation[]>
-  return cachePromise!
+  cachePromise = new Promise<Operation[]>(async (resolve) => {
+    const { data } = await supabase
+      .from('operations')
+      .select('*')
+      .order('sort_order', { ascending: true })
+    cachedOps = (data as Operation[]) ?? []
+    cachePromise = null
+    resolve(cachedOps)
+  })
+  return cachePromise
 }
 
 export function useOperations() {

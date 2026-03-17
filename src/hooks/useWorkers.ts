@@ -16,16 +16,16 @@ let cachePromise: Promise<Worker[]> | null = null
 async function fetchWorkersData(): Promise<Worker[]> {
   if (cachedWorkers) return cachedWorkers
   if (cachePromise) return cachePromise
-  cachePromise = supabase
-    .from('workers')
-    .select('*')
-    .order('name')
-    .then(({ data }) => {
-      cachedWorkers = (data as Worker[]) ?? []
-      cachePromise = null
-      return cachedWorkers
-    }) as Promise<Worker[]>
-  return cachePromise!
+  cachePromise = new Promise<Worker[]>(async (resolve) => {
+    const { data } = await supabase
+      .from('workers')
+      .select('*')
+      .order('name')
+    cachedWorkers = (data as Worker[]) ?? []
+    cachePromise = null
+    resolve(cachedWorkers)
+  })
+  return cachePromise
 }
 
 export function useWorkers() {
