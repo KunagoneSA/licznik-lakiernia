@@ -7,6 +7,7 @@ import { useToast } from '../contexts/ToastContext'
 import type { WorkLog } from '../types/database'
 
 const dayNames = ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota']
+const dayShort = ['Nd.', 'Pon.', 'Wt.', 'Śr.', 'Czw.', 'Pt.', 'Sob.']
 
 function getWeekDates(dateStr: string) {
   const d = new Date(dateStr)
@@ -213,7 +214,7 @@ export default function DailyWorkLogPage() {
 
   const selectedDayName = dayNames[new Date(selectedDate).getDay()]
   const isToday = selectedDate === today
-  const copyFromDay = dayNames[new Date(getPreviousWorkday(selectedDate)).getDay()]
+  const copyFromDayShort = dayShort[new Date(getPreviousWorkday(selectedDate)).getDay()]
 
   return (
     <div className="space-y-3">
@@ -237,7 +238,7 @@ export default function DailyWorkLogPage() {
         </div>
         <div className="flex items-center gap-2">
           <button onClick={copyPreviousDay} className="flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-50">
-            <Copy className="h-3 w-3" /> Kopiuj z {copyFromDay.toLowerCase().slice(0, 2)}.
+            <Copy className="h-3 w-3" /> Kopiuj z {copyFromDayShort.toLowerCase()}
           </button>
           {!showAdd && (
             <button onClick={() => { setShowAdd(true); if (!newOp && operations.length > 0) setNewOp(operations[0]) }}
@@ -252,7 +253,7 @@ export default function DailyWorkLogPage() {
       <div className="flex gap-1">
         {weekDates.map((d) => {
           const dd = new Date(d)
-          const dayLabel = dayNames[dd.getDay()].slice(0, 2)
+          const dayLabel = dayShort[dd.getDay()]
           const dayNum = dd.getDate()
           const isSelected = d === selectedDate
           const isTd = d === today
