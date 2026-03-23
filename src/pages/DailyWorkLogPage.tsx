@@ -328,7 +328,7 @@ export default function DailyWorkLogPage() {
                     <tr key={log.id} className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer" onClick={() => startEdit(log)}>
                       <td className="px-2 py-1.5 font-medium text-gray-900">{log.worker_name}</td>
                       <td className="px-2 py-1.5 text-gray-900">{log.operation}</td>
-                      <td className="px-2 py-1.5 text-right text-gray-900 tabular-nums">{log.hours}</td>
+                      <td className="px-2 py-1.5 text-right text-gray-900 tabular-nums">{String(log.hours).replace('.', ',')}</td>
                       <td className="px-2 py-1.5 text-gray-900 text-[10px]">{log.notes || ''}</td>
                       <td className="px-1 py-1.5" onClick={(e) => e.stopPropagation()}>
                         <button onClick={() => handleDelete(log.id)} className="rounded p-0.5 text-gray-400 hover:text-red-600 hover:bg-gray-100">
