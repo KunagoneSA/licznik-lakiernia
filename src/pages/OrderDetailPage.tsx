@@ -679,7 +679,7 @@ export default function OrderDetailPage() {
             </div>
           )}
         </div>
-        <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+        <div className="rounded-lg border border-gray-200 bg-white overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
@@ -692,7 +692,7 @@ export default function OrderDetailPage() {
                 <th className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-500">Uchwyt</th>
                 <th className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-500">Dopł.&nbsp;kolor</th>
                 <th className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-500">Wpyłka</th>
-                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 min-w-[120px]">Uwagi</th>
+                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 w-[200px]">Uwagi</th>
                 <th className="px-1 py-1.5 w-6"></th>
               </tr>
             </thead>
