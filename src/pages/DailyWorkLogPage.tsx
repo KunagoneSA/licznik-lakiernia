@@ -289,10 +289,10 @@ export default function DailyWorkLogPage() {
         <table className="w-full text-xs">
           <thead>
             <tr className="border-b border-gray-200 bg-gray-50">
-              <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500">Pracownik</th>
-              <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500">Operacja</th>
-              <th className="px-2 py-1.5 text-right text-[10px] font-medium text-gray-500 w-10">Godz</th>
-              <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 w-1/2">Uwagi</th>
+              <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 w-[25%]">Pracownik</th>
+              <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 w-[20%]">Operacja</th>
+              <th className="px-2 py-1.5 text-right text-[10px] font-medium text-gray-500 w-16">Godz</th>
+              <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500">Uwagi</th>
               <th className="px-1 py-1.5 w-6"></th>
             </tr>
           </thead>
