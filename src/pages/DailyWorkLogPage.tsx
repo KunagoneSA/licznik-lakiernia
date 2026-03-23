@@ -274,12 +274,12 @@ export default function DailyWorkLogPage() {
           {Object.entries(byWorker).map(([name, hours]) => (
             <div key={name} className="flex items-center gap-1.5 rounded-md bg-white border border-gray-200 px-2.5 py-1">
               <span className="text-xs font-medium text-gray-700">{name}</span>
-              <span className="text-xs font-bold text-amber-600 tabular-nums">{hours}h</span>
+              <span className="text-xs font-bold text-amber-600 tabular-nums">{String(hours).replace('.', ',')}h</span>
             </div>
           ))}
           <div className="flex items-center gap-1.5 rounded-md bg-gray-100 px-2.5 py-1">
             <span className="text-[10px] font-medium text-gray-500 uppercase">Razem</span>
-            <span className="text-xs font-bold text-gray-800 tabular-nums">{totalHours}h</span>
+            <span className="text-xs font-bold text-gray-800 tabular-nums">{String(totalHours).replace('.', ',')}h</span>
           </div>
         </div>
       )}
