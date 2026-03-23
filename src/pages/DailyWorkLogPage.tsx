@@ -326,10 +326,10 @@ export default function DailyWorkLogPage() {
                   )
                   return (
                     <tr key={log.id} className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer" onClick={() => startEdit(log)}>
-                      <td className="px-2 py-1.5 font-medium text-gray-800">{log.worker_name}</td>
-                      <td className="px-2 py-1.5 text-gray-600">{log.operation}</td>
-                      <td className="px-2 py-1.5 text-right text-gray-600 tabular-nums">{log.hours}</td>
-                      <td className="px-2 py-1.5 text-gray-400 text-[10px]">{log.notes || ''}</td>
+                      <td className="px-2 py-1.5 font-medium text-gray-900">{log.worker_name}</td>
+                      <td className="px-2 py-1.5 text-gray-900">{log.operation}</td>
+                      <td className="px-2 py-1.5 text-right text-gray-900 tabular-nums">{log.hours}</td>
+                      <td className="px-2 py-1.5 text-gray-900 text-[10px]">{log.notes || ''}</td>
                       <td className="px-1 py-1.5" onClick={(e) => e.stopPropagation()}>
                         <button onClick={() => handleDelete(log.id)} className="rounded p-0.5 text-gray-400 hover:text-red-600 hover:bg-gray-100">
                           <Trash2 className="h-3 w-3" />
@@ -340,7 +340,7 @@ export default function DailyWorkLogPage() {
                 })}
 
                 {/* Always-visible add row */}
-                <tr className="border-b border-gray-100 bg-amber-50/20">
+                <tr className="border-b border-gray-100 bg-amber-50/20 opacity-40 focus-within:opacity-100 transition-opacity">
                   <td className="px-2 py-1">
                     <select value={newWorker} onChange={(e) => setNewWorker(e.target.value)} className={ic} onKeyDown={(e) => kd(e, handleAdd)}>
                       {activeWorkers.map(w => <option key={w.id} value={w.name}>{w.name}</option>)}

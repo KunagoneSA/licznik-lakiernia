@@ -5,7 +5,7 @@
       "name": "dev",
       "runtimeExecutable": "/opt/homebrew/bin/npx",
       "runtimeArgs": ["vite", "--host"],
-      "port": 5173
+      "port": 5174
     }
   ]
 }
