@@ -948,11 +948,13 @@ export default function OrderDetailPage() {
         </div>
         <div className="flex-1 rounded-lg bg-white shadow-sm px-2 py-2">
           <p className="text-[10px] text-gray-500 uppercase">Komentarz</p>
-          <input type="text" value={commentText}
-            onChange={(e) => setCommentValue(e.target.value)}
+          <textarea value={commentText}
+            onChange={(e) => { setCommentValue(e.target.value); e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px' }}
             onBlur={() => { if (commentValue !== null) { updateOrder({ notes: commentValue || null }); setCommentValue(null) } }}
-            onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
-            className="w-full text-xs text-gray-700 bg-transparent outline-none border-b border-transparent focus:border-amber-500 mt-0.5"
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) (e.target as HTMLTextAreaElement).blur() }}
+            ref={(el) => { if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px' } }}
+            rows={1}
+            className="w-full text-xs text-gray-700 bg-transparent outline-none border-b border-transparent focus:border-amber-500 mt-0.5 resize-none overflow-hidden"
             placeholder="dodaj komentarz..." />
         </div>
       </div>
