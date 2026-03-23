@@ -305,7 +305,8 @@ export default function DailyWorkLogPage() {
               <>
                 {logs.map((log) => {
                   if (editId === log.id) return (
-                    <tr key={log.id} className="border-b border-gray-100 bg-blue-50/30">
+                    <tr key={log.id} className="border-b border-gray-100 bg-blue-50/30"
+                      onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) saveEdit() }}>
                       <td className="px-2 py-1">
                         <select value={editWorker} onChange={(e) => setEditWorker(e.target.value)} className={ic} onKeyDown={(e) => kd(e, saveEdit)}>
                           {activeWorkers.map(w => <option key={w.id} value={w.name}>{w.name}</option>)}
@@ -318,8 +319,7 @@ export default function DailyWorkLogPage() {
                       </td>
                       <td className="px-2 py-1"><input type="number" step="0.5" value={editHours} onChange={(e) => setEditHours(e.target.value)} className={`${ic} text-right tabular-nums w-12`} onKeyDown={(e) => kd(e, saveEdit)} /></td>
                       <td className="px-2 py-1"><input type="text" value={editNotes} onChange={(e) => setEditNotes(e.target.value)} className="w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-[10px] text-gray-600 outline-none focus:border-amber-500" onKeyDown={(e) => kd(e, saveEdit)} /></td>
-                      <td className="px-1 py-1 flex gap-0.5">
-                        <button onClick={saveEdit} className="rounded p-0.5 text-emerald-500 hover:text-emerald-700"><Check className="h-3 w-3" /></button>
+                      <td className="px-1 py-1">
                         <button onClick={() => setEditId(null)} className="rounded p-0.5 text-gray-400 hover:text-gray-600"><X className="h-3 w-3" /></button>
                       </td>
                     </tr>
