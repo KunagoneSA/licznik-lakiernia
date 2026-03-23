@@ -688,7 +688,7 @@ export default function OrderDetailPage() {
                 <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 min-w-[55px]">Szt</th>
                 <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 w-full">Rodzaj</th>
                 <th className="px-2 py-1.5 text-right text-[10px] font-medium text-gray-500">m²</th>
-                <th className="px-2 py-1.5 text-right text-[10px] font-medium text-gray-500">Cena</th>
+                <th className="px-2 py-1.5 text-right text-[10px] font-medium text-gray-500">Cena&nbsp;netto</th>
                 <th className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-500">Uchwyt</th>
                 <th className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-500">Dopł.&nbsp;kolor</th>
                 <th className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-500">Wpyłka</th>
@@ -756,7 +756,7 @@ export default function OrderDetailPage() {
                     <td className="px-2 py-1.5 text-center">{item.has_handle ? <span className="text-base font-bold text-emerald-600">✓</span> : ''}</td>
                     <td className="px-2 py-1.5 text-center">{item.color_surcharge ? <span className="text-base font-bold text-amber-600">✓</span> : ''}</td>
                     <td className="px-2 py-1.5 text-center">{item.has_wplyka ? <span className="text-base font-bold text-violet-600">✓</span> : ''}</td>
-                    <td className="px-2 py-1.5 text-gray-400 text-[10px]">{item.notes || ''}</td>
+                    <td className="px-2 py-1.5 text-gray-400 text-[10px] whitespace-normal break-words">{item.notes || ''}</td>
                     <td className="px-1 py-1.5" onClick={(e) => e.stopPropagation()}>
                       <button onClick={() => handleDeleteItem(item.id)} className="rounded p-0.5 text-gray-400 hover:text-red-600 hover:bg-gray-100">
                         <Trash2 className="h-3 w-3" />
@@ -943,7 +943,7 @@ export default function OrderDetailPage() {
           <p className="text-sm font-bold tabular-nums text-gray-800">{fmtPL(totalWplykaCost)}</p>
         </div>
         <div className="rounded-lg bg-white shadow-sm px-2 py-2">
-          <p className="text-[10px] text-gray-500 uppercase">Wartość</p>
+          <p className="text-[10px] text-gray-500 uppercase">Wartość netto</p>
           <p className="text-sm font-bold tabular-nums text-amber-600">{fmtPL(totalValue)}</p>
         </div>
         <div className="flex-1 rounded-lg bg-white shadow-sm px-2 py-2">
