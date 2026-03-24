@@ -138,7 +138,8 @@ export default function OrdersListPage() {
         <h1 className="text-xl font-bold text-gray-900">Zamówienia</h1>
         <button
           onClick={() => setShowNew(true)}
-          className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500 px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+          className="flex items-center gap-2 rounded-xl bg-[length:200%_200%] animate-[rainbow_3s_ease_infinite] px-5 py-2.5 text-sm font-semibold text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
+          style={{ backgroundImage: 'linear-gradient(135deg, #ff0000, #ff8800, #ffdd00, #00cc44, #0088ff, #8800ff, #ff00aa, #ff0000)' }}
         >
           <Plus className="h-4 w-4" />
           Nowe zamówienie
