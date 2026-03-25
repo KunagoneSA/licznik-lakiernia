@@ -25,7 +25,7 @@ const statusColors: Record<OrderStatus, string> = {
   'zapłacone': 'bg-gray-100 text-gray-500',
 }
 
-const tabs = ['wszystkie', 'nowe', 'w_trakcie', 'gotowe', 'wydane', 'fv_wystawiona', 'niezapłacone'] as const
+const tabs = ['aktualne', 'wszystkie', 'nowe', 'w_trakcie', 'gotowe', 'wydane', 'fv_wystawiona', 'niezapłacone'] as const
 
 function getClient(order: Record<string, unknown>): { name: string; type?: string } | null {
   return order.client as { name: string; type?: string } | null
@@ -67,7 +67,7 @@ export default function OrdersListPage() {
   const { orders, loading, refetch } = useOrders()
   const { variants } = usePaintingVariants()
   const [search, setSearch] = useState('')
-  const [tab, setTab] = useState<string>('wszystkie')
+  const [tab, setTab] = useState<string>('aktualne')
   const [showNew, setShowNew] = useState(false)
   const [sortKey, setSortKey] = useState<SortKey>('number')
 
@@ -97,8 +97,9 @@ export default function OrdersListPage() {
 
   const filtered = useMemo(() => {
     const list = orders.filter((o) => {
-      if (tab === 'niezapłacone' && o.status !== 'wydane' && o.status !== 'fv_wystawiona') return false
-      else if (tab !== 'wszystkie' && tab !== 'niezapłacone' && o.status !== tab) return false
+      if (tab === 'aktualne' && o.status === 'zapłacone') return false
+      else if (tab === 'niezapłacone' && o.status !== 'wydane' && o.status !== 'fv_wystawiona') return false
+      else if (tab !== 'wszystkie' && tab !== 'niezapłacone' && tab !== 'aktualne' && o.status !== tab) return false
       if (search) {
         const q = search.toLowerCase()
         const clientName = getClientNameStr(o as unknown as Record<string, unknown>).toLowerCase()
@@ -159,8 +160,9 @@ export default function OrdersListPage() {
         </div>
         <div className="flex flex-col gap-1">
           <div className="flex gap-1">
-            {tabs.slice(0, 4).map((t) => {
+            {tabs.slice(0, 5).map((t) => {
               const tabColors: Record<string, { active: string; inactive: string }> = {
+                aktualne: { active: 'bg-cyan-600 text-white', inactive: 'bg-cyan-50 text-cyan-600 hover:bg-cyan-100' },
                 wszystkie: { active: 'bg-gray-700 text-white', inactive: 'bg-gray-100 text-gray-600 hover:bg-gray-200' },
                 nowe: { active: 'bg-blue-500 text-white', inactive: 'bg-blue-50 text-blue-600 hover:bg-blue-100' },
                 w_trakcie: { active: 'bg-amber-500 text-white', inactive: 'bg-amber-50 text-amber-600 hover:bg-amber-100' },
@@ -175,13 +177,13 @@ export default function OrdersListPage() {
                     tab === t ? colors.active : colors.inactive
                   }`}
                 >
-                  {t === 'wszystkie' ? 'Wszystkie' : statusLabels[t as OrderStatus]}
+                  {t === 'aktualne' ? 'Aktualne' : t === 'wszystkie' ? 'Wszystkie' : statusLabels[t as OrderStatus]}
                 </button>
               )
             })}
           </div>
           <div className="flex gap-1">
-            {tabs.slice(4).map((t) => {
+            {tabs.slice(5).map((t) => {
               const tabColors: Record<string, { active: string; inactive: string }> = {
                 wydane: { active: 'bg-violet-500 text-white', inactive: 'bg-violet-50 text-violet-600 hover:bg-violet-100' },
                 fv_wystawiona: { active: 'bg-pink-500 text-white', inactive: 'bg-pink-50 text-pink-600 hover:bg-pink-100' },

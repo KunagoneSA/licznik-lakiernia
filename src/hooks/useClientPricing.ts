@@ -37,5 +37,14 @@ export function useClientPricing(clientId: string | null) {
     await fetch()
   }, [clientId, pricing, fetch])
 
-  return { pricing, loading, refetch: fetch, getPriceForVariant, upsertPricing }
+  const deletePricing = useCallback(async (variantId: string) => {
+    if (!clientId) return
+    const existing = pricing.find((p) => p.variant_id === variantId)
+    if (existing) {
+      await supabase.from('client_pricing').delete().eq('id', existing.id)
+      await fetch()
+    }
+  }, [clientId, pricing, fetch])
+
+  return { pricing, loading, refetch: fetch, getPriceForVariant, upsertPricing, deletePricing }
 }

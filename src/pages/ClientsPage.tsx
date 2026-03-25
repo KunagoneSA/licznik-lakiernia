@@ -11,7 +11,7 @@ export default function ClientsPage() {
   const { clients, refetch: refetchClients } = useClients()
   const { variants, refetch: refetchVariants } = usePaintingVariants()
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const { pricing, loading: pricingLoading, upsertPricing } = useClientPricing(selectedId)
+  const { pricing, loading: pricingLoading, upsertPricing, deletePricing } = useClientPricing(selectedId)
   const [showAdd, setShowAdd] = useState<ClientType | null>(null)
   const [newName, setNewName] = useState('')
   const [newContactName, setNewContactName] = useState('')
@@ -191,11 +191,11 @@ export default function ClientsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50">
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Nazwa firmy</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Osoba kontaktowa</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Telefon</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Email</th>
-                  <th className="px-1 py-2 w-16"></th>
+                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500">Nazwa firmy</th>
+                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500">Osoba kontaktowa</th>
+                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500">Telefon</th>
+                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-500">Email</th>
+                  <th className="px-1 py-1 w-12"></th>
                 </tr>
               </thead>
               <tbody>
@@ -205,11 +205,11 @@ export default function ClientsPage() {
                     const kd = (e: React.KeyboardEvent) => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') setEditingId(null) }
                     return (
                       <tr key={c.id} ref={editRowRef} className="border-b border-gray-100 bg-amber-50/30" onBlur={handleCompanyRowBlur}>
-                        <td className="px-3 py-1.5"><input value={eName} onChange={e => setEName(e.target.value)} className={ic} onKeyDown={kd} autoFocus /></td>
-                        <td className="px-3 py-1.5"><input value={eContact} onChange={e => setEContact(e.target.value)} className={ic} onKeyDown={kd} placeholder="osoba kontaktowa" /></td>
-                        <td className="px-3 py-1.5"><input value={ePhone} onChange={e => setEPhone(e.target.value)} className={ic} onKeyDown={kd} placeholder="telefon" /></td>
-                        <td className="px-3 py-1.5"><input value={eEmail} onChange={e => setEEmail(e.target.value)} className={ic} onKeyDown={kd} placeholder="email" /></td>
-                        <td className="px-1 py-1.5 flex gap-1">
+                        <td className="px-2 py-0.5"><input value={eName} onChange={e => setEName(e.target.value)} className={ic} onKeyDown={kd} autoFocus /></td>
+                        <td className="px-2 py-0.5"><input value={eContact} onChange={e => setEContact(e.target.value)} className={ic} onKeyDown={kd} placeholder="osoba kontaktowa" /></td>
+                        <td className="px-2 py-0.5"><input value={ePhone} onChange={e => setEPhone(e.target.value)} className={ic} onKeyDown={kd} placeholder="telefon" /></td>
+                        <td className="px-2 py-0.5"><input value={eEmail} onChange={e => setEEmail(e.target.value)} className={ic} onKeyDown={kd} placeholder="email" /></td>
+                        <td className="px-1 py-0.5 flex gap-1">
                           <button onClick={saveEdit} className="rounded p-1 text-emerald-500 hover:text-emerald-700"><Check className="h-4 w-4" /></button>
                           <button onClick={() => setEditingId(null)} className="rounded p-1 text-gray-400 hover:text-gray-600"><X className="h-4 w-4" /></button>
                         </td>
@@ -223,11 +223,11 @@ export default function ClientsPage() {
                       className={`border-b border-gray-100 cursor-pointer transition-colors ${
                         selectedId === c.id ? 'bg-amber-50' : 'hover:bg-gray-50'
                       }`}>
-                      <td className="px-3 py-2 font-medium text-gray-800">{c.name}</td>
-                      <td className="px-3 py-2 text-gray-500">{c.contact_name || '—'}</td>
-                      <td className="px-3 py-2 text-gray-500">{c.phone || '—'}</td>
-                      <td className="px-3 py-2 text-gray-500">{c.email || '—'}</td>
-                      <td className="px-1 py-2" onClick={(e) => e.stopPropagation()}>
+                      <td className="px-2 py-1 font-medium text-gray-800">{c.name}</td>
+                      <td className="px-2 py-1 text-gray-500">{c.contact_name || '—'}</td>
+                      <td className="px-2 py-1 text-gray-500">{c.phone || '—'}</td>
+                      <td className="px-2 py-1 text-gray-500">{c.email || '—'}</td>
+                      <td className="px-1 py-1" onClick={(e) => e.stopPropagation()}>
                         <button onClick={() => handleDeleteClient(c.id, c.name)}
                           className="rounded p-1 text-gray-300 hover:text-red-500 hover:bg-red-50">
                           <Trash2 className="h-3.5 w-3.5" />
@@ -488,6 +488,10 @@ export default function ClientsPage() {
                               </button>
                               <button onClick={() => startVariantEdit(v)} className="rounded-md p-1 text-gray-400 hover:text-amber-600 hover:bg-amber-50" title="Edytuj nazwę">
                                 <Pencil className="h-3 w-3" />
+                              </button>
+                              <button onClick={async () => { if (confirm(`Usunąć wariant "${v.name}" z cennika tego klienta?`)) { await deletePricing(v.id); toast('Pozycja usunięta z cennika') } }}
+                                className="rounded-md p-1 text-gray-300 hover:text-red-500 hover:bg-red-50" title="Usuń z cennika">
+                                <Trash2 className="h-3 w-3" />
                               </button>
                             </div>
                           </td>
