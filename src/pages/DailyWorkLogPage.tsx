@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Plus, Trash2, Check, X, ChevronLeft, ChevronRight, Copy } from 'lucide-react'
+import { Plus, Trash2, X, ChevronLeft, ChevronRight, Copy } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useWorkers } from '../hooks/useWorkers'
 import { useOperations } from '../hooks/useOperations'
