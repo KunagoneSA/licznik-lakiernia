@@ -2,7 +2,7 @@ import { Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
 export default function LoginPage() {
-  const { user, loading, signInWithGoogle } = useAuth()
+  const { user, loading, denied, signInWithGoogle } = useAuth()
 
   if (loading) {
     return (
@@ -22,6 +22,11 @@ export default function LoginPage() {
           <h1 className="text-xl font-bold tracking-wide text-gray-900 uppercase">Kunagone</h1>
           <p className="mt-1 text-sm text-gray-500">System zarządzania zamówieniami</p>
         </div>
+        {denied && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-center text-sm text-red-700">
+            Brak dostępu. Twoje konto nie jest autoryzowane.
+          </div>
+        )}
         <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
           <button
             onClick={signInWithGoogle}

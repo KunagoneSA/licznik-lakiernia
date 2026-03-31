@@ -18,26 +18,54 @@ function prefetchOrders() {
 interface AuthContextType {
   user: User | null
   loading: boolean
+  denied: boolean
   signInWithGoogle: () => Promise<void>
   signOut: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+async function checkAllowed(email: string): Promise<boolean> {
+  const { data } = await supabase.from('allowed_users').select('email').eq('email', email).maybeSingle()
+  return !!data
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [denied, setDenied] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        const ok = await checkAllowed(session.user.email ?? '')
+        if (!ok) {
+          await supabase.auth.signOut()
+          setDenied(true)
+          setLoading(false)
+          return
+        }
+        setUser(session.user)
+        prefetchOrders()
+      }
       setLoading(false)
-      if (session?.user) prefetchOrders()
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-      if (session?.user) prefetchOrders()
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        const ok = await checkAllowed(session.user.email ?? '')
+        if (!ok) {
+          await supabase.auth.signOut()
+          setDenied(true)
+          setUser(null)
+          return
+        }
+        setDenied(false)
+        setUser(session.user)
+        prefetchOrders()
+      } else {
+        setUser(null)
+      }
     })
 
     return () => subscription.unsubscribe()
@@ -57,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ user, loading, denied, signInWithGoogle, signOut }}>
       {children}
     </AuthContext.Provider>
   )
