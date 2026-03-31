@@ -1,7 +1,14 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import { Download, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { usePaintingVariants } from '../hooks/usePaintingVariants'
 import type { WorkLog } from '../types/database'
+
+interface OrderItem { total_price: number; m2: number; quantity: number; has_handle: boolean; has_wplyka: boolean; color_surcharge: boolean }
+interface CompletedOrder {
+  id: string; number: number; color: string | null; ready_date: string | null; created_at: string
+  client: { name: string } | null; order_items: OrderItem[]
+}
 
 const MONTH_NAMES = ['Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec','Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień']
 
@@ -14,8 +21,10 @@ export default function MonthlyReportPage() {
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth()) // 0-based
   const [logs, setLogs] = useState<WorkLog[]>([])
+  const [completedOrders, setCompletedOrders] = useState<CompletedOrder[]>([])
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const { variants } = usePaintingVariants()
 
   const daysInMonth = new Date(year, month + 1, 0).getDate()
 
@@ -37,21 +46,23 @@ export default function MonthlyReportPage() {
     setExpanded(new Set())
   }
 
-  const fetchLogs = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true)
     const from = `${year}-${String(month + 1).padStart(2, '0')}-01`
     const to = `${year}-${String(month + 1).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`
-    const { data } = await supabase
-      .from('work_logs')
-      .select('*')
-      .gte('date', from)
-      .lte('date', to)
-      .order('worker_name')
-    setLogs((data as WorkLog[]) ?? [])
+    const [logsRes, ordersRes] = await Promise.all([
+      supabase.from('work_logs').select('*').gte('date', from).lte('date', to).order('worker_name'),
+      supabase.from('orders')
+        .select('id, number, color, ready_date, created_at, client:clients(name), order_items(total_price, m2, quantity, has_handle, has_wplyka, color_surcharge)')
+        .gte('ready_date', from).lte('ready_date', to)
+        .order('ready_date', { ascending: true }),
+    ])
+    setLogs((logsRes.data as WorkLog[]) ?? [])
+    setCompletedOrders((ordersRes.data as unknown as CompletedOrder[]) ?? [])
     setLoading(false)
   }, [year, month, daysInMonth])
 
-  useEffect(() => { fetchLogs() }, [fetchLogs])
+  useEffect(() => { fetchData() }, [fetchData])
 
   // Group: worker -> day -> total hours + worker -> operation -> day -> hours
   const { workers, grid, opGrid, dayTotals, workerTotals, workerOps, grandTotal } = useMemo(() => {
@@ -100,6 +111,22 @@ export default function MonthlyReportPage() {
 
     return { workers, grid: map, opGrid: opMap, dayTotals, workerTotals, workerOps, grandTotal }
   }, [logs])
+
+  // Surcharge prices
+  const handlePrice = useMemo(() => variants.find(v => v.name === 'Uchwyt frezowany')?.default_price_per_m2 ?? 0, [variants])
+  const wplykaPrice = useMemo(() => variants.find(v => v.name.toLowerCase().includes('wpyłka') || v.name.toLowerCase().includes('wpłyka') || v.name.toLowerCase().includes('wypłka'))?.default_price_per_m2 ?? 0, [variants])
+  const colorSurchargePrice = useMemo(() => variants.find(v => v.name === 'Dopłata do koloru')?.default_price_per_m2 ?? 0, [variants])
+
+  function getOrderValue(items: OrderItem[]): number {
+    const base = items.reduce((s, i) => s + Number(i.total_price), 0)
+    const handles = items.filter(i => i.has_handle).reduce((s, i) => s + handlePrice * Number(i.quantity), 0)
+    const wplyka = items.filter(i => i.has_wplyka).reduce((s, i) => s + wplykaPrice * Number(i.quantity), 0)
+    const colorSurch = items.filter(i => i.color_surcharge).reduce((s, i) => s + colorSurchargePrice * Number(i.m2), 0)
+    return base + handles + wplyka + colorSurch
+  }
+
+  const ordersTotalValue = useMemo(() => completedOrders.reduce((s, o) => s + getOrderValue(o.order_items), 0), [completedOrders, handlePrice, wplykaPrice, colorSurchargePrice])
+  const ordersTotalM2 = useMemo(() => completedOrders.reduce((s, o) => s + o.order_items.reduce((s2, i) => s2 + Number(i.m2), 0), 0), [completedOrders])
 
   const isWeekend = (day: number) => {
     const d = new Date(year, month, day)
@@ -244,6 +271,72 @@ export default function MonthlyReportPage() {
               </tr>
             </tfoot>
           </table>
+        </div>
+      )}
+
+      {/* Completed orders section */}
+      {!loading && (
+        <div className="space-y-3">
+          <h2 className="text-lg font-bold text-gray-900">Zamówienia zakończone</h2>
+          {completedOrders.length === 0 ? (
+            <p className="py-4 text-center text-sm text-gray-400">Brak zakończonych zamówień w tym miesiącu</p>
+          ) : (
+            <>
+              <div className="flex gap-4 text-sm">
+                <div className="rounded-lg border border-gray-200 bg-white px-4 py-2 shadow-sm">
+                  <span className="text-gray-500">Zamówienia:</span>{' '}
+                  <span className="font-bold text-gray-900">{completedOrders.length}</span>
+                </div>
+                <div className="rounded-lg border border-gray-200 bg-white px-4 py-2 shadow-sm">
+                  <span className="text-gray-500">Łącznie m²:</span>{' '}
+                  <span className="font-bold text-gray-900">{String(Math.round(ordersTotalM2 * 100) / 100).replace('.', ',')}</span>
+                </div>
+                <div className="rounded-lg border border-gray-200 bg-white px-4 py-2 shadow-sm">
+                  <span className="text-gray-500">Wartość netto:</span>{' '}
+                  <span className="font-bold text-gray-900">{ordersTotalValue.toFixed(2).replace('.', ',')} zł</span>
+                </div>
+              </div>
+              <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-200 bg-gray-50 text-xs text-gray-500">
+                      <th className="px-3 py-2 text-left font-medium">Nr</th>
+                      <th className="px-3 py-2 text-left font-medium">Klient</th>
+                      <th className="px-3 py-2 text-left font-medium">Kolor</th>
+                      <th className="px-3 py-2 text-right font-medium">m²</th>
+                      <th className="px-3 py-2 text-right font-medium">Wartość netto</th>
+                      <th className="px-3 py-2 text-center font-medium">Data gotowości</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {completedOrders.map((o, idx) => {
+                      const yr = new Date(o.created_at).getFullYear() % 100
+                      const m2 = o.order_items.reduce((s, i) => s + Number(i.m2), 0)
+                      const val = getOrderValue(o.order_items)
+                      return (
+                        <tr key={o.id} className={`border-b border-gray-100 ${idx % 2 === 1 ? 'bg-gray-50/40' : ''}`}>
+                          <td className="px-3 py-2 font-medium text-gray-900">{o.number}/{yr}</td>
+                          <td className="px-3 py-2 text-gray-700">{o.client?.name ?? '—'}</td>
+                          <td className="px-3 py-2 text-gray-600">{o.color ?? '—'}</td>
+                          <td className="px-3 py-2 text-right tabular-nums text-gray-800">{String(Math.round(m2 * 100) / 100).replace('.', ',')}</td>
+                          <td className="px-3 py-2 text-right tabular-nums font-medium text-gray-900">{val.toFixed(2).replace('.', ',')} zł</td>
+                          <td className="px-3 py-2 text-center text-gray-600">{o.ready_date ?? '—'}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t-2 border-gray-300 bg-gray-50 font-bold">
+                      <td colSpan={3} className="px-3 py-2 text-gray-700">SUMA</td>
+                      <td className="px-3 py-2 text-right tabular-nums text-gray-900">{String(Math.round(ordersTotalM2 * 100) / 100).replace('.', ',')}</td>
+                      <td className="px-3 py-2 text-right tabular-nums text-amber-700">{ordersTotalValue.toFixed(2).replace('.', ',')} zł</td>
+                      <td></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>
