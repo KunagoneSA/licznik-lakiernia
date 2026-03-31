@@ -181,8 +181,8 @@ export default function MonthlyReportPage() {
                 return (
                   <Fragment key={w}>
                     {/* Worker row */}
-                    <tr className="border-b border-gray-100 hover:bg-gray-50/50 cursor-pointer" onClick={() => toggleExpand(w)}>
-                      <td className="sticky left-0 z-10 bg-white px-3 py-1.5 font-medium text-gray-900 whitespace-nowrap">
+                    <tr className={`border-b border-gray-100 hover:bg-gray-50/50 cursor-pointer ${workers.indexOf(w) % 2 === 1 ? 'bg-gray-50/40' : ''}`} onClick={() => toggleExpand(w)}>
+                      <td className={`sticky left-0 z-10 px-3 py-1.5 font-medium text-gray-900 whitespace-nowrap ${workers.indexOf(w) % 2 === 1 ? 'bg-gray-50' : 'bg-white'}`}>
                         <span className="flex items-center gap-1">
                           {isOpen ? <ChevronUp className="h-3 w-3 text-gray-400" /> : <ChevronDown className="h-3 w-3 text-gray-400" />}
                           {w}
