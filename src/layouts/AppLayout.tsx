@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
-import { LayoutDashboard, ClipboardList, Users, ShoppingCart, Menu, X, LogOut, Tag, HardHat, Truck, Package, FileBarChart, CalendarDays } from 'lucide-react'
+import { LayoutDashboard, ClipboardList, Users, ShoppingCart, Menu, X, LogOut, Tag, HardHat, Truck, Package, FileBarChart, CalendarDays, CalendarRange } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
 
@@ -21,6 +21,7 @@ const baseNav = [
 
 const reportNav = [
   { to: '/raport', icon: FileBarChart, label: 'Raport pracowników' },
+  { to: '/raport-miesieczny', icon: CalendarRange, label: 'Raport miesięczny' },
 ] as const
 
 type NavItem = typeof mainNav[number] | typeof baseNav[number] | typeof reportNav[number]
