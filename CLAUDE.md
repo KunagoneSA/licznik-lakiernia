@@ -13,6 +13,7 @@
 - **Deploy:** NIGDY nie deployuj samodzielnie (Netlify, produkcja). Deploy TYLKO na wyraźne polecenie usera ("releasuj", "deploy", "na produkcję").
 - **Netlify deploy:** Netlify NIE jest podłączony do GitHuba — po release wykonaj `npx netlify deploy --prod --dir=dist` żeby wgrać nową wersję.
 - **Po release:** zawsze podaj link do aplikacji: https://licznik-lakiernia.netlify.app
+- **Wersja:** przy każdym deploy na Netlify automatycznie podbij numer wersji w `src/layouts/AppLayout.tsx` (format: `ver. X.YY`) i poinformuj usera jaki to numer.
 
 ## Powiadomienia
 - Dźwięk `afplay /System/Library/Sounds/Hero.aiff` odtwarzaj **TYLKO jako ostatnią komendę** — po WSZYSTKICH operacjach (build, commit, push, odpowiedź tekstowa). Nigdy nie odtwarzaj dźwięku jeśli po nim jeszcze coś robisz.
