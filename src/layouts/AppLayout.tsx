@@ -83,7 +83,7 @@ export default function AppLayout() {
             </>
           )}
         </nav>
-        <div className="px-3 pb-4 space-y-1 border-t border-gray-200 pt-2">
+        <div className="relative z-10 px-3 pb-4 space-y-1 border-t border-gray-200 pt-2 shrink-0">
           {user && (
             <div className="px-3 py-2">
               {user.user_metadata?.full_name && (
@@ -92,7 +92,7 @@ export default function AppLayout() {
               <div className="text-[11px] text-gray-400 truncate">{user.email}</div>
             </div>
           )}
-          <button onClick={signOut} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
+          <button onClick={signOut} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors cursor-pointer">
             <LogOut className="h-[18px] w-[18px]" />
             Wyloguj się
           </button>
