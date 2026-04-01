@@ -62,7 +62,7 @@ export default function AppLayout() {
       <aside className="hidden md:flex md:w-48 md:flex-col md:border-r md:border-gray-200 bg-white">
         <div className="flex flex-col items-center justify-center h-24 px-3 border-b border-gray-200">
           <img src={`${import.meta.env.BASE_URL}logo-kunagone.png`} alt="Kunagone" className="h-16 w-auto" />
-          <span className="text-[9px] text-gray-400">ver. 1.14</span>
+          <span className="text-[9px] text-gray-400">ver. 1.15</span>
         </div>
         <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
           {mainNav.map((item) => renderNavLink(item))}
