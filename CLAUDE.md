@@ -23,3 +23,4 @@
 ## Projekt
 - Aplikacja: licznik lakiernia (React + Vite + Supabase)
 - Język interfejsu: polski
+- **Sortowanie list:** Zawsze sortuj elementy po `created_at` (ascending), nigdy po `id` (UUID jest losowy i nie zachowuje kolejności dodawania).
