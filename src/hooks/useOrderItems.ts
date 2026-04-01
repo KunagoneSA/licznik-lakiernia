@@ -12,7 +12,7 @@ export function useOrderItems(orderId: string) {
       .from('order_items')
       .select('*, variant:painting_variants(id, name, sides)')
       .eq('order_id', orderId)
-      .order('id', { ascending: true })
+      .order('created_at', { ascending: true })
     setItems((data as OrderItem[]) ?? [])
     setLoading(false)
   }, [orderId])
