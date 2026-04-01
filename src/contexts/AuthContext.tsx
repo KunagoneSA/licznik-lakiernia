@@ -35,6 +35,34 @@ async function checkAllowed(email: string): Promise<{ allowed: boolean; admin: b
   }
 }
 
+async function handleSession(
+  session: { user: User } | null,
+  setUser: (u: User | null) => void,
+  setIsAdmin: (a: boolean) => void,
+  setDenied: (d: boolean) => void,
+  setLoading: (l: boolean) => void,
+) {
+  if (session?.user) {
+    const { allowed, admin } = await checkAllowed(session.user.email ?? '')
+    if (!allowed) {
+      await supabase.auth.signOut()
+      setDenied(true)
+      setUser(null)
+      setLoading(false)
+      return
+    }
+    setDenied(false)
+    setIsAdmin(admin)
+    setUser(session.user)
+    setLoading(false)
+    prefetchOrders()
+  } else {
+    setUser(null)
+    setIsAdmin(false)
+    setLoading(false)
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
@@ -42,38 +70,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
-    // Let onAuthStateChange handle everything — it fires for initial session too
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) {
-        const { allowed, admin } = await checkAllowed(session.user.email ?? '')
-        if (!allowed) {
-          await supabase.auth.signOut()
-          setDenied(true)
-          setUser(null)
-          setLoading(false)
-          return
-        }
-        setDenied(false)
-        setIsAdmin(admin)
-        setUser(session.user)
-        setLoading(false)
-        prefetchOrders()
-      } else {
-        setUser(null)
-        setIsAdmin(false)
-        setLoading(false)
-      }
+    let handled = false
+
+    // Primary: getSession (works always)
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (handled) return
+      handled = true
+      if (error) { setLoading(false); return }
+      handleSession(session, setUser, setIsAdmin, setDenied, setLoading)
+    }).catch(() => {
+      if (!handled) { handled = true; setLoading(false) }
     })
 
-    return () => subscription.unsubscribe()
+    // Secondary: listen for auth changes (login, logout, token refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!handled) { handled = true }
+      handleSession(session, setUser, setIsAdmin, setDenied, setLoading)
+    })
+
+    // Safety: if nothing fires in 8s, stop loading
+    const timeout = setTimeout(() => {
+      if (!handled) { handled = true; setLoading(false) }
+    }, 8000)
+
+    return () => { clearTimeout(timeout); subscription.unsubscribe() }
   }, [])
 
   const signInWithGoogle = async () => {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: {
-        redirectTo: window.location.origin + import.meta.env.BASE_URL,
-      },
+      options: { redirectTo: window.location.origin + import.meta.env.BASE_URL },
     })
   }
 
