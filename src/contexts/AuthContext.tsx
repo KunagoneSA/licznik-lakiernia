@@ -41,7 +41,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [denied, setDenied] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
+      if (error) {
+        // Invalid refresh token — clear stale session
+        await supabase.auth.signOut()
+        setLoading(false)
+        return
+      }
       if (session?.user) {
         const ok = await checkAllowed(session.user.email ?? '')
         if (!ok) {
@@ -54,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         prefetchOrders()
       }
       setLoading(false)
-    })
+    }).catch(() => { setLoading(false) })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
