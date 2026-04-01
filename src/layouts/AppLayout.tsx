@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
-import { LayoutDashboard, ClipboardList, Users, ShoppingCart, Menu, X, LogOut, Tag, HardHat, Truck, Package, FileBarChart, CalendarDays, CalendarRange } from 'lucide-react'
+import { LayoutDashboard, ClipboardList, Users, ShoppingCart, Menu, X, LogOut, Tag, HardHat, Truck, Package, FileBarChart, CalendarDays, CalendarRange, Wallet } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
 
@@ -24,11 +24,15 @@ const reportNav = [
   { to: '/raport-miesieczny', icon: CalendarRange, label: 'Raport miesięczny' },
 ] as const
 
-type NavItem = typeof mainNav[number] | typeof baseNav[number] | typeof reportNav[number]
+const adminNav = [
+  { to: '/finanse', icon: Wallet, label: 'Finanse' },
+] as const
+
+type NavItem = typeof mainNav[number] | typeof baseNav[number] | typeof reportNav[number] | typeof adminNav[number]
 
 export default function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
-  const { user, signOut } = useAuth()
+  const { user, isAdmin, signOut } = useAuth()
 
   const renderNavLink = (
     { to, icon: Icon, label }: NavItem,
@@ -70,6 +74,14 @@ export default function AppLayout() {
             <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Raporty</span>
           </div>
           {reportNav.map((item) => renderNavLink(item))}
+          {isAdmin && (
+            <>
+              <div className="pt-6 pb-1 px-3">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Admin</span>
+              </div>
+              {adminNav.map((item) => renderNavLink(item))}
+            </>
+          )}
         </nav>
         <div className="px-3 pb-4 space-y-1 border-t border-gray-200 pt-2">
           {user && (
@@ -110,6 +122,14 @@ export default function AppLayout() {
             <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Raporty</span>
           </div>
           {reportNav.map((item) => renderNavLink(item, () => setMobileOpen(false)))}
+          {isAdmin && (
+            <>
+              <div className="pt-6 pb-1 px-3">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Admin</span>
+              </div>
+              {adminNav.map((item) => renderNavLink(item, () => setMobileOpen(false)))}
+            </>
+          )}
         </nav>
         <div className="px-3 pb-4 space-y-1">
           {user && (

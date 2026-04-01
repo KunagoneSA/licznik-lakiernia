@@ -19,19 +19,20 @@ interface AuthContextType {
   user: User | null
   loading: boolean
   denied: boolean
+  isAdmin: boolean
   signInWithGoogle: () => Promise<void>
   signOut: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-async function checkAllowed(email: string): Promise<boolean> {
+async function checkAllowed(email: string): Promise<{ allowed: boolean; admin: boolean }> {
   try {
-    const { data, error } = await supabase.from('allowed_users').select('email').eq('email', email).maybeSingle()
-    if (error) { console.warn('allowed_users check failed, allowing access:', error.message); return true }
-    return !!data
+    const { data, error } = await supabase.from('allowed_users').select('email, role').eq('email', email).maybeSingle()
+    if (error) { console.warn('allowed_users check failed, allowing access:', error.message); return { allowed: true, admin: false } }
+    return { allowed: !!data, admin: data?.role === 'admin' }
   } catch {
-    return true // fallback: allow access if table doesn't exist
+    return { allowed: true, admin: false }
   }
 }
 
@@ -39,6 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [denied, setDenied] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session }, error }) => {
@@ -48,13 +50,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return
       }
       if (session?.user) {
-        const ok = await checkAllowed(session.user.email ?? '')
-        if (!ok) {
+        const { allowed, admin } = await checkAllowed(session.user.email ?? '')
+        if (!allowed) {
           await supabase.auth.signOut()
           setDenied(true)
           setLoading(false)
           return
         }
+        setIsAdmin(admin)
         setUser(session.user)
         prefetchOrders()
       }
@@ -78,14 +81,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return
       }
       if (session?.user) {
-        const ok = await checkAllowed(session.user.email ?? '')
-        if (!ok) {
+        const { allowed, admin } = await checkAllowed(session.user.email ?? '')
+        if (!allowed) {
           await supabase.auth.signOut()
           setDenied(true)
           setUser(null)
           return
         }
         setDenied(false)
+        setIsAdmin(admin)
         setUser(session.user)
         setLoading(false)
         prefetchOrders()
@@ -112,7 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, denied, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ user, loading, denied, isAdmin, signInWithGoogle, signOut }}>
       {children}
     </AuthContext.Provider>
   )

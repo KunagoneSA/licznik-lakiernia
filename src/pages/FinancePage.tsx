@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Navigate } from 'react-router-dom'
 import { TrendingUp, TrendingDown, DollarSign, Paintbrush, Package, Building2, Plus, Trash2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useWorkLogs } from '../hooks/useWorkLogs'
+import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../contexts/ToastContext'
 import type { PaintPurchase } from '../types/database'
 
@@ -15,6 +17,9 @@ interface OrderWithItems {
 }
 
 export default function FinancePage() {
+  const { isAdmin } = useAuth()
+  if (!isAdmin) return <Navigate to="/" replace />
+
   const [dateFrom, setDateFrom] = useState(() => {
     const d = new Date(); d.setDate(1); return d.toISOString().slice(0, 10)
   })
