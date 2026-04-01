@@ -683,17 +683,17 @@ export default function OrderDetailPage() {
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 min-w-[55px]">Dl</th>
-                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 min-w-[55px]">Szer</th>
-                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 min-w-[55px]">Szt</th>
-                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 w-full">Rodzaj</th>
-                <th className="px-2 py-1.5 text-right text-[10px] font-medium text-gray-500">m²</th>
-                <th className="px-2 py-1.5 text-right text-[10px] font-medium text-gray-500">Cena&nbsp;netto</th>
-                <th className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-500">Uchwyt</th>
-                <th className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-500">Dopł.&nbsp;kolor</th>
-                <th className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-500">Wpyłka</th>
-                <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 w-[200px]">Uwagi</th>
-                <th className="px-1 py-1.5 w-6"></th>
+                <th className="px-1.5 py-1 text-left text-[10px] font-medium text-gray-500">Dl</th>
+                <th className="px-1.5 py-1 text-left text-[10px] font-medium text-gray-500">Szer</th>
+                <th className="px-1.5 py-1 text-left text-[10px] font-medium text-gray-500">Szt</th>
+                <th className="px-1.5 py-1 text-left text-[10px] font-medium text-gray-500">Rodzaj</th>
+                <th className="px-1.5 py-1 text-right text-[10px] font-medium text-gray-500">m²</th>
+                <th className="px-1.5 py-1 text-right text-[10px] font-medium text-gray-500">Netto</th>
+                <th className="px-1 py-1 text-center text-[10px] font-medium text-gray-500">U</th>
+                <th className="px-1 py-1 text-center text-[10px] font-medium text-gray-500">K</th>
+                <th className="px-1 py-1 text-center text-[10px] font-medium text-gray-500">W</th>
+                <th className="px-1.5 py-1 text-left text-[10px] font-medium text-gray-500">Uwagi</th>
+                <th className="px-0.5 py-1 w-5"></th>
               </tr>
             </thead>
             <tbody>
@@ -744,22 +744,22 @@ export default function OrderDetailPage() {
                   )
                 }
                 return (
-                  <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
+                  <tr key={item.id} className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer"
                     onClick={() => startEditItem(item)}
                     style={lastAddedId && idx === items.length - 1 ? { animation: 'rowFlash 1.5s ease-out' } : undefined}>
-                    <td className="px-2 py-1.5 text-gray-800 tabular-nums">{item.length_mm || '—'}</td>
-                    <td className="px-2 py-1.5 text-gray-800 tabular-nums">{item.width_mm || '—'}</td>
-                    <td className="px-2 py-1.5 text-gray-800 tabular-nums">{item.quantity}</td>
-                    <td className="px-2 py-1.5 text-gray-600">{(item.variant as { name: string } | undefined)?.name ?? '—'}</td>
-                    <td className="px-2 py-1.5 text-right text-gray-600 tabular-nums">{item.length_mm && item.width_mm ? fmtPL(Number(item.m2), 3) : '—'}</td>
-                    <td className="px-2 py-1.5 text-right text-gray-600 tabular-nums">{fmtPL(Number(item.price_per_m2), 0)}{item.length_mm === 0 && item.width_mm === 0 ? '/szt' : ''}</td>
-                    <td className="px-2 py-1.5 text-center">{item.has_handle ? <span className="text-base font-bold text-emerald-600">✓</span> : ''}</td>
-                    <td className="px-2 py-1.5 text-center">{item.color_surcharge ? <span className="text-base font-bold text-amber-600">✓</span> : ''}</td>
-                    <td className="px-2 py-1.5 text-center">{item.has_wplyka ? <span className="text-base font-bold text-violet-600">✓</span> : ''}</td>
-                    <td className="px-2 py-1.5 text-gray-400 text-[10px] whitespace-normal break-words">{item.notes || ''}</td>
-                    <td className="px-1 py-1.5" onClick={(e) => e.stopPropagation()}>
-                      <button onClick={() => handleDeleteItem(item.id)} className="rounded p-0.5 text-gray-400 hover:text-red-600 hover:bg-gray-100">
-                        <Trash2 className="h-3 w-3" />
+                    <td className="px-1.5 py-0.5 text-gray-800 tabular-nums">{item.length_mm || '—'}</td>
+                    <td className="px-1.5 py-0.5 text-gray-800 tabular-nums">{item.width_mm || '—'}</td>
+                    <td className="px-1.5 py-0.5 text-gray-800 tabular-nums">{item.quantity}</td>
+                    <td className="px-1.5 py-0.5 text-gray-600 truncate max-w-[120px]">{(item.variant as { name: string } | undefined)?.name ?? '—'}</td>
+                    <td className="px-1.5 py-0.5 text-right text-gray-600 tabular-nums">{item.length_mm && item.width_mm ? fmtPL(Number(item.m2), 3) : '—'}</td>
+                    <td className="px-1.5 py-0.5 text-right text-gray-600 tabular-nums">{fmtPL(Number(item.price_per_m2), 0)}{item.length_mm === 0 && item.width_mm === 0 ? '/szt' : ''}</td>
+                    <td className="px-1 py-0.5 text-center">{item.has_handle ? <span className="text-xs text-emerald-600">✓</span> : ''}</td>
+                    <td className="px-1 py-0.5 text-center">{item.color_surcharge ? <span className="text-xs text-amber-600">✓</span> : ''}</td>
+                    <td className="px-1 py-0.5 text-center">{item.has_wplyka ? <span className="text-xs text-violet-600">✓</span> : ''}</td>
+                    <td className="px-1.5 py-0.5 text-gray-400 text-[10px] truncate max-w-[140px]">{item.notes || ''}</td>
+                    <td className="px-0.5 py-0.5" onClick={(e) => e.stopPropagation()}>
+                      <button onClick={() => handleDeleteItem(item.id)} className="rounded p-0.5 text-gray-300 hover:text-red-600 hover:bg-gray-100">
+                        <Trash2 className="h-2.5 w-2.5" />
                       </button>
                     </td>
                   </tr>
