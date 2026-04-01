@@ -2,6 +2,22 @@
   command = "npm run build"
   publish = "dist"
 
+# Force no-cache on service worker and index to bust stale PWA
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+[[headers]]
+  for = "/"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
