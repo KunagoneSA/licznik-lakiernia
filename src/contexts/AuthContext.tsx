@@ -43,8 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session }, error }) => {
       if (error) {
-        // Invalid refresh token — clear stale session
-        await supabase.auth.signOut()
+        await supabase.auth.signOut().catch(() => {})
         setLoading(false)
         return
       }
@@ -60,9 +59,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         prefetchOrders()
       }
       setLoading(false)
-    }).catch(() => { setLoading(false) })
+    }).catch(async () => {
+      // Invalid refresh token or network error
+      await supabase.auth.signOut().catch(() => {})
+      setLoading(false)
+    })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'TOKEN_REFRESHED' && !session) {
+        // Token refresh failed
+        setUser(null)
+        setLoading(false)
+        return
+      }
+      if (event === 'SIGNED_OUT') {
+        setUser(null)
+        setLoading(false)
+        return
+      }
       if (session?.user) {
         const ok = await checkAllowed(session.user.email ?? '')
         if (!ok) {
@@ -73,9 +87,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         setDenied(false)
         setUser(session.user)
+        setLoading(false)
         prefetchOrders()
       } else {
         setUser(null)
+        setLoading(false)
       }
     })
 
