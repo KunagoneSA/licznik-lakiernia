@@ -6,7 +6,7 @@ import type { WorkLog } from '../types/database'
 
 interface OrderItem { total_price: number; m2: number; quantity: number; has_handle: boolean; has_wplyka: boolean; color_surcharge: boolean }
 interface CompletedOrder {
-  id: string; number: number; color: string | null; ready_date: string | null; created_at: string
+  id: string; number: number; color: string | null; ready_date: string | null; created_at: string; status: string
   client: { name: string } | null; order_items: OrderItem[]
 }
 
@@ -53,12 +53,16 @@ export default function MonthlyReportPage() {
     const [logsRes, ordersRes] = await Promise.all([
       supabase.from('work_logs').select('*').gte('date', from).lte('date', to).order('worker_name'),
       supabase.from('orders')
-        .select('id, number, color, ready_date, created_at, client:clients(name), order_items(total_price, m2, quantity, has_handle, has_wplyka, color_surcharge)')
-        .gte('ready_date', from).lte('ready_date', to)
+        .select('id, number, color, ready_date, created_at, status, client:clients(name), order_items(total_price, m2, quantity, has_handle, has_wplyka, color_surcharge)')
+        .in('status', ['gotowe', 'wydane', 'fv_wystawiona', 'zapłacone'])
         .order('ready_date', { ascending: true }),
     ])
     setLogs((logsRes.data as WorkLog[]) ?? [])
-    setCompletedOrders((ordersRes.data as unknown as CompletedOrder[]) ?? [])
+    const allOrders = (ordersRes.data as unknown as CompletedOrder[]) ?? []
+    setCompletedOrders(allOrders.filter(o => {
+      if (o.ready_date) return o.ready_date >= from && o.ready_date <= to
+      return false // skip orders without ready_date
+    }))
     setLoading(false)
   }, [year, month, daysInMonth])
 

@@ -49,11 +49,15 @@ export default function FinancePage() {
     setLoading(true)
     const [ordersRes, purchasesRes, extraRes] = await Promise.all([
       supabase.from('orders').select('id, number, status, created_at, ready_date, client:clients(name), order_items(total_price, m2)')
-        .gte('ready_date', dateFrom).lte('ready_date', dateTo),
+        .in('status', ['gotowe', 'wydane', 'fv_wystawiona', 'zapłacone']),
       supabase.from('paint_purchases').select('*').order('date', { ascending: false }),
       supabase.from('extra_costs').select('*').gte('date', dateFrom).lte('date', dateTo).order('date', { ascending: true }),
     ])
-    setOrders((ordersRes.data as unknown as OrderWithItems[]) ?? [])
+    const allOrders = (ordersRes.data as unknown as OrderWithItems[]) ?? []
+    setOrders(allOrders.filter(o => {
+      if (o.ready_date) return o.ready_date >= dateFrom && o.ready_date <= dateTo
+      return false
+    }))
     setPurchases((purchasesRes.data as PaintPurchase[]) ?? [])
     setExtraCosts((extraRes?.data ?? []) as { id: string; date: string; description: string; amount: number }[])
     setLoading(false)
