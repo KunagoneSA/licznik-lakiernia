@@ -44,20 +44,25 @@ export default function FinancePage() {
   const [purchases, setPurchases] = useState<PaintPurchase[]>([])
   const [loading, setLoading] = useState(true)
   const [monthlyCosts, setMonthlyCosts] = useState<{ id: string; month: string; rent: number; waste: number; other: number; total: number }[]>([])
+  const [extraCosts, setExtraCosts] = useState<{ id: string; date: string; description: string; amount: number }[]>([])
   const [showCostForm, setShowCostForm] = useState(false)
+  const [newExtraDesc, setNewExtraDesc] = useState('')
+  const [newExtraAmount, setNewExtraAmount] = useState('')
   const { toast } = useToast()
 
   const fetchData = useCallback(async () => {
     setLoading(true)
-    const [ordersRes, purchasesRes, costsRes] = await Promise.all([
+    const [ordersRes, purchasesRes, costsRes, extraRes] = await Promise.all([
       supabase.from('orders').select('id, number, status, created_at, ready_date, client:clients(name), order_items(total_price, m2)')
         .gte('ready_date', dateFrom).lte('ready_date', dateTo),
       supabase.from('paint_purchases').select('*').order('date', { ascending: false }),
       supabase.from('monthly_costs').select('*').order('month', { ascending: false }),
+      supabase.from('extra_costs').select('*').gte('date', dateFrom).lte('date', dateTo).order('date', { ascending: true }),
     ])
     setOrders((ordersRes.data as unknown as OrderWithItems[]) ?? [])
     setPurchases((purchasesRes.data as PaintPurchase[]) ?? [])
     setMonthlyCosts(costsRes.data ?? [])
+    setExtraCosts((extraRes?.data ?? []) as { id: string; date: string; description: string; amount: number }[])
     setLoading(false)
   }, [dateFrom, dateTo])
 
@@ -112,7 +117,21 @@ export default function FinancePage() {
     return monthlyCosts.filter(c => c.month >= fromMonth && c.month <= toMonth).length
   }, [monthlyCosts, dateFrom, dateTo])
 
-  const profit = revenue - laborCost - materialCost - fixedCosts
+  const extraCostTotal = useMemo(() => extraCosts.reduce((s, c) => s + Number(c.amount), 0), [extraCosts])
+
+  const addExtraCost = async () => {
+    if (!newExtraDesc || !newExtraAmount) return
+    await supabase.from('extra_costs').insert({
+      date: dateFrom,
+      description: newExtraDesc,
+      amount: Math.round(Number(newExtraAmount) * 100) / 100,
+    })
+    setNewExtraDesc('')
+    setNewExtraAmount('')
+    toast('Koszt dodany')
+    fetchData()
+  }
+  const profit = revenue - laborCost - materialCost - fixedCosts - extraCostTotal
   const margin = revenue > 0 ? (profit / revenue) * 100 : 0
 
   // Per-worker breakdown
@@ -313,6 +332,70 @@ export default function FinancePage() {
         </div>
       </div>
 
+      {/* Extra costs */}
+      <div>
+        <h2 className="mb-3 text-sm font-semibold text-gray-600 uppercase tracking-wide">Dodatkowe koszty</h2>
+        <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50">
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Data</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Opis</th>
+                <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Kwota</th>
+                <th className="px-4 py-2 w-8"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {extraCosts.map((c) => (
+                <tr key={c.id} className="border-b border-gray-100">
+                  <td className="px-4 py-2 text-gray-600">{c.date}</td>
+                  <td className="px-4 py-2 text-gray-800">{c.description}</td>
+                  <td className="px-4 py-2 text-right text-rose-600 font-medium">{Number(c.amount).toFixed(2).replace('.', ',')} zł</td>
+                  <td className="px-4 py-2">
+                    <button onClick={async () => {
+                      await supabase.from('extra_costs').delete().eq('id', c.id)
+                      toast('Koszt usunięty')
+                      fetchData()
+                    }} className="rounded p-1 text-gray-400 hover:text-red-500 hover:bg-red-50">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {extraCosts.length > 0 && (
+                <tr className="bg-gray-50 font-medium">
+                  <td className="px-4 py-2 text-gray-600" colSpan={2}>Razem</td>
+                  <td className="px-4 py-2 text-right text-rose-600">{extraCostTotal.toFixed(2).replace('.', ',')} zł</td>
+                  <td></td>
+                </tr>
+              )}
+              {/* Inline add row */}
+              <tr className="border-t border-gray-200 bg-amber-50/30">
+                <td className="px-4 py-2">
+                  <span className="text-xs text-gray-400">{dateFrom}</span>
+                </td>
+                <td className="px-4 py-2">
+                  <input type="text" placeholder="Opis kosztu..." value={newExtraDesc} onChange={(e) => setNewExtraDesc(e.target.value)}
+                    className="w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-sm text-gray-800 outline-none focus:border-amber-500"
+                    onKeyDown={(e) => { if (e.key === 'Enter') addExtraCost() }} />
+                </td>
+                <td className="px-4 py-2">
+                  <input type="number" placeholder="0,00" value={newExtraAmount} onChange={(e) => setNewExtraAmount(e.target.value)}
+                    className="w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-sm text-right text-gray-800 outline-none focus:border-amber-500"
+                    onKeyDown={(e) => { if (e.key === 'Enter') addExtraCost() }} />
+                </td>
+                <td className="px-4 py-2">
+                  <button onClick={addExtraCost} disabled={!newExtraDesc || !newExtraAmount}
+                    className="rounded p-1 text-amber-500 hover:text-amber-700 disabled:opacity-30">
+                    <Plus className="h-3.5 w-3.5" />
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* Cost structure bar */}
       {revenue > 0 && (
         <div>
@@ -333,11 +416,11 @@ export default function FinancePage() {
                   title={`Materiały: ${materialCost.toFixed(0)} zł`}
                 />
               )}
-              {fixedCosts > 0 && (
+              {(fixedCosts + extraCostTotal) > 0 && (
                 <div
                   className="bg-rose-500 transition-all"
-                  style={{ width: `${(fixedCosts / revenue) * 100}%` }}
-                  title={`Koszty stałe: ${fixedCosts.toFixed(0)} zł`}
+                  style={{ width: `${((fixedCosts + extraCostTotal) / revenue) * 100}%` }}
+                  title={`Inne koszty: ${(fixedCosts + extraCostTotal).toFixed(0)} zł`}
                 />
               )}
               {profit > 0 && (
@@ -351,7 +434,7 @@ export default function FinancePage() {
             <div className="mt-3 flex flex-wrap gap-4 text-xs">
               <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-red-500" /> Praca {laborCost > 0 ? `${((laborCost / revenue) * 100).toFixed(0)}%` : '—'}</span>
               <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-orange-500" /> Materiały {materialCost > 0 ? `${((materialCost / revenue) * 100).toFixed(0)}%` : '—'}</span>
-              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-rose-500" /> Koszty stałe {fixedCosts > 0 ? `${((fixedCosts / revenue) * 100).toFixed(0)}%` : '—'}</span>
+              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-rose-500" /> Inne koszty {(fixedCosts + extraCostTotal) > 0 ? `${(((fixedCosts + extraCostTotal) / revenue) * 100).toFixed(0)}%` : '—'}</span>
               <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-emerald-500" /> Zysk {profit > 0 ? `${((profit / revenue) * 100).toFixed(0)}%` : '—'}</span>
             </div>
           </div>
