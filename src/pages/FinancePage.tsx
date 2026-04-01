@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Navigate } from 'react-router-dom'
-import { TrendingUp, TrendingDown, DollarSign, Paintbrush, Package, Building2, Plus, Trash2 } from 'lucide-react'
+import { TrendingUp, TrendingDown, DollarSign, Paintbrush, Package, Building2, Plus, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
+
+const MONTH_NAMES = ['Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec','Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień']
 import { supabase } from '../lib/supabase'
 import { useWorkLogs } from '../hooks/useWorkLogs'
 import { useAuth } from '../contexts/AuthContext'
@@ -12,6 +14,7 @@ interface OrderWithItems {
   number: number
   status: string
   created_at: string
+  ready_date: string | null
   client: { name: string } | null
   order_items: { total_price: number; m2: number }[]
 }
@@ -20,10 +23,22 @@ export default function FinancePage() {
   const { isAdmin } = useAuth()
   if (!isAdmin) return <Navigate to="/" replace />
 
-  const [dateFrom, setDateFrom] = useState(() => {
-    const d = new Date(); d.setDate(1); return d.toISOString().slice(0, 10)
-  })
-  const [dateTo, setDateTo] = useState(() => new Date().toISOString().slice(0, 10))
+  const now = new Date()
+  const [year, setYear] = useState(now.getFullYear())
+  const [month, setMonth] = useState(now.getMonth())
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const dateFrom = `${year}-${String(month + 1).padStart(2, '0')}-01`
+  const dateTo = `${year}-${String(month + 1).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`
+
+  const shiftMonth = (dir: number) => {
+    let m = month + dir
+    let y = year
+    if (m < 0) { m = 11; y-- }
+    if (m > 11) { m = 0; y++ }
+    setMonth(m)
+    setYear(y)
+  }
   const { logs } = useWorkLogs()
   const [orders, setOrders] = useState<OrderWithItems[]>([])
   const [purchases, setPurchases] = useState<PaintPurchase[]>([])
@@ -35,7 +50,8 @@ export default function FinancePage() {
   const fetchData = useCallback(async () => {
     setLoading(true)
     const [ordersRes, purchasesRes, costsRes] = await Promise.all([
-      supabase.from('orders').select('id, number, status, created_at, client:clients(name), order_items(total_price, m2)'),
+      supabase.from('orders').select('id, number, status, created_at, ready_date, client:clients(name), order_items(total_price, m2)')
+        .gte('ready_date', dateFrom).lte('ready_date', dateTo),
       supabase.from('paint_purchases').select('*').order('date', { ascending: false }),
       supabase.from('monthly_costs').select('*').order('month', { ascending: false }),
     ])
@@ -43,7 +59,7 @@ export default function FinancePage() {
     setPurchases((purchasesRes.data as PaintPurchase[]) ?? [])
     setMonthlyCosts(costsRes.data ?? [])
     setLoading(false)
-  }, [])
+  }, [dateFrom, dateTo])
 
   useEffect(() => { fetchData() }, [fetchData])
 
@@ -56,8 +72,6 @@ export default function FinancePage() {
     purchases.filter((p) => p.date >= dateFrom && p.date <= dateTo),
     [purchases, dateFrom, dateTo])
 
-  // Show all orders (not filtered by date) — revenue comes from all active orders
-  // Date filter applies to costs (work logs, purchases, fixed costs)
   const filteredOrders = orders
 
   // Calculate totals
@@ -71,8 +85,9 @@ export default function FinancePage() {
       s + o.order_items.reduce((si, i) => si + Number(i.m2), 0), 0),
     [filteredOrders])
 
+  const HOURLY_RATE = 45 // zł/h — uproszczona stawka dla wszystkich
   const laborCost = useMemo(() =>
-    filteredLogs.reduce((s, l) => s + Number(l.cost), 0),
+    filteredLogs.reduce((s, l) => s + Number(l.hours) * HOURLY_RATE, 0),
     [filteredLogs])
 
   const totalHours = useMemo(() =>
@@ -106,7 +121,7 @@ export default function FinancePage() {
     filteredLogs.forEach((l) => {
       const cur = map.get(l.worker_name) ?? { hours: 0, cost: 0 }
       cur.hours += Number(l.hours)
-      cur.cost += Number(l.cost)
+      cur.cost += Number(l.hours) * HOURLY_RATE
       map.set(l.worker_name, cur)
     })
     return Array.from(map.entries()).sort((a, b) => b[1].cost - a[1].cost)
@@ -137,12 +152,16 @@ export default function FinancePage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl font-bold text-gray-900">Podsumowanie finansowe</h1>
-        <div className="flex gap-2">
-          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
-            className="rounded-lg bg-white border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30" />
-          <span className="self-center text-gray-400">—</span>
-          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
-            className="rounded-lg bg-white border border-gray-300 px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30" />
+        <div className="flex items-center gap-2">
+          <button onClick={() => shiftMonth(-1)} className="rounded-lg p-2 text-gray-500 hover:bg-gray-100">
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <span className="min-w-[160px] text-center text-sm font-semibold text-gray-800">
+            {MONTH_NAMES[month]} {year}
+          </span>
+          <button onClick={() => shiftMonth(1)} className="rounded-lg p-2 text-gray-500 hover:bg-gray-100">
+            <ChevronRight className="h-4 w-4" />
+          </button>
         </div>
       </div>
 
@@ -255,6 +274,42 @@ export default function FinancePage() {
               </tbody>
             </table>
           </div>
+        </div>
+      </div>
+
+      {/* Purchases breakdown */}
+      <div>
+        <h2 className="mb-3 text-sm font-semibold text-gray-600 uppercase tracking-wide">Zakupy lakierów i materiałów</h2>
+        <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50">
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Data</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Produkt</th>
+                <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Ilość</th>
+                <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Kwota</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredPurchases.map((p) => (
+                <tr key={p.id} className="border-b border-gray-100">
+                  <td className="px-4 py-2 text-gray-600">{p.date}</td>
+                  <td className="px-4 py-2 text-gray-800">{p.product}{p.color ? ` (${p.color})` : ''}</td>
+                  <td className="px-4 py-2 text-right text-gray-600">{p.quantity} {p.unit}</td>
+                  <td className="px-4 py-2 text-right text-orange-600 font-medium">{Number(p.total).toFixed(2).replace('.', ',')} zł</td>
+                </tr>
+              ))}
+              {filteredPurchases.length > 0 && (
+                <tr className="bg-gray-50 font-medium">
+                  <td className="px-4 py-2 text-gray-600" colSpan={3}>Razem</td>
+                  <td className="px-4 py-2 text-right text-orange-600">{materialCost.toFixed(2).replace('.', ',')} zł</td>
+                </tr>
+              )}
+              {filteredPurchases.length === 0 && (
+                <tr><td colSpan={4} className="px-4 py-6 text-center text-gray-400">Brak zakupów w tym miesiącu</td></tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 
