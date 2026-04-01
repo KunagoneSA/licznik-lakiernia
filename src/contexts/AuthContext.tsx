@@ -28,10 +28,11 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 async function checkAllowed(email: string): Promise<{ allowed: boolean; admin: boolean }> {
   try {
     const { data, error } = await supabase.from('allowed_users').select('email, role').eq('email', email).maybeSingle()
-    if (error) return { allowed: true, admin: false }
+    if (error) { console.warn('[auth] allowed_users error:', error.message, '→ allowing'); return { allowed: true, admin: false } }
+    console.log('[auth] checkAllowed:', email, '→', data ? 'found' : 'NOT FOUND', data?.role)
     return { allowed: !!data, admin: data?.role === 'admin' }
-  } catch {
-    return { allowed: true, admin: false }
+  } catch (e) {
+    console.warn('[auth] checkAllowed exception:', e); return { allowed: true, admin: false }
   }
 }
 

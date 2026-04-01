@@ -15,21 +15,16 @@
   <body>
     <div id="root"></div>
     <script>
-      // Force clear old service workers and caches (v1.18 migration)
-      if ('serviceWorker' in navigator) {
+      // Clear old service workers (one-time, skip during OAuth callback)
+      if ('serviceWorker' in navigator && !location.hash.includes('access_token')) {
         navigator.serviceWorker.getRegistrations().then(function(regs) {
-          var hadSW = regs.length > 0;
           regs.forEach(function(r) { r.unregister(); });
-          if ('caches' in window) {
-            caches.keys().then(function(names) {
-              names.forEach(function(n) { caches.delete(n); });
-            });
-          }
-          if (hadSW && !sessionStorage.getItem('sw_cleared')) {
-            sessionStorage.setItem('sw_cleared', '1');
-            location.reload();
-          }
         });
+        if ('caches' in window) {
+          caches.keys().then(function(names) {
+            names.forEach(function(n) { caches.delete(n); });
+          });
+        }
       }
     </script>
     <script type="module" src="/src/main.tsx"></script>
