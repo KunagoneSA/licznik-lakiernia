@@ -2,7 +2,6 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { supabase } from '../lib/supabase'
 import type { User } from '@supabase/supabase-js'
 
-// Prefetch zamówień — "rozgrzewa" Supabase i cache'uje dane
 function prefetchOrders() {
   supabase
     .from('orders')
@@ -29,11 +28,17 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 async function checkAllowed(email: string): Promise<{ allowed: boolean; admin: boolean }> {
   try {
     const { data, error } = await supabase.from('allowed_users').select('email, role').eq('email', email).maybeSingle()
-    if (error) { console.warn('allowed_users check failed, allowing access:', error.message); return { allowed: true, admin: false } }
+    if (error) return { allowed: true, admin: false }
     return { allowed: !!data, admin: data?.role === 'admin' }
   } catch {
     return { allowed: true, admin: false }
   }
+}
+
+// Clear all Supabase auth data from localStorage
+function clearAuthStorage() {
+  const keys = Object.keys(localStorage).filter(k => k.startsWith('sb-'))
+  keys.forEach(k => localStorage.removeItem(k))
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -43,41 +48,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
-      if (error) {
-        await supabase.auth.signOut().catch(() => {})
-        setLoading(false)
-        return
+    let settled = false
+    const settle = () => { if (!settled) { settled = true; setLoading(false) } }
+
+    // Safety timeout — if auth takes longer than 5s, force stop loading
+    const timeout = setTimeout(() => {
+      if (!settled) {
+        console.warn('Auth timeout — clearing stale session')
+        clearAuthStorage()
+        settle()
       }
-      if (session?.user) {
-        const { allowed, admin } = await checkAllowed(session.user.email ?? '')
-        if (!allowed) {
-          await supabase.auth.signOut()
-          setDenied(true)
-          setLoading(false)
+    }, 5000)
+
+    const init = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession()
+        if (error) {
+          clearAuthStorage()
+          await supabase.auth.signOut().catch(() => {})
+          settle()
           return
         }
-        setIsAdmin(admin)
-        setUser(session.user)
-        prefetchOrders()
+        if (session?.user) {
+          const { allowed, admin } = await checkAllowed(session.user.email ?? '')
+          if (!allowed) {
+            await supabase.auth.signOut()
+            setDenied(true)
+            settle()
+            return
+          }
+          setIsAdmin(admin)
+          setUser(session.user)
+          prefetchOrders()
+        }
+        settle()
+      } catch {
+        clearAuthStorage()
+        await supabase.auth.signOut().catch(() => {})
+        settle()
       }
-      setLoading(false)
-    }).catch(async () => {
-      // Invalid refresh token or network error
-      await supabase.auth.signOut().catch(() => {})
-      setLoading(false)
-    })
+    }
+
+    init()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'TOKEN_REFRESHED' && !session) {
-        // Token refresh failed
         setUser(null)
-        setLoading(false)
+        settle()
         return
       }
       if (event === 'SIGNED_OUT') {
         setUser(null)
-        setLoading(false)
+        setIsAdmin(false)
+        settle()
         return
       }
       if (session?.user) {
@@ -91,15 +114,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setDenied(false)
         setIsAdmin(admin)
         setUser(session.user)
-        setLoading(false)
+        settle()
         prefetchOrders()
       } else {
         setUser(null)
-        setLoading(false)
+        settle()
       }
     })
 
-    return () => subscription.unsubscribe()
+    return () => { clearTimeout(timeout); subscription.unsubscribe() }
   }, [])
 
   const signInWithGoogle = async () => {
@@ -112,6 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const signOut = async () => {
+    clearAuthStorage()
     await supabase.auth.signOut()
   }
 
