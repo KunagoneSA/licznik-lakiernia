@@ -50,7 +50,7 @@ export default function FinancePage() {
     const [ordersRes, purchasesRes, extraRes] = await Promise.all([
       supabase.from('orders').select('id, number, status, created_at, ready_date, client:clients(name), order_items(total_price, m2)')
         .in('status', ['gotowe', 'wydane', 'fv_wystawiona', 'zapłacone']),
-      supabase.from('paint_purchases').select('*').order('date', { ascending: false }),
+      supabase.from('paint_purchases').select('*, supplier:suppliers(name)').order('date', { ascending: false }),
       supabase.from('extra_costs').select('*').gte('date', dateFrom).lte('date', dateTo).order('date', { ascending: true }),
     ])
     const allOrders = (ordersRes.data as unknown as OrderWithItems[]) ?? []
@@ -89,6 +89,18 @@ export default function FinancePage() {
     })
     return Array.from(map.entries()).sort((a, b) => b[1].cost - a[1].cost)
   }, [filteredLogs])
+
+  const supplierStats = useMemo(() => {
+    const map = new Map<string, { total: number; count: number }>()
+    filteredPurchases.forEach((p) => {
+      const name = (p as unknown as { supplier?: { name: string } }).supplier?.name ?? 'Nieznany'
+      const cur = map.get(name) ?? { total: 0, count: 0 }
+      cur.total += Number(p.total)
+      cur.count += 1
+      map.set(name, cur)
+    })
+    return Array.from(map.entries()).sort((a, b) => b[1].total - a[1].total)
+  }, [filteredPurchases])
 
   const orderRanking = useMemo(() =>
     orders.map((o) => ({
@@ -275,6 +287,39 @@ export default function FinancePage() {
               <tr className="bg-gray-50 font-semibold border-t border-gray-200">
                 <td className="px-3 py-1.5 text-gray-700" colSpan={3}>Razem</td>
                 <td className="px-3 py-1.5 text-right text-orange-600 tabular-nums">{fmtPL(materialCost)} zł</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Purchases by supplier */}
+      {supplierStats.length > 0 && (
+        <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+          <div className="bg-gray-50 px-3 py-1.5 text-xs font-semibold text-gray-600 uppercase tracking-wide border-b border-gray-200">Zakupy wg dostawcy</div>
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50/50">
+                <th className="px-3 py-1.5 text-left font-medium text-gray-500">Dostawca</th>
+                <th className="px-3 py-1.5 text-right font-medium text-gray-500">Zakupów</th>
+                <th className="px-3 py-1.5 text-right font-medium text-gray-500">Kwota</th>
+                <th className="px-3 py-1.5 text-right font-medium text-gray-500">Udział</th>
+              </tr>
+            </thead>
+            <tbody>
+              {supplierStats.map(([name, s], i) => (
+                <tr key={name} className={`border-b border-gray-50 ${i % 2 === 1 ? 'bg-gray-50/30' : ''}`}>
+                  <td className="px-3 py-1 text-gray-800 font-medium">{name}</td>
+                  <td className="px-3 py-1 text-right text-gray-600 tabular-nums">{s.count}</td>
+                  <td className="px-3 py-1 text-right text-orange-600 tabular-nums">{fmtPL(s.total)} zł</td>
+                  <td className="px-3 py-1 text-right text-gray-500 tabular-nums">{materialCost > 0 ? ((s.total / materialCost) * 100).toFixed(0) : 0}%</td>
+                </tr>
+              ))}
+              <tr className="bg-gray-50 font-semibold border-t border-gray-200">
+                <td className="px-3 py-1.5 text-gray-700">Razem</td>
+                <td className="px-3 py-1.5 text-right text-gray-700 tabular-nums">{filteredPurchases.length}</td>
+                <td className="px-3 py-1.5 text-right text-orange-600 tabular-nums">{fmtPL(materialCost)} zł</td>
+                <td className="px-3 py-1.5 text-right text-gray-500">100%</td>
               </tr>
             </tbody>
           </table>
