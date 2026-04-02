@@ -95,15 +95,16 @@ export default function FinancePage() {
   }, [filteredLogs])
 
   const supplierStats = useMemo(() => {
-    const map = new Map<string, { total: number; count: number }>()
+    const map = new Map<string, { total: number; count: number; products: Set<string> }>()
     filteredPurchases.forEach((p) => {
       const name = (p as unknown as { supplier?: { name: string } }).supplier?.name ?? 'Nieznany'
-      const cur = map.get(name) ?? { total: 0, count: 0 }
+      const cur = map.get(name) ?? { total: 0, count: 0, products: new Set<string>() }
       cur.total += Number(p.total)
       cur.count += 1
+      if (p.product) cur.products.add(p.product)
       map.set(name, cur)
     })
-    return Array.from(map.entries()).sort((a, b) => b[1].total - a[1].total)
+    return Array.from(map.entries()).map(([name, s]) => [name, { ...s, products: [...s.products].sort().join(', ') }] as const).sort((a, b) => b[1].total - a[1].total)
   }, [filteredPurchases])
 
   const orderRanking = useMemo(() =>
@@ -325,6 +326,7 @@ export default function FinancePage() {
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50/50">
                 <th className="px-3 py-1.5 text-left font-medium text-gray-500">Dostawca</th>
+                <th className="px-3 py-1.5 text-left font-medium text-gray-500">Produkty</th>
                 <th className="px-3 py-1.5 text-right font-medium text-gray-500">Zakupów</th>
                 <th className="px-3 py-1.5 text-right font-medium text-gray-500">Kwota</th>
                 <th className="px-3 py-1.5 text-right font-medium text-gray-500">Udział</th>
@@ -334,6 +336,7 @@ export default function FinancePage() {
               {supplierStats.map(([name, s], i) => (
                 <tr key={name} className={`border-b border-gray-50 ${i % 2 === 1 ? 'bg-gray-50/30' : ''}`}>
                   <td className="px-3 py-1 text-gray-800 font-medium">{name}</td>
+                  <td className="px-3 py-1 text-gray-500 text-[10px] max-w-[200px]">{s.products}</td>
                   <td className="px-3 py-1 text-right text-gray-600 tabular-nums">{s.count}</td>
                   <td className="px-3 py-1 text-right text-orange-600 tabular-nums">{fmtPL(s.total)} zł</td>
                   <td className="px-3 py-1 text-right text-gray-500 tabular-nums">{materialCost > 0 ? ((s.total / materialCost) * 100).toFixed(0) : 0}%</td>
@@ -341,6 +344,7 @@ export default function FinancePage() {
               ))}
               <tr className="bg-gray-50 font-semibold border-t border-gray-200">
                 <td className="px-3 py-1.5 text-gray-700">Razem</td>
+                <td></td>
                 <td className="px-3 py-1.5 text-right text-gray-700 tabular-nums">{filteredPurchases.length}</td>
                 <td className="px-3 py-1.5 text-right text-orange-600 tabular-nums">{fmtPL(materialCost)} zł</td>
                 <td className="px-3 py-1.5 text-right text-gray-500">100%</td>
