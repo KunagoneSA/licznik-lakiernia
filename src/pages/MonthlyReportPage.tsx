@@ -280,36 +280,35 @@ export default function MonthlyReportPage() {
 
       {/* Completed orders section */}
       {!loading && (
-        <div className="space-y-3">
-          <h2 className="text-lg font-bold text-gray-900">Zamówienia zakończone</h2>
+        <div className="space-y-3 print:space-y-2" id="orders-report">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold text-gray-900">Zamówienia zakończone — {MONTH_NAMES[month]} {year}</h2>
+            {completedOrders.length > 0 && (
+              <button onClick={() => window.print()} className="flex items-center gap-2 rounded-lg bg-white shadow-sm border border-gray-200 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50 print:hidden">
+                <Download className="h-3.5 w-3.5" /> Drukuj / PDF
+              </button>
+            )}
+          </div>
           {completedOrders.length === 0 ? (
             <p className="py-4 text-center text-sm text-gray-400">Brak zakończonych zamówień w tym miesiącu</p>
           ) : (
             <>
-              <div className="flex gap-4 text-sm">
-                <div className="rounded-lg border border-gray-200 bg-white px-4 py-2 shadow-sm">
-                  <span className="text-gray-500">Zamówienia:</span>{' '}
-                  <span className="font-bold text-gray-900">{completedOrders.length}</span>
-                </div>
-                <div className="rounded-lg border border-gray-200 bg-white px-4 py-2 shadow-sm">
-                  <span className="text-gray-500">Łącznie m²:</span>{' '}
-                  <span className="font-bold text-gray-900">{String(Math.round(ordersTotalM2 * 100) / 100).replace('.', ',')}</span>
-                </div>
-                <div className="rounded-lg border border-gray-200 bg-white px-4 py-2 shadow-sm">
-                  <span className="text-gray-500">Wartość netto:</span>{' '}
-                  <span className="font-bold text-gray-900">{ordersTotalValue.toFixed(2).replace('.', ',')} zł</span>
-                </div>
+              <div className="flex gap-3 text-xs print:gap-6">
+                <span className="text-gray-500">Zamówień: <strong className="text-gray-900">{completedOrders.length}</strong></span>
+                <span className="text-gray-500">m²: <strong className="text-gray-900">{String(Math.round(ordersTotalM2 * 100) / 100).replace('.', ',')}</strong></span>
+                <span className="text-gray-500">Wartość netto: <strong className="text-gray-900">{ordersTotalValue.toFixed(2).replace('.', ',')} zł</strong></span>
               </div>
-              <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
-                <table className="w-full text-sm">
+              <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm print:shadow-none print:rounded-none">
+                <table className="w-full text-xs print:text-[10px]">
                   <thead>
-                    <tr className="border-b border-gray-200 bg-gray-50 text-xs text-gray-500">
-                      <th className="px-3 py-2 text-left font-medium">Nr</th>
-                      <th className="px-3 py-2 text-left font-medium">Klient</th>
-                      <th className="px-3 py-2 text-left font-medium">Kolor</th>
-                      <th className="px-3 py-2 text-right font-medium">m²</th>
-                      <th className="px-3 py-2 text-right font-medium">Wartość netto</th>
-                      <th className="px-3 py-2 text-center font-medium">Data gotowości</th>
+                    <tr className="border-b border-gray-300 bg-gray-100 text-gray-600">
+                      <th className="px-2 py-1.5 text-left font-semibold w-8">Lp</th>
+                      <th className="px-2 py-1.5 text-left font-semibold">Nr</th>
+                      <th className="px-2 py-1.5 text-left font-semibold">Klient</th>
+                      <th className="px-2 py-1.5 text-left font-semibold">Kolor</th>
+                      <th className="px-2 py-1.5 text-right font-semibold">m²</th>
+                      <th className="px-2 py-1.5 text-right font-semibold">Wartość netto</th>
+                      <th className="px-2 py-1.5 text-center font-semibold">Gotowe</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -318,22 +317,23 @@ export default function MonthlyReportPage() {
                       const m2 = o.order_items.reduce((s, i) => s + Number(i.m2), 0)
                       const val = getOrderValue(o.order_items)
                       return (
-                        <tr key={o.id} className={`border-b border-gray-100 ${idx % 2 === 1 ? 'bg-gray-50/40' : ''}`}>
-                          <td className="px-3 py-2 font-medium text-gray-900">{o.number}/{yr}</td>
-                          <td className="px-3 py-2 text-gray-700">{o.client?.name ?? '—'}</td>
-                          <td className="px-3 py-2 text-gray-600">{o.color ?? '—'}</td>
-                          <td className="px-3 py-2 text-right tabular-nums text-gray-800">{String(Math.round(m2 * 100) / 100).replace('.', ',')}</td>
-                          <td className="px-3 py-2 text-right tabular-nums font-medium text-gray-900">{val.toFixed(2).replace('.', ',')} zł</td>
-                          <td className="px-3 py-2 text-center text-gray-600">{o.ready_date ?? '—'}</td>
+                        <tr key={o.id} className={`border-b border-gray-100 ${idx % 2 === 1 ? 'bg-gray-50' : ''}`}>
+                          <td className="px-2 py-1 text-gray-400 tabular-nums">{idx + 1}</td>
+                          <td className="px-2 py-1 font-medium text-gray-900 tabular-nums">{o.number}/{yr}</td>
+                          <td className="px-2 py-1 text-gray-700">{o.client?.name ?? '—'}</td>
+                          <td className="px-2 py-1 text-gray-600">{o.color ?? '—'}</td>
+                          <td className="px-2 py-1 text-right tabular-nums text-gray-800">{String(Math.round(m2 * 100) / 100).replace('.', ',')}</td>
+                          <td className="px-2 py-1 text-right tabular-nums font-medium text-gray-900">{val.toFixed(2).replace('.', ',')} zł</td>
+                          <td className="px-2 py-1 text-center text-gray-600">{o.ready_date ?? '—'}</td>
                         </tr>
                       )
                     })}
                   </tbody>
                   <tfoot>
-                    <tr className="border-t-2 border-gray-300 bg-gray-50 font-bold">
-                      <td colSpan={3} className="px-3 py-2 text-gray-700">SUMA</td>
-                      <td className="px-3 py-2 text-right tabular-nums text-gray-900">{String(Math.round(ordersTotalM2 * 100) / 100).replace('.', ',')}</td>
-                      <td className="px-3 py-2 text-right tabular-nums text-amber-700">{ordersTotalValue.toFixed(2).replace('.', ',')} zł</td>
+                    <tr className="border-t-2 border-gray-400 bg-gray-100 font-bold">
+                      <td colSpan={4} className="px-2 py-1.5 text-gray-700">SUMA ({completedOrders.length} zamówień)</td>
+                      <td className="px-2 py-1.5 text-right tabular-nums text-gray-900">{String(Math.round(ordersTotalM2 * 100) / 100).replace('.', ',')}</td>
+                      <td className="px-2 py-1.5 text-right tabular-nums text-amber-700">{ordersTotalValue.toFixed(2).replace('.', ',')} zł</td>
                       <td></td>
                     </tr>
                   </tfoot>
