@@ -69,9 +69,17 @@ export default function WorkerReportPage() {
   }, [monthLogs])
 
   // Filtered month logs
+  const ALUMINIUM_PATTERNS = ['alumin', 'alumim', 'alumnin', 'alunim', 'alimini', 'alu ']
+  const isAluminiumFilter = notesFilter === '__aluminium__'
   const filteredMonthLogs = useMemo(() => {
     if (!notesFilter) return monthLogs
-    return monthLogs.filter(l => l.notes?.toLowerCase().includes(notesFilter))
+    if (isAluminiumFilter) {
+      return monthLogs.filter(l => {
+        const n = l.notes?.toLowerCase() ?? ''
+        return ALUMINIUM_PATTERNS.some(p => n.includes(p))
+      })
+    }
+    return monthLogs.filter(l => l.notes?.trim().toLowerCase().replace(/[,.]$/, '') === notesFilter)
   }, [monthLogs, notesFilter])
 
   // Group: worker -> operation -> hours
@@ -272,8 +280,8 @@ export default function WorkerReportPage() {
           <button onClick={() => shiftMonth(1)} className="rounded-lg p-2 text-gray-500 hover:bg-gray-100">
             <ChevronRight className="h-4 w-4" />
           </button>
-          <button onClick={() => setNotesFilter(notesFilter === 'aluminium' ? '' : 'aluminium')}
-            className={`ml-2 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${notesFilter === 'aluminium' ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+          <button onClick={() => setNotesFilter(isAluminiumFilter ? '' : '__aluminium__')}
+            className={`ml-2 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${isAluminiumFilter ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
             Aluminium
           </button>
           {notesTags.length > 0 && (
