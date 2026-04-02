@@ -61,7 +61,11 @@ export default function ExtraCostsPage() {
       amount: Math.round(Number(newAmount) * 100) / 100,
       created_by_email: user?.email ?? null,
     })
-    setNewDesc(''); setNewAmount(''); toast('Koszt dodany'); fetchData()
+    // Switch to the month of the new entry so it's visible
+    const d = new Date(newDate)
+    setYear(d.getFullYear())
+    setMonth(d.getMonth())
+    setNewDesc(''); setNewAmount(''); toast('Koszt dodany')
   }
 
   const startEdit = (c: ExtraCost) => {
@@ -71,7 +75,10 @@ export default function ExtraCostsPage() {
   const saveEdit = async () => {
     if (!editId || !editDesc || !editAmount) return
     await supabase.from('extra_costs').update({ date: editDate, description: editDesc, amount: Math.round(Number(editAmount) * 100) / 100 }).eq('id', editId)
-    setEditId(null); toast('Zaktualizowano'); fetchData()
+    const d = new Date(editDate)
+    setYear(d.getFullYear())
+    setMonth(d.getMonth())
+    setEditId(null); toast('Zaktualizowano')
   }
 
   return (
