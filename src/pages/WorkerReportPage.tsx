@@ -14,11 +14,16 @@ interface WorkLogWithOrder extends WorkLog {
   order?: OrderInfo | null
 }
 
+const MONTH_NAMES = ['Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec','Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień']
+
 export default function WorkerReportPage() {
   const today = new Date().toISOString().slice(0, 10)
   const [date, setDate] = useState(today)
   const [logs, setLogs] = useState<WorkLogWithOrder[]>([])
   const [loading, setLoading] = useState(true)
+  const [monthLogs, setMonthLogs] = useState<WorkLog[]>([])
+  const [mYear, setMYear] = useState(new Date().getFullYear())
+  const [mMonth, setMMonth] = useState(new Date().getMonth())
 
   const fetchLogs = useCallback(async () => {
     setLoading(true)
@@ -33,6 +38,48 @@ export default function WorkerReportPage() {
   }, [date])
 
   useEffect(() => { fetchLogs() }, [fetchLogs])
+
+  // Monthly summary
+  const mDays = new Date(mYear, mMonth + 1, 0).getDate()
+  const mFrom = `${mYear}-${String(mMonth + 1).padStart(2, '0')}-01`
+  const mTo = `${mYear}-${String(mMonth + 1).padStart(2, '0')}-${String(mDays).padStart(2, '0')}`
+  const shiftMonth = (dir: number) => {
+    let m = mMonth + dir, y = mYear
+    if (m < 0) { m = 11; y-- } if (m > 11) { m = 0; y++ }
+    setMMonth(m); setMYear(y)
+  }
+  const fetchMonthLogs = useCallback(async () => {
+    const { data } = await supabase.from('work_logs').select('*').gte('date', mFrom).lte('date', mTo)
+    setMonthLogs((data as WorkLog[]) ?? [])
+  }, [mFrom, mTo])
+  useEffect(() => { fetchMonthLogs() }, [fetchMonthLogs])
+
+  // Group: worker -> operation -> hours
+  const monthSummary = useMemo(() => {
+    const map = new Map<string, Map<string, number>>()
+    const allOps = new Set<string>()
+    for (const l of monthLogs) {
+      if (!map.has(l.worker_name)) map.set(l.worker_name, new Map())
+      const opMap = map.get(l.worker_name)!
+      opMap.set(l.operation, (opMap.get(l.operation) ?? 0) + Number(l.hours))
+      allOps.add(l.operation)
+    }
+    const workers = [...map.keys()].sort()
+    const operations = [...allOps].sort()
+    const workerTotals = new Map<string, number>()
+    workers.forEach(w => {
+      const opMap = map.get(w)!
+      workerTotals.set(w, [...opMap.values()].reduce((s, h) => s + h, 0))
+    })
+    const opTotals = new Map<string, number>()
+    operations.forEach(op => {
+      let t = 0
+      workers.forEach(w => { t += map.get(w)?.get(op) ?? 0 })
+      opTotals.set(op, t)
+    })
+    const grandTotal = [...workerTotals.values()].reduce((s, h) => s + h, 0)
+    return { workers, operations, map, workerTotals, opTotals, grandTotal }
+  }, [monthLogs])
 
   // Navigate date
   const shiftDate = (days: number) => {
@@ -185,6 +232,67 @@ export default function WorkerReportPage() {
           </table>
         </div>
       )}
+      {/* Monthly worker × operation summary */}
+      <div className="mt-8 space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold text-gray-900">Podsumowanie miesięczne</h2>
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={() => shiftMonth(-1)} className="rounded-lg p-2 text-gray-500 hover:bg-gray-100">
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <span className="min-w-[160px] text-center text-sm font-semibold text-gray-800">
+            {MONTH_NAMES[mMonth]} {mYear}
+          </span>
+          <button onClick={() => shiftMonth(1)} className="rounded-lg p-2 text-gray-500 hover:bg-gray-100">
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+        {monthSummary.workers.length === 0 ? (
+          <p className="py-4 text-center text-sm text-gray-400">Brak wpisów w tym miesiącu</p>
+        ) : (
+          <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-gray-300 bg-gray-100">
+                  <th className="px-3 py-1.5 text-left font-semibold text-gray-700">Pracownik</th>
+                  {monthSummary.operations.map(op => (
+                    <th key={op} className="px-2 py-1.5 text-right font-medium text-gray-600">{op}</th>
+                  ))}
+                  <th className="px-3 py-1.5 text-right font-bold text-gray-800 bg-gray-200">Σ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {monthSummary.workers.map((w, idx) => (
+                  <tr key={w} className={`border-b border-gray-100 ${idx % 2 === 1 ? 'bg-gray-50' : ''}`}>
+                    <td className="px-3 py-1 font-medium text-gray-900">{w}</td>
+                    {monthSummary.operations.map(op => {
+                      const h = monthSummary.map.get(w)?.get(op) ?? 0
+                      return <td key={op} className={`px-2 py-1 text-right tabular-nums ${h ? 'text-gray-800' : 'text-gray-200'}`}>{h ? String(h).replace('.', ',') : ''}</td>
+                    })}
+                    <td className="px-3 py-1 text-right font-bold text-gray-900 bg-gray-50 tabular-nums">
+                      {String(monthSummary.workerTotals.get(w) ?? 0).replace('.', ',')}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-gray-400 bg-gray-100 font-bold">
+                  <td className="px-3 py-1.5 text-gray-700">SUMA</td>
+                  {monthSummary.operations.map(op => (
+                    <td key={op} className="px-2 py-1.5 text-right tabular-nums text-gray-800">
+                      {String(monthSummary.opTotals.get(op) ?? 0).replace('.', ',')}
+                    </td>
+                  ))}
+                  <td className="px-3 py-1.5 text-right tabular-nums text-amber-700 bg-gray-200">
+                    {String(monthSummary.grandTotal).replace('.', ',')}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
