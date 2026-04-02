@@ -54,7 +54,7 @@ export default function FinancePage() {
     const [ordersRes, purchasesRes, extraRes] = await Promise.all([
       supabase.from('orders').select('id, number, status, created_at, ready_date, client:clients(name), order_items(total_price, m2)')
         .in('status', ['gotowe', 'wydane', 'fv_wystawiona', 'zapłacone']),
-      supabase.from('paint_purchases').select('*, supplier:suppliers(name)').order('date', { ascending: false }),
+      supabase.from('paint_purchases').select('*, supplier:suppliers(name)').gte('date', dateFrom).lte('date', dateTo).order('date', { ascending: false }),
       supabase.from('extra_costs').select('*').gte('date', dateFrom).lte('date', dateTo).order('date', { ascending: true }),
     ])
     const allOrders = (ordersRes.data as unknown as OrderWithItems[]) ?? []
@@ -70,7 +70,7 @@ export default function FinancePage() {
   useEffect(() => { fetchData() }, [fetchData])
 
   const filteredLogs = useMemo(() => logs.filter((l) => l.date >= dateFrom && l.date <= dateTo), [logs, dateFrom, dateTo])
-  const filteredPurchases = useMemo(() => purchases.filter((p) => p.date >= dateFrom && p.date <= dateTo), [purchases, dateFrom, dateTo])
+  const filteredPurchases = purchases
 
   const HOURLY_RATE = 45
   const revenue = useMemo(() => orders.reduce((s, o) => s + o.order_items.reduce((si, i) => si + Number(i.total_price), 0), 0), [orders])
