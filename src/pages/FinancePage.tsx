@@ -304,8 +304,7 @@ export default function FinancePage() {
           </table>
         </div>
         )
-      })()
-      )}
+      })()}
 
       {/* Purchases by supplier */}
       {supplierStats.length > 0 && (
