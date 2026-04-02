@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Navigate } from 'react-router-dom'
-import { Plus, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, Trash2, X, ChevronLeft, ChevronRight } from 'lucide-react'
 
 const MONTH_NAMES = ['Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec','Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień']
 
@@ -44,6 +44,9 @@ export default function FinancePage() {
   const [newExtraDesc, setNewExtraDesc] = useState('')
   const [newExtraAmount, setNewExtraAmount] = useState('')
   const [supplierFilter, setSupplierFilter] = useState('')
+  const [editExtraId, setEditExtraId] = useState<string | null>(null)
+  const [editExtraDesc, setEditExtraDesc] = useState('')
+  const [editExtraAmount, setEditExtraAmount] = useState('')
   const { toast } = useToast()
 
   const fetchData = useCallback(async () => {
@@ -112,6 +115,14 @@ export default function FinancePage() {
     })).filter((o) => o.revenue > 0).sort((a, b) => b.revenue - a.revenue),
   [orders])
 
+  const startEditExtra = (c: { id: string; description: string; amount: number }) => {
+    setEditExtraId(c.id); setEditExtraDesc(c.description); setEditExtraAmount(String(c.amount))
+  }
+  const saveEditExtra = async () => {
+    if (!editExtraId || !editExtraDesc || !editExtraAmount) return
+    await supabase.from('extra_costs').update({ description: editExtraDesc, amount: Math.round(Number(editExtraAmount) * 100) / 100 }).eq('id', editExtraId)
+    setEditExtraId(null); toast('Koszt zaktualizowany'); fetchData()
+  }
   const addExtraCost = async () => {
     if (!newExtraDesc || !newExtraAmount) return
     await supabase.from('extra_costs').insert({ date: dateFrom, description: newExtraDesc, amount: Math.round(Number(newExtraAmount) * 100) / 100 })
@@ -345,17 +356,37 @@ export default function FinancePage() {
         <table className="w-full text-xs">
           <tbody>
             {extraCosts.map((c) => (
-              <tr key={c.id} className="border-b border-gray-50">
-                <td className="px-3 py-1.5 text-gray-600 w-24">{c.date}</td>
-                <td className="px-3 py-1.5 text-gray-800">{c.description}</td>
-                <td className="px-3 py-1.5 text-right text-rose-600 tabular-nums w-28">{fmtPL(Number(c.amount))} zł</td>
-                <td className="px-1 py-1.5 w-6 print:hidden">
-                  <button onClick={async () => {
-                    await supabase.from('extra_costs').delete().eq('id', c.id)
-                    toast('Koszt usunięty'); fetchData()
-                  }} className="rounded p-0.5 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
-                </td>
-              </tr>
+              editExtraId === c.id ? (
+                <tr key={c.id} className="border-b border-gray-50 bg-blue-50/30"
+                  onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) saveEditExtra() }}>
+                  <td className="px-3 py-1.5 text-gray-600 w-24">{c.date}</td>
+                  <td className="px-3 py-1.5">
+                    <input type="text" value={editExtraDesc} onChange={(e) => setEditExtraDesc(e.target.value)}
+                      className="w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500"
+                      onKeyDown={(e) => { if (e.key === 'Enter') saveEditExtra(); if (e.key === 'Escape') setEditExtraId(null) }} autoFocus />
+                  </td>
+                  <td className="px-3 py-1.5">
+                    <input type="number" value={editExtraAmount} onChange={(e) => setEditExtraAmount(e.target.value)}
+                      className="w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-xs text-right text-gray-800 outline-none focus:border-amber-500"
+                      onKeyDown={(e) => { if (e.key === 'Enter') saveEditExtra(); if (e.key === 'Escape') setEditExtraId(null) }} />
+                  </td>
+                  <td className="px-1 py-1.5 w-6 print:hidden">
+                    <button onClick={() => setEditExtraId(null)} className="rounded p-0.5 text-gray-400 hover:text-gray-600"><X className="h-3 w-3" /></button>
+                  </td>
+                </tr>
+              ) : (
+                <tr key={c.id} className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer print:cursor-default" onClick={() => startEditExtra(c)}>
+                  <td className="px-3 py-1.5 text-gray-600 w-24">{c.date}</td>
+                  <td className="px-3 py-1.5 text-gray-800">{c.description}</td>
+                  <td className="px-3 py-1.5 text-right text-rose-600 tabular-nums w-28">{fmtPL(Number(c.amount))} zł</td>
+                  <td className="px-1 py-1.5 w-6 print:hidden" onClick={(e) => e.stopPropagation()}>
+                    <button onClick={async () => {
+                      await supabase.from('extra_costs').delete().eq('id', c.id)
+                      toast('Koszt usunięty'); fetchData()
+                    }} className="rounded p-0.5 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
+                  </td>
+                </tr>
+              )
             ))}
             {extraCosts.length > 0 && (
               <tr className="bg-gray-50 font-semibold border-t border-gray-200">
