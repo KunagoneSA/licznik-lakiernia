@@ -6,7 +6,7 @@ import type { WorkLog } from '../types/database'
 
 interface OrderItem { total_price: number; m2: number; quantity: number; has_handle: boolean; has_wplyka: boolean; color_surcharge: boolean }
 interface CompletedOrder {
-  id: string; number: number; color: string | null; ready_date: string | null; created_at: string; status: string
+  id: string; number: number; color: string | null; ready_date: string | null; accepted_date: string | null; planned_date: string | null; created_at: string; status: string
   client: { name: string } | null; order_items: OrderItem[]
 }
 
@@ -53,7 +53,7 @@ export default function MonthlyReportPage() {
     const [logsRes, ordersRes] = await Promise.all([
       supabase.from('work_logs').select('*').gte('date', from).lte('date', to).order('worker_name'),
       supabase.from('orders')
-        .select('id, number, color, ready_date, created_at, status, client:clients(name), order_items(total_price, m2, quantity, has_handle, has_wplyka, color_surcharge)')
+        .select('id, number, color, ready_date, accepted_date, planned_date, created_at, status, client:clients(name), order_items(total_price, m2, quantity, has_handle, has_wplyka, color_surcharge)')
         .in('status', ['gotowe', 'wydane', 'fv_wystawiona', 'zapłacone'])
         .order('ready_date', { ascending: true }),
     ])
@@ -303,6 +303,7 @@ export default function MonthlyReportPage() {
                   <thead>
                     <tr className="border-b border-gray-300 bg-gray-100 text-gray-600">
                       <th className="px-2 py-1.5 text-left font-semibold w-8">Lp</th>
+                      <th className="px-2 py-1.5 text-center font-semibold">Przyjęte</th>
                       <th className="px-2 py-1.5 text-left font-semibold">Nr</th>
                       <th className="px-2 py-1.5 text-left font-semibold">Klient</th>
                       <th className="px-2 py-1.5 text-left font-semibold">Kolor</th>
@@ -312,6 +313,7 @@ export default function MonthlyReportPage() {
                       <th className="px-2 py-1.5 text-center font-semibold">Dpł.</th>
                       <th className="px-2 py-1.5 text-right font-semibold">Wartość netto</th>
                       <th className="px-2 py-1.5 text-center font-semibold">Gotowe</th>
+                      <th className="px-2 py-1.5 text-center font-semibold">Planowane</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -325,6 +327,7 @@ export default function MonthlyReportPage() {
                       return (
                         <tr key={o.id} className={`border-b border-gray-100 ${idx % 2 === 1 ? 'bg-gray-50' : ''}`}>
                           <td className="px-2 py-1 text-gray-400 tabular-nums">{idx + 1}</td>
+                          <td className="px-2 py-1 text-center text-gray-600">{o.accepted_date ?? o.created_at?.slice(0, 10) ?? '—'}</td>
                           <td className="px-2 py-1 font-medium text-gray-900 tabular-nums">{o.number}/{yr}</td>
                           <td className="px-2 py-1 text-gray-700">{o.client?.name ?? '—'}</td>
                           <td className="px-2 py-1 text-gray-600">{o.color ?? '—'}</td>
@@ -334,17 +337,18 @@ export default function MonthlyReportPage() {
                           <td className="px-2 py-1 text-center text-gray-500">{colorSurch ? '✓' : ''}</td>
                           <td className="px-2 py-1 text-right tabular-nums font-medium text-gray-900">{val.toFixed(2).replace('.', ',')} zł</td>
                           <td className="px-2 py-1 text-center text-gray-600">{o.ready_date ?? '—'}</td>
+                          <td className="px-2 py-1 text-center text-gray-600">{o.planned_date ?? '—'}</td>
                         </tr>
                       )
                     })}
                   </tbody>
                   <tfoot>
                     <tr className="border-t-2 border-gray-400 bg-gray-100 font-bold">
-                      <td colSpan={4} className="px-2 py-1.5 text-gray-700">SUMA ({completedOrders.length} zamówień)</td>
+                      <td colSpan={5} className="px-2 py-1.5 text-gray-700">SUMA ({completedOrders.length} zamówień)</td>
                       <td className="px-2 py-1.5 text-right tabular-nums text-gray-900">{String(Math.round(ordersTotalM2 * 100) / 100).replace('.', ',')}</td>
                       <td colSpan={3}></td>
                       <td className="px-2 py-1.5 text-right tabular-nums text-amber-700">{ordersTotalValue.toFixed(2).replace('.', ',')} zł</td>
-                      <td></td>
+                      <td colSpan={2}></td>
                     </tr>
                   </tfoot>
                 </table>
