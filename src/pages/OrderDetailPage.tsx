@@ -1,6 +1,9 @@
 import { useState, useRef, useCallback } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Plus, Trash2, Pencil, Check, X } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Pencil, Check, X, GripVertical } from 'lucide-react'
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
+import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { useOrder } from '../hooks/useOrder'
 import { useOrderItems } from '../hooks/useOrderItems'
 import { useWorkLogs } from '../hooks/useWorkLogs'
@@ -28,6 +31,37 @@ const statusColors: Record<OrderStatus, string> = {
 }
 const statusFlow: OrderStatus[] = ['nowe', 'w_trakcie', 'gotowe', 'wydane', 'fv_wystawiona', 'zapłacone']
 
+function SortableItemRow({ item, idx, lastAddedId, itemsLength, onEdit, onDelete, fmtPL }: {
+  item: import('../types/database').OrderItem; idx: number; lastAddedId: string | null; itemsLength: number
+  onEdit: () => void; onDelete: () => void; fmtPL: (n: number, d?: number) => string
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id })
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }
+  return (
+    <tr ref={setNodeRef} style={lastAddedId && idx === itemsLength - 1 ? { ...style, animation: 'rowFlash 1.5s ease-out' } : style}
+      className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer" onClick={onEdit}>
+      <td className="px-0.5 py-0.5 cursor-grab" onClick={(e) => e.stopPropagation()} {...attributes} {...listeners}>
+        <GripVertical className="h-3 w-3 text-gray-300" />
+      </td>
+      <td className="px-1.5 py-0.5 text-gray-800 tabular-nums">{item.length_mm || '—'}</td>
+      <td className="px-1.5 py-0.5 text-gray-800 tabular-nums">{item.width_mm || '—'}</td>
+      <td className="px-1.5 py-0.5 text-gray-800 tabular-nums">{item.quantity}</td>
+      <td className="px-1.5 py-0.5 text-gray-600 truncate max-w-[120px]">{(item.variant as { name: string } | undefined)?.name ?? '—'}</td>
+      <td className="px-1.5 py-0.5 text-right text-gray-600 tabular-nums">{item.length_mm && item.width_mm ? fmtPL(Number(item.m2), 3) : '—'}</td>
+      <td className="px-1.5 py-0.5 text-right text-gray-600 tabular-nums">{fmtPL(Number(item.price_per_m2), 0)}{item.length_mm === 0 && item.width_mm === 0 ? '/szt' : ''}</td>
+      <td className="px-1 py-0.5 text-center">{item.has_handle ? <span className="text-xs text-emerald-600">✓</span> : ''}</td>
+      <td className="px-1 py-0.5 text-center">{item.color_surcharge ? <span className="text-xs text-amber-600">✓</span> : ''}</td>
+      <td className="px-1 py-0.5 text-center">{item.has_wplyka ? <span className="text-xs text-violet-600">✓</span> : ''}</td>
+      <td className="px-1.5 py-0.5 text-gray-400 text-[10px] truncate max-w-[140px]">{item.notes || ''}</td>
+      <td className="px-0.5 py-0.5" onClick={(e) => e.stopPropagation()}>
+        <button onClick={onDelete} className="rounded p-0.5 text-gray-300 hover:text-red-600 hover:bg-gray-100">
+          <Trash2 className="h-2.5 w-2.5" />
+        </button>
+      </td>
+    </tr>
+  )
+}
+
 function getClientName(order: Record<string, unknown>): string {
   const client = order.client as { name: string } | null
   return client?.name ?? '—'
@@ -37,13 +71,25 @@ export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { order, loading, updateOrder } = useOrder(id!)
-  const { items, addItem, updateItem, deleteItem } = useOrderItems(id!)
+  const { items, addItem, updateItem, deleteItem, reorderItems } = useOrderItems(id!)
   const { logs, addLog, updateLog, deleteLog } = useWorkLogs(id!)
   const { variants, refetch: refetchVariants } = usePaintingVariants()
   const { getPriceForVariant } = useClientPricing(order?.client_id ?? null)
   const { toast } = useToast()
   const { workers } = useWorkers()
   const activeWorkers = workers.filter((w) => w.active)
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    const oldIdx = items.findIndex(i => i.id === active.id)
+    const newIdx = items.findIndex(i => i.id === over.id)
+    if (oldIdx === -1 || newIdx === -1) return
+    const newItems = [...items]
+    const [moved] = newItems.splice(oldIdx, 1)
+    newItems.splice(newIdx, 0, moved)
+    reorderItems(newItems.map(i => i.id))
+  }, [items, reorderItems])
   const [showInlineAdd, setShowInlineAdd] = useState(false)
   const [showCustomAdd, setShowCustomAdd] = useState(false)
   const [newLength, setNewLength] = useState('')
@@ -179,6 +225,7 @@ export default function OrderDetailPage() {
       m2: 0,
       price_per_m2: price,
       total_price: Math.round(price * q * 100) / 100,
+      sort_order: items.length,
     })
     if (!err) {
       setLastAddedId(String(Date.now()))
@@ -209,6 +256,7 @@ export default function OrderDetailPage() {
       m2: Math.round(m2 * 10000) / 10000,
       price_per_m2: pricePerM2,
       total_price: Math.round(totalPrice * 100) / 100,
+      sort_order: items.length,
     })
     if (!err) {
       setLastAddedId(String(Date.now()))
@@ -683,6 +731,7 @@ export default function OrderDetailPage() {
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
+                <th className="w-5 px-0.5 py-1"></th>
                 <th className="px-1.5 py-1 text-left text-[10px] font-medium text-gray-500">Dl</th>
                 <th className="px-1.5 py-1 text-left text-[10px] font-medium text-gray-500">Szer</th>
                 <th className="px-1.5 py-1 text-left text-[10px] font-medium text-gray-500">Szt</th>
@@ -696,6 +745,8 @@ export default function OrderDetailPage() {
                 <th className="px-0.5 py-1 w-5"></th>
               </tr>
             </thead>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
             <tbody>
               {items.map((item, idx) => {
                 const isEditing = editingItemId === item.id
@@ -708,6 +759,7 @@ export default function OrderDetailPage() {
                   const kd = (e: React.KeyboardEvent) => { if (e.key === 'Enter') saveEditItem(); if (e.key === 'Escape') setEditingItemId(null) }
                   return (
                     <tr key={item.id} ref={editItemRowRef} onBlur={handleRowBlur(editItemRowRef, saveEditItem)} className="border-b border-gray-100 bg-blue-50/30">
+                      <td></td>
                       <td className="px-2 py-1"><input type="text" inputMode="numeric" value={eiLength} onChange={(e) => setEiLength(e.target.value)} className={ic} onKeyDown={kd} /></td>
                       <td className="px-2 py-1"><input type="text" inputMode="numeric" value={eiWidth} onChange={(e) => setEiWidth(e.target.value)} className={ic} onKeyDown={kd} /></td>
                       <td className="px-2 py-1"><input type="number" value={eiQty} onChange={(e) => setEiQty(e.target.value)} className={`${ic} w-10`} onKeyDown={kd} /></td>
@@ -744,25 +796,8 @@ export default function OrderDetailPage() {
                   )
                 }
                 return (
-                  <tr key={item.id} className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer"
-                    onClick={() => startEditItem(item)}
-                    style={lastAddedId && idx === items.length - 1 ? { animation: 'rowFlash 1.5s ease-out' } : undefined}>
-                    <td className="px-1.5 py-0.5 text-gray-800 tabular-nums">{item.length_mm || '—'}</td>
-                    <td className="px-1.5 py-0.5 text-gray-800 tabular-nums">{item.width_mm || '—'}</td>
-                    <td className="px-1.5 py-0.5 text-gray-800 tabular-nums">{item.quantity}</td>
-                    <td className="px-1.5 py-0.5 text-gray-600 truncate max-w-[120px]">{(item.variant as { name: string } | undefined)?.name ?? '—'}</td>
-                    <td className="px-1.5 py-0.5 text-right text-gray-600 tabular-nums">{item.length_mm && item.width_mm ? fmtPL(Number(item.m2), 3) : '—'}</td>
-                    <td className="px-1.5 py-0.5 text-right text-gray-600 tabular-nums">{fmtPL(Number(item.price_per_m2), 0)}{item.length_mm === 0 && item.width_mm === 0 ? '/szt' : ''}</td>
-                    <td className="px-1 py-0.5 text-center">{item.has_handle ? <span className="text-xs text-emerald-600">✓</span> : ''}</td>
-                    <td className="px-1 py-0.5 text-center">{item.color_surcharge ? <span className="text-xs text-amber-600">✓</span> : ''}</td>
-                    <td className="px-1 py-0.5 text-center">{item.has_wplyka ? <span className="text-xs text-violet-600">✓</span> : ''}</td>
-                    <td className="px-1.5 py-0.5 text-gray-400 text-[10px] truncate max-w-[140px]">{item.notes || ''}</td>
-                    <td className="px-0.5 py-0.5" onClick={(e) => e.stopPropagation()}>
-                      <button onClick={() => handleDeleteItem(item.id)} className="rounded p-0.5 text-gray-300 hover:text-red-600 hover:bg-gray-100">
-                        <Trash2 className="h-2.5 w-2.5" />
-                      </button>
-                    </td>
-                  </tr>
+                  <SortableItemRow key={item.id} item={item} idx={idx} lastAddedId={lastAddedId} itemsLength={items.length}
+                    onEdit={() => startEditItem(item)} onDelete={() => handleDeleteItem(item.id)} fmtPL={fmtPL} />
                 )
               })}
               {showInlineAdd && (() => {
@@ -775,6 +810,7 @@ export default function OrderDetailPage() {
                 const inputClass = "w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500 tabular-nums"
                 return (
                   <tr ref={itemRowRef} onBlur={handleRowBlur(itemRowRef, handleInlineAdd, () => { if (!Number(newLength) || !Number(newWidth)) setShowInlineAdd(false) })} className="border-b border-gray-100 bg-amber-50/30">
+                    <td></td>
                     <td className="px-2 py-1">
                       <input ref={lengthRef} type="text" inputMode="numeric" value={newLength} onChange={(e) => setNewLength(e.target.value)}
                         placeholder="0" className={inputClass}
@@ -846,6 +882,7 @@ export default function OrderDetailPage() {
                 const inputClass = "w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500 tabular-nums"
                 return (
                   <tr ref={customRowRef} onBlur={handleRowBlur(customRowRef, handleCustomAdd, () => { if (!Number(newCustomPrice)) setShowCustomAdd(false) })} className="border-b border-gray-100 bg-blue-50/30">
+                    <td></td>
                     <td className="px-2 py-1.5 text-center text-gray-300" colSpan={1}>—</td>
                     <td className="px-2 py-1.5 text-center text-gray-300" colSpan={1}>—</td>
                     <td className="px-2 py-1">
@@ -906,11 +943,13 @@ export default function OrderDetailPage() {
                 )
               })()}
               {!showInlineAdd && !showCustomAdd && items.length === 0 && (
-                <tr><td colSpan={11} className="px-2 py-6 text-center text-xs text-gray-400">
+                <tr><td colSpan={12} className="px-2 py-6 text-center text-xs text-gray-400">
                   Brak elementów — kliknij "Dodaj"
                 </td></tr>
               )}
             </tbody>
+            </SortableContext>
+            </DndContext>
           </table>
         </div>
         {(showInlineAdd || showCustomAdd) && (

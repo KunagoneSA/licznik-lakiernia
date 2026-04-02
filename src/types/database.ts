@@ -63,6 +63,7 @@ export interface OrderItem {
   m2: number
   price_per_m2: number
   total_price: number
+  sort_order: number
   variant?: PaintingVariant
 }
 

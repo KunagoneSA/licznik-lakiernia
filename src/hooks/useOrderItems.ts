@@ -12,6 +12,7 @@ export function useOrderItems(orderId: string) {
       .from('order_items')
       .select('*, variant:painting_variants(id, name, sides)')
       .eq('order_id', orderId)
+      .order('sort_order', { ascending: true })
       .order('created_at', { ascending: true })
     setItems((data as OrderItem[]) ?? [])
     setLoading(false)
@@ -45,5 +46,17 @@ export function useOrderItems(orderId: string) {
     return error
   }, [fetch])
 
-  return { items, loading, refetch: fetch, addItem, updateItem, deleteItem }
+  const reorderItems = useCallback(async (orderedIds: string[]) => {
+    // Optimistic update
+    setItems(prev => {
+      const map = new Map(prev.map(i => [i.id, i]))
+      return orderedIds.map((id, idx) => ({ ...map.get(id)!, sort_order: idx }))
+    })
+    // Persist to DB
+    await Promise.all(orderedIds.map((id, idx) =>
+      supabase.from('order_items').update({ sort_order: idx }).eq('id', id)
+    ))
+  }, [])
+
+  return { items, loading, refetch: fetch, addItem, updateItem, deleteItem, reorderItems }
 }
