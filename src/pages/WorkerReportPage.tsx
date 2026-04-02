@@ -78,18 +78,23 @@ export default function WorkerReportPage() {
   const monthSummary = useMemo(() => {
     const map = new Map<string, Map<string, number>>()
     const allOps = new Set<string>()
+    const workerDays = new Map<string, Set<string>>()
     for (const l of filteredMonthLogs) {
       if (!map.has(l.worker_name)) map.set(l.worker_name, new Map())
+      if (!workerDays.has(l.worker_name)) workerDays.set(l.worker_name, new Set())
       const opMap = map.get(l.worker_name)!
       opMap.set(l.operation, (opMap.get(l.operation) ?? 0) + Number(l.hours))
       allOps.add(l.operation)
+      workerDays.get(l.worker_name)!.add(l.date)
     }
     const workers = [...map.keys()].sort()
     const operations = [...allOps].sort()
     const workerTotals = new Map<string, number>()
+    const workerDayCounts = new Map<string, number>()
     workers.forEach(w => {
       const opMap = map.get(w)!
       workerTotals.set(w, [...opMap.values()].reduce((s, h) => s + h, 0))
+      workerDayCounts.set(w, workerDays.get(w)?.size ?? 0)
     })
     const opTotals = new Map<string, number>()
     operations.forEach(op => {
@@ -98,7 +103,7 @@ export default function WorkerReportPage() {
       opTotals.set(op, t)
     })
     const grandTotal = [...workerTotals.values()].reduce((s, h) => s + h, 0)
-    return { workers, operations, map, workerTotals, opTotals, grandTotal }
+    return { workers, operations, map, workerTotals, workerDayCounts, opTotals, grandTotal }
   }, [filteredMonthLogs])
 
   // Navigate date
@@ -267,9 +272,13 @@ export default function WorkerReportPage() {
           <button onClick={() => shiftMonth(1)} className="rounded-lg p-2 text-gray-500 hover:bg-gray-100">
             <ChevronRight className="h-4 w-4" />
           </button>
+          <button onClick={() => setNotesFilter(notesFilter === 'aluminium' ? '' : 'aluminium')}
+            className={`ml-2 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${notesFilter === 'aluminium' ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+            Aluminium
+          </button>
           {notesTags.length > 0 && (
             <select value={notesFilter} onChange={(e) => setNotesFilter(e.target.value)}
-              className="ml-2 rounded-md border border-gray-300 bg-white px-2 py-1.5 text-xs text-gray-700 outline-none focus:border-amber-500">
+              className="rounded-md border border-gray-300 bg-white px-2 py-1.5 text-xs text-gray-700 outline-none focus:border-amber-500">
               <option value="">Wszystkie wpisy</option>
               {notesTags.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
@@ -287,6 +296,7 @@ export default function WorkerReportPage() {
                     <th key={op} className="px-2 py-1.5 text-right font-medium text-gray-600">{op}</th>
                   ))}
                   <th className="px-3 py-1.5 text-right font-bold text-gray-800 bg-gray-200">Σ</th>
+                  <th className="px-2 py-1.5 text-center font-medium text-gray-600">Dni</th>
                 </tr>
               </thead>
               <tbody>
@@ -300,6 +310,7 @@ export default function WorkerReportPage() {
                     <td className="px-3 py-1 text-right font-bold text-gray-900 bg-gray-50 tabular-nums">
                       {String(monthSummary.workerTotals.get(w) ?? 0).replace('.', ',')}
                     </td>
+                    <td className="px-2 py-1 text-center text-gray-600 tabular-nums">{monthSummary.workerDayCounts.get(w) ?? 0}</td>
                   </tr>
                 ))}
               </tbody>
@@ -314,6 +325,7 @@ export default function WorkerReportPage() {
                   <td className="px-3 py-1.5 text-right tabular-nums text-amber-700 bg-gray-200">
                     {String(monthSummary.grandTotal).replace('.', ',')}
                   </td>
+                  <td></td>
                 </tr>
               </tfoot>
             </table>
