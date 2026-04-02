@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Plus, Trash2, X, ChevronDown, ChevronLeft, ChevronRight, Upload, FileText, Loader2, Pencil, Check } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useToast } from '../contexts/ToastContext'
@@ -714,6 +714,51 @@ export default function PaintPurchasesPage() {
           </table>
         </div>
       )}
+
+      {/* Supplier summary */}
+      {filtered.length > 0 && (() => {
+        const sMap = new Map<string, { total: number; count: number; products: Set<string> }>()
+        filtered.forEach(p => {
+          const name = p.supplier?.name ?? 'Nieznany'
+          const cur = sMap.get(name) ?? { total: 0, count: 0, products: new Set<string>() }
+          cur.total += Number(p.total); cur.count += 1
+          if (p.product) cur.products.add(p.product)
+          sMap.set(name, cur)
+        })
+        const stats = [...sMap.entries()].map(([n, s]) => [n, { ...s, products: [...s.products].sort().join(', ') }] as const).sort((a, b) => b[1].total - a[1].total)
+        const total = filtered.reduce((s, p) => s + Number(p.total), 0)
+        return (
+          <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+            <div className="bg-gray-50 px-3 py-1.5 text-xs font-semibold text-gray-600 uppercase tracking-wide border-b border-gray-200">Podsumowanie wg dostawcy</div>
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-gray-200 bg-gray-50/50">
+                  <th className="px-3 py-1.5 text-left font-medium text-gray-500">Dostawca</th>
+                  <th className="px-3 py-1.5 text-left font-medium text-gray-500">Produkty</th>
+                  <th className="px-3 py-1.5 text-right font-medium text-gray-500">Zakupów</th>
+                  <th className="px-3 py-1.5 text-right font-medium text-gray-500">Kwota</th>
+                </tr>
+              </thead>
+              <tbody>
+                {stats.map(([name, s], i) => (
+                  <tr key={name} className={`border-b border-gray-50 ${i % 2 === 1 ? 'bg-gray-50/30' : ''}`}>
+                    <td className="px-3 py-1 text-gray-800 font-medium">{name}</td>
+                    <td className="px-3 py-1 text-gray-500 text-[10px] max-w-[200px]">{s.products}</td>
+                    <td className="px-3 py-1 text-right text-gray-600 tabular-nums">{s.count}</td>
+                    <td className="px-3 py-1 text-right text-orange-600 tabular-nums">{fmt(s.total)} zł</td>
+                  </tr>
+                ))}
+                <tr className="bg-gray-50 font-semibold border-t border-gray-200">
+                  <td className="px-3 py-1.5 text-gray-700">Razem</td>
+                  <td></td>
+                  <td className="px-3 py-1.5 text-right text-gray-700 tabular-nums">{filtered.length}</td>
+                  <td className="px-3 py-1.5 text-right text-orange-600 tabular-nums">{fmt(total)} zł</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )
+      })()}
 
       {showForm && (
         <PurchaseFormModal
