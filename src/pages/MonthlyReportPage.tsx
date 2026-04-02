@@ -309,6 +309,7 @@ export default function MonthlyReportPage() {
                       <th className="px-2 py-1.5 text-right font-semibold">m²</th>
                       <th className="px-2 py-1.5 text-center font-semibold">U</th>
                       <th className="px-2 py-1.5 text-center font-semibold">W</th>
+                      <th className="px-2 py-1.5 text-center font-semibold">Dpł.</th>
                       <th className="px-2 py-1.5 text-right font-semibold">Wartość netto</th>
                       <th className="px-2 py-1.5 text-center font-semibold">Gotowe</th>
                     </tr>
@@ -319,6 +320,7 @@ export default function MonthlyReportPage() {
                       const m2 = o.order_items.reduce((s, i) => s + Number(i.m2), 0)
                       const handles = o.order_items.filter(i => i.has_handle).reduce((s, i) => s + Number(i.quantity), 0)
                       const wplykas = o.order_items.filter(i => i.has_wplyka).reduce((s, i) => s + Number(i.quantity), 0)
+                      const colorSurch = o.order_items.some(i => i.color_surcharge)
                       const val = getOrderValue(o.order_items)
                       return (
                         <tr key={o.id} className={`border-b border-gray-100 ${idx % 2 === 1 ? 'bg-gray-50' : ''}`}>
@@ -329,6 +331,7 @@ export default function MonthlyReportPage() {
                           <td className="px-2 py-1 text-right tabular-nums text-gray-800">{String(Math.round(m2 * 100) / 100).replace('.', ',')}</td>
                           <td className="px-2 py-1 text-center text-gray-500">{handles > 0 ? handles : ''}</td>
                           <td className="px-2 py-1 text-center text-gray-500">{wplykas > 0 ? wplykas : ''}</td>
+                          <td className="px-2 py-1 text-center text-gray-500">{colorSurch ? '✓' : ''}</td>
                           <td className="px-2 py-1 text-right tabular-nums font-medium text-gray-900">{val.toFixed(2).replace('.', ',')} zł</td>
                           <td className="px-2 py-1 text-center text-gray-600">{o.ready_date ?? '—'}</td>
                         </tr>
@@ -339,7 +342,7 @@ export default function MonthlyReportPage() {
                     <tr className="border-t-2 border-gray-400 bg-gray-100 font-bold">
                       <td colSpan={4} className="px-2 py-1.5 text-gray-700">SUMA ({completedOrders.length} zamówień)</td>
                       <td className="px-2 py-1.5 text-right tabular-nums text-gray-900">{String(Math.round(ordersTotalM2 * 100) / 100).replace('.', ',')}</td>
-                      <td colSpan={2}></td>
+                      <td colSpan={3}></td>
                       <td className="px-2 py-1.5 text-right tabular-nums text-amber-700">{ordersTotalValue.toFixed(2).replace('.', ',')} zł</td>
                       <td></td>
                     </tr>
