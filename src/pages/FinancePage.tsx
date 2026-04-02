@@ -111,7 +111,7 @@ export default function FinancePage() {
     <div className="space-y-4 max-w-4xl mx-auto print:space-y-2">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-bold text-gray-900">Raport finansowy</h1>
+        <h1 className="text-lg font-bold italic animate-pulse text-blue-600" style={{ fontFamily: 'Tahoma, sans-serif' }}>Raport finansowy</h1>
         <div className="flex items-center gap-1">
           <button onClick={() => shiftMonth(-1)} className="rounded p-1.5 text-gray-500 hover:bg-gray-100 print:hidden"><ChevronLeft className="h-4 w-4" /></button>
           <span className="min-w-[140px] text-center text-sm font-semibold text-gray-800">{MONTH_NAMES[month]} {year}</span>
