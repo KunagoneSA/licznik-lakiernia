@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
-import { LayoutDashboard, ClipboardList, Users, ShoppingCart, Menu, X, LogOut, Tag, HardHat, Truck, Package, FileBarChart, CalendarDays, CalendarRange, Wallet } from 'lucide-react'
+import { LayoutDashboard, ClipboardList, Users, ShoppingCart, Menu, X, LogOut, Tag, HardHat, Truck, Package, FileBarChart, CalendarDays, CalendarRange, Wallet, ReceiptText } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
 
@@ -9,6 +9,7 @@ const mainNav = [
   { to: '/', icon: LayoutDashboard, label: 'Tablica' },
   { to: '/lakiery', icon: ShoppingCart, label: 'Zakupy lakierów' },
   { to: '/dziennik-pracy', icon: CalendarDays, label: 'Dziennik pracy' },
+  { to: '/dodatkowe-koszty', icon: ReceiptText, label: 'Dodatkowe koszty' },
 ] as const
 
 const baseNav = [

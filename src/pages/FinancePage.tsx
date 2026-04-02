@@ -20,7 +20,7 @@ interface OrderWithItems {
 }
 
 export default function FinancePage() {
-  const { isAdmin } = useAuth()
+  const { isAdmin, user } = useAuth()
   if (!isAdmin) return <Navigate to="/" replace />
 
   const now = new Date()
@@ -39,7 +39,7 @@ export default function FinancePage() {
   const { logs } = useWorkLogs()
   const [orders, setOrders] = useState<OrderWithItems[]>([])
   const [purchases, setPurchases] = useState<PaintPurchase[]>([])
-  const [extraCosts, setExtraCosts] = useState<{ id: string; date: string; description: string; amount: number }[]>([])
+  const [extraCosts, setExtraCosts] = useState<{ id: string; date: string; description: string; amount: number; created_by_email: string | null }[]>([])
   const [loading, setLoading] = useState(true)
   const [newExtraDesc, setNewExtraDesc] = useState('')
   const [newExtraAmount, setNewExtraAmount] = useState('')
@@ -63,7 +63,7 @@ export default function FinancePage() {
       return false
     }))
     setPurchases((purchasesRes.data as PaintPurchase[]) ?? [])
-    setExtraCosts((extraRes?.data ?? []) as { id: string; date: string; description: string; amount: number }[])
+    setExtraCosts((extraRes?.data ?? []) as { id: string; date: string; description: string; amount: number; created_by_email: string | null }[])
     setLoading(false)
   }, [dateFrom, dateTo])
 
@@ -126,7 +126,7 @@ export default function FinancePage() {
   }
   const addExtraCost = async () => {
     if (!newExtraDesc || !newExtraAmount) return
-    await supabase.from('extra_costs').insert({ date: dateFrom, description: newExtraDesc, amount: Math.round(Number(newExtraAmount) * 100) / 100 })
+    await supabase.from('extra_costs').insert({ date: dateFrom, description: newExtraDesc, amount: Math.round(Number(newExtraAmount) * 100) / 100, created_by_email: user?.email ?? null })
     setNewExtraDesc(''); setNewExtraAmount(''); toast('Koszt dodany'); fetchData()
   }
 
@@ -363,6 +363,7 @@ export default function FinancePage() {
               editExtraId === c.id ? (
                 <tr key={c.id} className="border-b border-gray-50 bg-blue-50/30"
                   onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) saveEditExtra() }}>
+                  <td className="px-3 py-1.5 text-gray-400 text-[10px] w-20">{(c.created_by_email ?? '').split('@')[0]}</td>
                   <td className="px-3 py-1.5 text-gray-600 w-24">{c.date}</td>
                   <td className="px-3 py-1.5">
                     <input type="text" value={editExtraDesc} onChange={(e) => setEditExtraDesc(e.target.value)}
@@ -380,6 +381,7 @@ export default function FinancePage() {
                 </tr>
               ) : (
                 <tr key={c.id} className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer print:cursor-default" onClick={() => startEditExtra(c)}>
+                  <td className="px-3 py-1.5 text-gray-400 text-[10px] w-20">{(c.created_by_email ?? '').split('@')[0]}</td>
                   <td className="px-3 py-1.5 text-gray-600 w-24">{c.date}</td>
                   <td className="px-3 py-1.5 text-gray-800">{c.description}</td>
                   <td className="px-3 py-1.5 text-right text-rose-600 tabular-nums w-28">{fmtPL(Number(c.amount))} zł</td>
