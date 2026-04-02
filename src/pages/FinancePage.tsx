@@ -43,6 +43,7 @@ export default function FinancePage() {
   const [loading, setLoading] = useState(true)
   const [newExtraDesc, setNewExtraDesc] = useState('')
   const [newExtraAmount, setNewExtraAmount] = useState('')
+  const [supplierFilter, setSupplierFilter] = useState('')
   const { toast } = useToast()
 
   const fetchData = useCallback(async () => {
@@ -263,9 +264,20 @@ export default function FinancePage() {
       </div>
 
       {/* Purchases */}
-      {filteredPurchases.length > 0 && (
+      {filteredPurchases.length > 0 && (() => {
+        const supplierNames = [...new Set(filteredPurchases.map(p => (p as unknown as { supplier?: { name: string } }).supplier?.name ?? 'Nieznany'))].sort()
+        const displayPurchases = supplierFilter ? filteredPurchases.filter(p => (p as unknown as { supplier?: { name: string } }).supplier?.name === supplierFilter) : filteredPurchases
+        const displayTotal = displayPurchases.reduce((s, p) => s + Number(p.total), 0)
+        return (
         <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
-          <div className="bg-gray-50 px-3 py-1.5 text-xs font-semibold text-gray-600 uppercase tracking-wide border-b border-gray-200">Zakupy lakierów i materiałów</div>
+          <div className="bg-gray-50 px-3 py-1.5 flex items-center justify-between border-b border-gray-200">
+            <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Zakupy lakierów i materiałów</span>
+            <select value={supplierFilter} onChange={(e) => setSupplierFilter(e.target.value)}
+              className="text-xs bg-white border border-gray-300 rounded px-2 py-0.5 text-gray-700 outline-none focus:border-amber-500 print:hidden">
+              <option value="">Wszyscy dostawcy</option>
+              {supplierNames.map(n => <option key={n} value={n}>{n}</option>)}
+            </select>
+          </div>
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50/50">
@@ -276,7 +288,7 @@ export default function FinancePage() {
               </tr>
             </thead>
             <tbody>
-              {filteredPurchases.map((p, i) => (
+              {displayPurchases.map((p, i) => (
                 <tr key={p.id} className={`border-b border-gray-50 ${i % 2 === 1 ? 'bg-gray-50/30' : ''}`}>
                   <td className="px-3 py-1 text-gray-600">{p.date}</td>
                   <td className="px-3 py-1 text-gray-800">{p.product}{p.color ? ` (${p.color})` : ''}</td>
@@ -285,12 +297,14 @@ export default function FinancePage() {
                 </tr>
               ))}
               <tr className="bg-gray-50 font-semibold border-t border-gray-200">
-                <td className="px-3 py-1.5 text-gray-700" colSpan={3}>Razem</td>
-                <td className="px-3 py-1.5 text-right text-orange-600 tabular-nums">{fmtPL(materialCost)} zł</td>
+                <td className="px-3 py-1.5 text-gray-700" colSpan={3}>Razem{supplierFilter ? ` (${supplierFilter})` : ''}</td>
+                <td className="px-3 py-1.5 text-right text-orange-600 tabular-nums">{fmtPL(displayTotal)} zł</td>
               </tr>
             </tbody>
           </table>
         </div>
+        )
+      })()
       )}
 
       {/* Purchases by supplier */}
