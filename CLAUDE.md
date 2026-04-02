@@ -22,6 +22,14 @@
 ## Supabase
 - Gdy podajesz SQL do wykonania w Supabase, **zawsze dołącz link** do SQL Editor: https://supabase.com/dashboard/project/xbfafasiginpgvsnzgyz/sql/new
 
+## Bezpieczeństwo zmian
+- **NIGDY nie zmieniaj kodu auth/logowania** bez testowania na localhost PRZED deployem na produkcję.
+- **NIGDY nie usuwaj ani nie wyłączaj PWA/service workera** na produkcji bez uprzedzenia usera.
+- **Przed każdą zmianą sprawdź** czy nie wpływa na istniejącą funkcjonalność — szczególnie logowanie, wyświetlanie danych, zapisywanie.
+- **Nie rób wielu zmian naraz** w krytycznych plikach (auth, supabase, routing). Jedna zmiana → test → deploy.
+- **Sprawdzaj kolumny w bazie** przed zmianą sortowania/query — upewnij się że kolumna istnieje (`created_at` w `order_items`).
+- **Gdy nie jesteś pewny** — zapytaj usera zamiast zgadywać.
+
 ## Projekt
 - Aplikacja: licznik lakiernia (React + Vite + Supabase)
 - Język interfejsu: polski
