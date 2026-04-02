@@ -359,10 +359,12 @@ export default function PaintPurchasesPage() {
   } | null>(null)
 
   const [tab, setTab] = useState<string>('wszystkie')
+  const [supplierFilter, setSupplierFilter] = useState('')
 
   const filtered = purchases.filter(p => {
-    if (tab === 'wszystkie') return true
-    return p.status === tab
+    if (tab !== 'wszystkie' && p.status !== tab) return false
+    if (supplierFilter && p.supplier_id !== supplierFilter) return false
+    return true
   })
 
   const ic = "w-full rounded border border-gray-300 px-1.5 py-1 text-xs text-gray-800 outline-none focus:ring-2 focus:ring-amber-500/30"
@@ -540,8 +542,8 @@ export default function PaintPurchasesPage() {
         </button>
       </div>
 
-      {/* Status filter tabs */}
-      <div className="flex gap-1">
+      {/* Status filter tabs + supplier filter */}
+      <div className="flex gap-1 items-center flex-wrap">
         {(['wszystkie', 'do_zamowienia', 'zamowione', 'dostarczone', 'faktura'] as const).map(t => {
           const tabColors: Record<string, { active: string; inactive: string }> = {
             wszystkie: { active: 'bg-gray-700 text-white', inactive: 'bg-gray-100 text-gray-600 hover:bg-gray-200' },
@@ -564,6 +566,11 @@ export default function PaintPurchasesPage() {
             </button>
           )
         })}
+        <select value={supplierFilter} onChange={(e) => setSupplierFilter(e.target.value)}
+          className="ml-2 rounded-md border border-gray-300 bg-white px-2 py-1.5 text-xs text-gray-700 outline-none focus:border-amber-500">
+          <option value="">Wszyscy dostawcy</option>
+          {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+        </select>
       </div>
 
       {loading ? (
