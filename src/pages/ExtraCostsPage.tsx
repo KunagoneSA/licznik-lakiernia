@@ -20,9 +20,11 @@ export default function ExtraCostsPage() {
   const [month, setMonth] = useState(now.getMonth())
   const [costs, setCosts] = useState<ExtraCost[]>([])
   const [loading, setLoading] = useState(true)
+  const [newDate, setNewDate] = useState(new Date().toISOString().slice(0, 10))
   const [newDesc, setNewDesc] = useState('')
   const [newAmount, setNewAmount] = useState('')
   const [editId, setEditId] = useState<string | null>(null)
+  const [editDate, setEditDate] = useState('')
   const [editDesc, setEditDesc] = useState('')
   const [editAmount, setEditAmount] = useState('')
 
@@ -54,7 +56,7 @@ export default function ExtraCostsPage() {
   const addCost = async () => {
     if (!newDesc || !newAmount) return
     await supabase.from('extra_costs').insert({
-      date: dateFrom,
+      date: newDate,
       description: newDesc,
       amount: Math.round(Number(newAmount) * 100) / 100,
       created_by_email: user?.email ?? null,
@@ -63,12 +65,12 @@ export default function ExtraCostsPage() {
   }
 
   const startEdit = (c: ExtraCost) => {
-    setEditId(c.id); setEditDesc(c.description); setEditAmount(String(c.amount))
+    setEditId(c.id); setEditDate(c.date); setEditDesc(c.description); setEditAmount(String(c.amount))
   }
 
   const saveEdit = async () => {
     if (!editId || !editDesc || !editAmount) return
-    await supabase.from('extra_costs').update({ description: editDesc, amount: Math.round(Number(editAmount) * 100) / 100 }).eq('id', editId)
+    await supabase.from('extra_costs').update({ date: editDate, description: editDesc, amount: Math.round(Number(editAmount) * 100) / 100 }).eq('id', editId)
     setEditId(null); toast('Zaktualizowano'); fetchData()
   }
 
@@ -108,7 +110,10 @@ export default function ExtraCostsPage() {
                   <tr key={c.id} className="border-b border-gray-50 bg-blue-50/30"
                     onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) saveEdit() }}>
                     {isAdmin && <td className="px-3 py-1.5 text-gray-400 text-[10px]">{(c.created_by_email ?? '').split('@')[0]}</td>}
-                    <td className="px-3 py-1.5 text-gray-600">{c.date}</td>
+                    <td className="px-3 py-1.5">
+                      <input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)}
+                        className="bg-transparent border-b border-gray-300 px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500" />
+                    </td>
                     <td className="px-3 py-1.5">
                       <input type="text" value={editDesc} onChange={(e) => setEditDesc(e.target.value)}
                         className="w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500"
@@ -151,7 +156,10 @@ export default function ExtraCostsPage() {
               {/* Inline add */}
               <tr className="border-t border-gray-200 bg-amber-50/30">
                 {isAdmin && <td></td>}
-                <td className="px-3 py-1.5 text-[10px] text-gray-400">{dateFrom}</td>
+                <td className="px-3 py-1.5">
+                  <input type="date" value={newDate} onChange={(e) => setNewDate(e.target.value)}
+                    className="bg-transparent border-b border-gray-300 px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500" />
+                </td>
                 <td className="px-3 py-1.5">
                   <input type="text" placeholder="Opis kosztu..." value={newDesc} onChange={(e) => setNewDesc(e.target.value)}
                     className="w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500"
