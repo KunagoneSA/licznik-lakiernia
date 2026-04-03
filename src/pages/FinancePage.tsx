@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Navigate } from 'react-router-dom'
-import { Plus, Trash2, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, Trash2, X, ChevronLeft, ChevronRight, Copy } from 'lucide-react'
 
 const MONTH_NAMES = ['Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec','Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień']
 
@@ -92,6 +92,17 @@ export default function FinancePage() {
   const profit = revenue - totalCosts
 
   const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`
+  const prevMonthKey = (() => {
+    let m = month - 1, y = year
+    if (m < 0) { m = 11; y-- }
+    return `${y}-${String(m + 1).padStart(2, '0')}`
+  })()
+  const copyFromPrevMonth = async () => {
+    const { data: prev } = await supabase.from('fixed_costs').select('name, amount').eq('month', prevMonthKey)
+    if (!prev || prev.length === 0) { toast('Brak kosztów w poprzednim miesiącu'); return }
+    await supabase.from('fixed_costs').insert(prev.map(c => ({ month: monthKey, name: c.name, amount: c.amount })))
+    toast(`Skopiowano ${prev.length} pozycji`); fetchData()
+  }
   const addFixedCost = async () => {
     if (!newFixedName || !newFixedAmount) return
     await supabase.from('fixed_costs').insert({ month: monthKey, name: newFixedName, amount: Math.round(Number(newFixedAmount) * 100) / 100 })
@@ -396,7 +407,14 @@ export default function FinancePage() {
 
       {/* Fixed costs — editable */}
       <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
-        <div className="bg-gray-50 px-3 py-1.5 text-xs font-semibold text-gray-600 uppercase tracking-wide border-b border-gray-200">Koszty stałe — {MONTH_NAMES[month]} {year}</div>
+        <div className="bg-gray-50 px-3 py-1.5 flex items-center justify-between border-b border-gray-200">
+          <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Koszty stałe — {MONTH_NAMES[month]} {year}</span>
+          {fixedCosts.length === 0 && (
+            <button onClick={copyFromPrevMonth} className="flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 print:hidden">
+              <Copy className="h-3 w-3" /> Kopiuj z poprzedniego miesiąca
+            </button>
+          )}
+        </div>
         <table className="w-full text-xs">
           <tbody>
             {fixedCosts.map((c, idx) => (
