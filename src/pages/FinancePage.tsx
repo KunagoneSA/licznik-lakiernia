@@ -40,6 +40,7 @@ export default function FinancePage() {
   const [orders, setOrders] = useState<OrderWithItems[]>([])
   const [purchases, setPurchases] = useState<PaintPurchase[]>([])
   const [extraCosts, setExtraCosts] = useState<{ id: string; date: string; description: string; amount: number; created_by_email: string | null }[]>([])
+  const [fixedCosts, setFixedCosts] = useState<{ id: string; month: string; name: string; amount: number }[]>([])
   const [loading, setLoading] = useState(true)
   const [newExtraDesc, setNewExtraDesc] = useState('')
   const [newExtraAmount, setNewExtraAmount] = useState('')
@@ -47,15 +48,21 @@ export default function FinancePage() {
   const [editExtraId, setEditExtraId] = useState<string | null>(null)
   const [editExtraDesc, setEditExtraDesc] = useState('')
   const [editExtraAmount, setEditExtraAmount] = useState('')
+  const [newFixedName, setNewFixedName] = useState('')
+  const [newFixedAmount, setNewFixedAmount] = useState('')
+  const [editFixedId, setEditFixedId] = useState<string | null>(null)
+  const [editFixedName, setEditFixedName] = useState('')
+  const [editFixedAmount, setEditFixedAmount] = useState('')
   const { toast } = useToast()
 
   const fetchData = useCallback(async () => {
     setLoading(true)
-    const [ordersRes, purchasesRes, extraRes] = await Promise.all([
+    const [ordersRes, purchasesRes, extraRes, fixedRes] = await Promise.all([
       supabase.from('orders').select('id, number, status, created_at, ready_date, client:clients(name), order_items(total_price, m2)')
         .in('status', ['gotowe', 'wydane', 'fv_wystawiona', 'zapłacone']),
       supabase.from('paint_purchases').select('*, supplier:suppliers(name)').gte('date', dateFrom).lte('date', dateTo).order('date', { ascending: false }),
       supabase.from('extra_costs').select('*').gte('date', dateFrom).lte('date', dateTo).order('date', { ascending: true }),
+      supabase.from('fixed_costs').select('*').eq('month', `${year}-${String(month + 1).padStart(2, '0')}`).order('name'),
     ])
     const allOrders = (ordersRes.data as unknown as OrderWithItems[]) ?? []
     setOrders(allOrders.filter(o => {
@@ -64,6 +71,7 @@ export default function FinancePage() {
     }))
     setPurchases((purchasesRes.data as PaintPurchase[]) ?? [])
     setExtraCosts((extraRes?.data ?? []) as { id: string; date: string; description: string; amount: number; created_by_email: string | null }[])
+    setFixedCosts((fixedRes?.data ?? []) as { id: string; month: string; name: string; amount: number }[])
     setLoading(false)
   }, [dateFrom, dateTo])
 
@@ -79,8 +87,24 @@ export default function FinancePage() {
   const totalHours = useMemo(() => filteredLogs.reduce((s, l) => s + Number(l.hours), 0), [filteredLogs])
   const materialCost = useMemo(() => filteredPurchases.reduce((s, p) => s + Number(p.total), 0), [filteredPurchases])
   const extraCostTotal = useMemo(() => extraCosts.reduce((s, c) => s + Number(c.amount), 0), [extraCosts])
-  const totalCosts = laborCost + materialCost + extraCostTotal
+  const fixedCostTotal = useMemo(() => fixedCosts.reduce((s, c) => s + Number(c.amount), 0), [fixedCosts])
+  const totalCosts = laborCost + materialCost + extraCostTotal + fixedCostTotal
   const profit = revenue - totalCosts
+
+  const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`
+  const addFixedCost = async () => {
+    if (!newFixedName || !newFixedAmount) return
+    await supabase.from('fixed_costs').insert({ month: monthKey, name: newFixedName, amount: Math.round(Number(newFixedAmount) * 100) / 100 })
+    setNewFixedName(''); setNewFixedAmount(''); toast('Koszt dodany'); fetchData()
+  }
+  const startEditFixed = (c: { id: string; name: string; amount: number }) => {
+    setEditFixedId(c.id); setEditFixedName(c.name); setEditFixedAmount(String(c.amount))
+  }
+  const saveEditFixed = async () => {
+    if (!editFixedId || !editFixedName || !editFixedAmount) return
+    await supabase.from('fixed_costs').update({ name: editFixedName, amount: Math.round(Number(editFixedAmount) * 100) / 100 }).eq('id', editFixedId)
+    setEditFixedId(null); toast('Zaktualizowano'); fetchData()
+  }
   const margin = revenue > 0 ? (profit / revenue) * 100 : 0
 
   const workerStats = useMemo(() => {
@@ -172,6 +196,20 @@ export default function FinancePage() {
               <td className="px-4 py-2 text-gray-600 pl-8">{filteredPurchases.length} zakupów w okresie</td>
               <td></td>
             </tr>
+            {fixedCostTotal > 0 && (
+              <>
+                <tr className="border-b border-gray-100 bg-purple-50/30">
+                  <td className="px-4 py-2 font-semibold text-gray-700">Koszty stałe</td>
+                  <td className="px-4 py-2 text-right font-bold text-purple-600 tabular-nums">- {fmtPL(fixedCostTotal)} zł</td>
+                </tr>
+                {fixedCosts.map(c => (
+                  <tr key={c.id} className="border-b border-gray-50">
+                    <td className="px-4 py-1 text-gray-500 pl-8 text-xs">{c.name}</td>
+                    <td className="px-4 py-1 text-right text-gray-500 text-xs tabular-nums">{fmtPL(Number(c.amount))} zł</td>
+                  </tr>
+                ))}
+              </>
+            )}
             {extraCostTotal > 0 && (
               <>
                 <tr className="border-b border-gray-100 bg-rose-50/30">
@@ -202,12 +240,14 @@ export default function FinancePage() {
           <div className="flex h-5 w-full overflow-hidden rounded-full bg-gray-200">
             {laborCost > 0 && <div className="bg-red-500" style={{ width: `${(laborCost / revenue) * 100}%` }} />}
             {materialCost > 0 && <div className="bg-orange-500" style={{ width: `${(materialCost / revenue) * 100}%` }} />}
+            {fixedCostTotal > 0 && <div className="bg-purple-500" style={{ width: `${(fixedCostTotal / revenue) * 100}%` }} />}
             {extraCostTotal > 0 && <div className="bg-rose-500" style={{ width: `${(extraCostTotal / revenue) * 100}%` }} />}
             {profit > 0 && <div className="bg-emerald-500" style={{ width: `${(profit / revenue) * 100}%` }} />}
           </div>
           <div className="mt-2 flex flex-wrap gap-3 text-[10px]">
             <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-500" /> Praca {((laborCost / revenue) * 100).toFixed(0)}%</span>
             <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-orange-500" /> Materiały {((materialCost / revenue) * 100).toFixed(0)}%</span>
+            {fixedCostTotal > 0 && <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-purple-500" /> Stałe {((fixedCostTotal / revenue) * 100).toFixed(0)}%</span>}
             {extraCostTotal > 0 && <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-rose-500" /> Dodatkowe {((extraCostTotal / revenue) * 100).toFixed(0)}%</span>}
             <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Zysk {((profit / revenue) * 100).toFixed(0)}%</span>
           </div>
@@ -353,6 +393,70 @@ export default function FinancePage() {
           </table>
         </div>
       )}
+
+      {/* Fixed costs — editable */}
+      <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+        <div className="bg-gray-50 px-3 py-1.5 text-xs font-semibold text-gray-600 uppercase tracking-wide border-b border-gray-200">Koszty stałe — {MONTH_NAMES[month]} {year}</div>
+        <table className="w-full text-xs">
+          <tbody>
+            {fixedCosts.map((c, idx) => (
+              editFixedId === c.id ? (
+                <tr key={c.id} className="border-b border-gray-50 bg-blue-50/30"
+                  onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) saveEditFixed() }}>
+                  <td className="px-3 py-1.5">
+                    <input type="text" value={editFixedName} onChange={(e) => setEditFixedName(e.target.value)}
+                      className="w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500"
+                      onKeyDown={(e) => { if (e.key === 'Enter') saveEditFixed(); if (e.key === 'Escape') setEditFixedId(null) }} autoFocus />
+                  </td>
+                  <td className="px-3 py-1.5">
+                    <input type="number" value={editFixedAmount} onChange={(e) => setEditFixedAmount(e.target.value)}
+                      className="w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-xs text-right text-gray-800 outline-none focus:border-amber-500"
+                      onKeyDown={(e) => { if (e.key === 'Enter') saveEditFixed(); if (e.key === 'Escape') setEditFixedId(null) }} />
+                  </td>
+                  <td className="px-1 py-1.5 w-6 print:hidden">
+                    <button onClick={() => setEditFixedId(null)} className="rounded p-0.5 text-gray-400 hover:text-gray-600"><X className="h-3 w-3" /></button>
+                  </td>
+                </tr>
+              ) : (
+                <tr key={c.id} className={`border-b border-gray-50 hover:bg-gray-50 cursor-pointer ${idx % 2 === 1 ? 'bg-gray-50/30' : ''}`} onClick={() => startEditFixed(c)}>
+                  <td className="px-3 py-1.5 text-gray-800">{c.name}</td>
+                  <td className="px-3 py-1.5 text-right text-purple-600 tabular-nums w-28">{fmtPL(Number(c.amount))} zł</td>
+                  <td className="px-1 py-1.5 w-6 print:hidden" onClick={(e) => e.stopPropagation()}>
+                    <button onClick={async () => {
+                      await supabase.from('fixed_costs').delete().eq('id', c.id)
+                      toast('Usunięto'); fetchData()
+                    }} className="rounded p-0.5 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
+                  </td>
+                </tr>
+              )
+            ))}
+            {fixedCosts.length > 0 && (
+              <tr className="bg-gray-50 font-semibold border-t border-gray-200">
+                <td className="px-3 py-1.5 text-gray-700">Razem</td>
+                <td className="px-3 py-1.5 text-right text-purple-600 tabular-nums">{fmtPL(fixedCostTotal)} zł</td>
+                <td className="print:hidden"></td>
+              </tr>
+            )}
+            {/* Inline add */}
+            <tr className="border-t border-gray-200 bg-amber-50/30 print:hidden">
+              <td className="px-3 py-1.5">
+                <input type="text" placeholder="Nazwa kosztu..." value={newFixedName} onChange={(e) => setNewFixedName(e.target.value)}
+                  className="w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500"
+                  onKeyDown={(e) => { if (e.key === 'Enter') addFixedCost() }} />
+              </td>
+              <td className="px-3 py-1.5">
+                <input type="number" placeholder="0,00" value={newFixedAmount} onChange={(e) => setNewFixedAmount(e.target.value)}
+                  className="w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-xs text-right text-gray-800 outline-none focus:border-amber-500"
+                  onKeyDown={(e) => { if (e.key === 'Enter') addFixedCost() }} />
+              </td>
+              <td className="px-1 py-1.5 print:hidden">
+                <button onClick={addFixedCost} disabled={!newFixedName || !newFixedAmount}
+                  className="rounded p-0.5 text-amber-500 hover:text-amber-700 disabled:opacity-30"><Plus className="h-3 w-3" /></button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
       {/* Extra costs — editable */}
       <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
