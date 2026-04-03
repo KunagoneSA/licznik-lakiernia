@@ -15,6 +15,7 @@ import { useToast } from '../contexts/ToastContext'
 import { useWorkers } from '../hooks/useWorkers'
 import type { OrderStatus } from '../types/database'
 import ColorSwatch from '../components/ColorSwatch'
+import { useAuth } from '../contexts/AuthContext'
 
 /** Polish number formatting: comma as decimal, space as thousand separator */
 const fmtPL = (n: number, decimals = 2) => {
@@ -77,6 +78,7 @@ export default function OrderDetailPage() {
   const { getPriceForVariant } = useClientPricing(order?.client_id ?? null)
   const { toast } = useToast()
   const { workers } = useWorkers()
+  const { isAdmin } = useAuth()
   const activeWorkers = workers.filter((w) => w.active)
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
   const handleDragEnd = useCallback((event: DragEndEvent) => {
@@ -518,7 +520,12 @@ export default function OrderDetailPage() {
               <tr><td className="text-gray-500 pr-2 text-right py-px">Plan:</td><td className="font-medium text-gray-700 tabular-nums py-px">{new Date(order.planned_date).toLocaleDateString('pl-PL')}</td></tr>
             )}
             {order.ready_date && (
-              <tr><td className="text-gray-500 pr-2 text-right py-px">Gotowe:</td><td className="font-medium text-emerald-600 tabular-nums py-px">{new Date(order.ready_date).toLocaleDateString('pl-PL')}</td></tr>
+              <tr><td className="text-gray-500 pr-2 text-right py-px">Gotowe:</td><td className="font-medium text-emerald-600 tabular-nums py-px">
+                {isAdmin ? (
+                  <input type="date" value={order.ready_date} onChange={async (e) => { await updateOrder({ ready_date: e.target.value }); toast('Data gotowości zmieniona') }}
+                    className="bg-transparent border-b border-emerald-300 px-1 py-0 text-xs text-emerald-600 outline-none focus:border-emerald-500 cursor-pointer" />
+                ) : new Date(order.ready_date).toLocaleDateString('pl-PL')}
+              </td></tr>
             )}
             {order.invoice_number && (
               <tr><td className="text-gray-500 pr-2 text-right py-px">FV:</td><td className="font-medium text-pink-600 py-px">{order.invoice_number}</td></tr>
