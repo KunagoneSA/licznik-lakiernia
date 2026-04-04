@@ -85,7 +85,7 @@ export default function FinancePage() {
   const totalM2 = useMemo(() => orders.reduce((s, o) => s + o.order_items.reduce((si, i) => si + Number(i.m2), 0), 0), [orders])
   const laborCost = useMemo(() => filteredLogs.reduce((s, l) => s + Number(l.hours) * HOURLY_RATE, 0), [filteredLogs])
   const totalHours = useMemo(() => filteredLogs.reduce((s, l) => s + Number(l.hours), 0), [filteredLogs])
-  const materialCost = useMemo(() => filteredPurchases.reduce((s, p) => s + Number(p.total), 0), [filteredPurchases])
+  const materialCost = useMemo(() => filteredPurchases.filter(p => (p as unknown as { in_report?: boolean }).in_report !== false).reduce((s, p) => s + Number(p.total), 0), [filteredPurchases])
   const extraCostTotal = useMemo(() => extraCosts.reduce((s, c) => s + Number(c.amount), 0), [extraCosts])
   const fixedCostTotal = useMemo(() => fixedCosts.reduce((s, c) => s + Number(c.amount), 0), [fixedCosts])
   const totalCosts = laborCost + materialCost + extraCostTotal + fixedCostTotal
@@ -330,7 +330,8 @@ export default function FinancePage() {
       {filteredPurchases.length > 0 && (() => {
         const supplierNames = [...new Set(filteredPurchases.map(p => (p as unknown as { supplier?: { name: string } }).supplier?.name ?? 'Nieznany'))].sort()
         const displayPurchases = supplierFilter ? filteredPurchases.filter(p => (p as unknown as { supplier?: { name: string } }).supplier?.name === supplierFilter) : filteredPurchases
-        const displayTotal = displayPurchases.reduce((s, p) => s + Number(p.total), 0)
+        const reportPurchases = displayPurchases.filter(p => (p as unknown as { in_report?: boolean }).in_report !== false)
+        const displayTotal = reportPurchases.reduce((s, p) => s + Number(p.total), 0)
         return (
         <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
           <div className="bg-gray-50 px-3 py-1.5 flex items-center justify-between border-b border-gray-200">
@@ -344,6 +345,7 @@ export default function FinancePage() {
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50/50">
+                <th className="px-1 py-1.5 text-center font-medium text-gray-500 print:hidden">✓</th>
                 <th className="px-3 py-1.5 text-left font-medium text-gray-500">Data</th>
                 <th className="px-3 py-1.5 text-left font-medium text-gray-500">Produkt</th>
                 <th className="px-3 py-1.5 text-right font-medium text-gray-500">Ilość</th>
@@ -352,7 +354,15 @@ export default function FinancePage() {
             </thead>
             <tbody>
               {displayPurchases.map((p, i) => (
-                <tr key={p.id} className={`border-b border-gray-50 ${i % 2 === 1 ? 'bg-gray-50/30' : ''}`}>
+                <tr key={p.id} className={`border-b border-gray-50 ${i % 2 === 1 ? 'bg-gray-50/30' : ''} ${(p as unknown as { in_report?: boolean }).in_report === false ? 'opacity-40' : ''}`}>
+                  <td className="px-1 py-1 text-center print:hidden">
+                    <input type="checkbox" checked={(p as unknown as { in_report?: boolean }).in_report !== false}
+                      onChange={async (e) => {
+                        await supabase.from('paint_purchases').update({ in_report: e.target.checked }).eq('id', p.id)
+                        fetchData()
+                      }}
+                      className="h-3.5 w-3.5 rounded border-gray-300 text-amber-500 focus:ring-amber-500/30 cursor-pointer" />
+                  </td>
                   <td className="px-3 py-1 text-gray-600">{p.date}</td>
                   <td className="px-3 py-1 text-gray-800">{p.product}{p.color ? ` (${p.color})` : ''}</td>
                   <td className="px-3 py-1 text-right text-gray-600">{p.quantity} {p.unit}</td>
@@ -360,6 +370,7 @@ export default function FinancePage() {
                 </tr>
               ))}
               <tr className="bg-gray-50 font-semibold border-t border-gray-200">
+                <td className="print:hidden"></td>
                 <td className="px-3 py-1.5 text-gray-700" colSpan={3}>Razem{supplierFilter ? ` (${supplierFilter})` : ''}</td>
                 <td className="px-3 py-1.5 text-right text-orange-600 tabular-nums">{fmtPL(displayTotal)} zł</td>
               </tr>
