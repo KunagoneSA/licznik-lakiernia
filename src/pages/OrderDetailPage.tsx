@@ -288,6 +288,21 @@ export default function OrderDetailPage() {
   const [eiColorSurcharge, setEiColorSurcharge] = useState(false)
   const [eiWplyka, setEiWplyka] = useState(false)
   const [eiNotes, setEiNotes] = useState('')
+  const saveEditItemRef = useRef<(() => void) | null>(null)
+
+  // Global click handler — save edit when clicking outside the editing row
+  useEffect(() => {
+    if (!editingItemId) return
+    const handler = (e: MouseEvent) => {
+      const row = editItemRowRef.current
+      if (!row) return
+      if (!row.contains(e.target as Node)) {
+        saveEditItemRef.current?.()
+      }
+    }
+    const timer = setTimeout(() => document.addEventListener('mousedown', handler), 0)
+    return () => { clearTimeout(timer); document.removeEventListener('mousedown', handler) }
+  }, [editingItemId])
 
   // Log inline edit
   const [editingLogId, setEditingLogId] = useState<string | null>(null)
@@ -414,22 +429,6 @@ export default function OrderDetailPage() {
     setEiNotes(item.notes ?? '')
   }
 
-  // Global click handler — save edit when clicking outside the editing row
-  useEffect(() => {
-    if (!editingItemId) return
-    const handler = (e: MouseEvent) => {
-      const row = editItemRowRef.current
-      if (!row) return
-      if (!row.contains(e.target as Node)) {
-        saveEditItem()
-      }
-    }
-    // Delay attaching so the click that started editing doesn't trigger save
-    const timer = setTimeout(() => document.addEventListener('mousedown', handler), 0)
-    return () => { clearTimeout(timer); document.removeEventListener('mousedown', handler) }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editingItemId])
-
   const saveEditItem = async () => {
     if (!editingItemId) return
     const l = Number(eiLength)
@@ -476,6 +475,7 @@ export default function OrderDetailPage() {
     setEditingItemId(null)
     toast('Element zaktualizowany')
   }
+  saveEditItemRef.current = saveEditItem
 
   const startEditLog = (log: typeof logs[0]) => {
     setEditingLogId(log.id)
