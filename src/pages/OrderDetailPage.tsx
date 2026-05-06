@@ -47,9 +47,11 @@ function SortableItemRow({ item, idx, lastAddedId, itemsLength, onEdit, onDelete
       <td className="px-1.5 py-0.5 text-gray-800 tabular-nums">{item.length_mm || '—'}</td>
       <td className="px-1.5 py-0.5 text-gray-800 tabular-nums">{item.width_mm || '—'}</td>
       <td className="px-1.5 py-0.5 text-gray-800 tabular-nums">{item.quantity}</td>
+      <td className="px-1.5 py-0.5 text-gray-800 tabular-nums">{item.passes ?? 1}</td>
       <td className="px-1.5 py-0.5 text-gray-600 truncate max-w-[120px]">{(item.variant as { name: string } | undefined)?.name ?? '—'}</td>
       <td className="px-1.5 py-0.5 text-right text-gray-600 tabular-nums">{item.length_mm && item.width_mm ? fmtPL(Number(item.m2), 3) : '—'}</td>
       <td className="px-1.5 py-0.5 text-right text-gray-600 tabular-nums">{fmtPL(Number(item.price_per_m2), 0)}{item.length_mm === 0 && item.width_mm === 0 ? '/szt' : ''}</td>
+      <td className="px-1.5 py-0.5 text-right text-gray-800 font-medium tabular-nums">{fmtPL(Number(item.total_price), 2)}</td>
       <td className="px-1 py-0.5 text-center">{item.has_handle ? <span className="text-xs text-emerald-600">✓</span> : ''}</td>
       <td className="px-1 py-0.5 text-center">{item.color_surcharge ? <span className="text-xs text-amber-600">✓</span> : ''}</td>
       <td className="px-1 py-0.5 text-center">{item.has_wplyka ? <span className="text-xs text-violet-600">✓</span> : ''}</td>
@@ -97,6 +99,7 @@ export default function OrderDetailPage() {
   const [newLength, setNewLength] = useState('')
   const [newWidth, setNewWidth] = useState('')
   const [newQty, setNewQty] = useState('1')
+  const [newPasses, setNewPasses] = useState('1')
   const [newVariantId, setNewVariantId] = useState('')
   const [newPrice, setNewPrice] = useState('')
   const [newHandle, setNewHandle] = useState(false)
@@ -105,6 +108,7 @@ export default function OrderDetailPage() {
   const [newNotes, setNewNotes] = useState('')
   const [newCustomPrice, setNewCustomPrice] = useState('')
   const [newCustomQty, setNewCustomQty] = useState('1')
+  const [newCustomPasses, setNewCustomPasses] = useState('1')
   const [newCustomNotes, setNewCustomNotes] = useState('')
   const [newCustomHandle, setNewCustomHandle] = useState(false)
   const [newCustomColorSurcharge, setNewCustomColorSurcharge] = useState(false)
@@ -190,6 +194,7 @@ export default function OrderDetailPage() {
     setNewLength('')
     setNewWidth('')
     setNewQty('1')
+    setNewPasses('1')
     setNewVariantId(selectableVariants[0]?.id ?? '')
     setNewPrice('')
     setNewHandle(false)
@@ -202,6 +207,7 @@ export default function OrderDetailPage() {
   const resetCustomForm = useCallback(() => {
     setNewCustomPrice('')
     setNewCustomQty('1')
+    setNewCustomPasses('1')
     setNewCustomNotes('')
     setNewCustomHandle(false)
     setNewCustomColorSurcharge(false)
@@ -213,12 +219,14 @@ export default function OrderDetailPage() {
   const handleCustomAdd = useCallback(async () => {
     const price = Number(newCustomPrice)
     const q = Number(newCustomQty) || 1
+    const passes = Number(newCustomPasses) || 1
     if (!price) return
     const vid = newCustomVariantId || selectableVariants[0]?.id
     const err = await addItem({
       length_mm: 0,
       width_mm: 0,
       quantity: q,
+      passes: passes,
       variant_id: vid,
       has_handle: newCustomHandle,
       color_surcharge: newCustomColorSurcharge,
@@ -226,7 +234,7 @@ export default function OrderDetailPage() {
       notes: newCustomNotes || null,
       m2: 0,
       price_per_m2: price,
-      total_price: Math.round(price * q * 100) / 100,
+      total_price: Math.round(price * q * passes * 100) / 100,
       sort_order: items.length,
     })
     if (!err) {
@@ -240,16 +248,18 @@ export default function OrderDetailPage() {
     const l = Number(newLength)
     const w = Number(newWidth)
     const q = Number(newQty) || 1
+    const passes = Number(newPasses) || 1
     const vid = newVariantId || selectableVariants[0]?.id
     if (!l || !w || !vid) return
     const parsedPrice = Number(newPrice)
     const pricePerM2 = newPrice !== '' && !isNaN(parsedPrice) ? parsedPrice : getDefaultPrice(vid)
     const m2 = (l * w * q) / 1_000_000
-    const totalPrice = m2 * pricePerM2
+    const totalPrice = m2 * passes * pricePerM2
     const err = await addItem({
       length_mm: l,
       width_mm: w,
       quantity: q,
+      passes: passes,
       variant_id: vid,
       has_handle: newHandle,
       color_surcharge: newColorSurcharge,
@@ -271,6 +281,7 @@ export default function OrderDetailPage() {
   const [eiLength, setEiLength] = useState('')
   const [eiWidth, setEiWidth] = useState('')
   const [eiQty, setEiQty] = useState('')
+  const [eiPasses, setEiPasses] = useState('')
   const [eiVariantId, setEiVariantId] = useState('')
   const [eiPrice, setEiPrice] = useState('')
   const [eiHandle, setEiHandle] = useState(false)
@@ -394,6 +405,7 @@ export default function OrderDetailPage() {
     setEiLength(String(item.length_mm))
     setEiWidth(String(item.width_mm))
     setEiQty(String(item.quantity))
+    setEiPasses(String(item.passes ?? 1))
     setEiVariantId(item.variant_id)
     setEiPrice(String(item.price_per_m2))
     setEiHandle(item.has_handle)
@@ -407,6 +419,7 @@ export default function OrderDetailPage() {
     const l = Number(eiLength)
     const w = Number(eiWidth)
     const q = Number(eiQty) || 1
+    const passes = Number(eiPasses) || 1
     const vid = eiVariantId
     const isCustom = l === 0 && w === 0
     const pricePerUnit = Number(eiPrice)
@@ -415,6 +428,7 @@ export default function OrderDetailPage() {
         length_mm: 0,
         width_mm: 0,
         quantity: q,
+        passes: passes,
         variant_id: vid,
         has_handle: eiHandle,
         color_surcharge: eiColorSurcharge,
@@ -422,16 +436,17 @@ export default function OrderDetailPage() {
         notes: eiNotes || null,
         m2: 0,
         price_per_m2: pricePerUnit,
-        total_price: Math.round(pricePerUnit * q * 100) / 100,
+        total_price: Math.round(pricePerUnit * q * passes * 100) / 100,
       })
     } else {
       const pricePerM2 = eiPrice !== '' && !isNaN(pricePerUnit) ? pricePerUnit : getDefaultPrice(vid)
       const m2 = (l * w * q) / 1_000_000
-      const totalPrice = m2 * pricePerM2
+      const totalPrice = m2 * passes * pricePerM2
       await updateItem(editingItemId, {
         length_mm: l,
         width_mm: w,
         quantity: q,
+        passes: passes,
         variant_id: vid,
         has_handle: eiHandle,
         color_surcharge: eiColorSurcharge,
@@ -742,9 +757,11 @@ export default function OrderDetailPage() {
                 <th className="px-1.5 py-1 text-left text-[10px] font-medium text-gray-500">Dl</th>
                 <th className="px-1.5 py-1 text-left text-[10px] font-medium text-gray-500">Szer</th>
                 <th className="px-1.5 py-1 text-left text-[10px] font-medium text-gray-500">Szt</th>
+                <th className="px-1.5 py-1 text-left text-[10px] font-medium text-gray-500">Przejść</th>
                 <th className="px-1.5 py-1 text-left text-[10px] font-medium text-gray-500">Rodzaj</th>
                 <th className="px-1.5 py-1 text-right text-[10px] font-medium text-gray-500">m²</th>
-                <th className="px-1.5 py-1 text-right text-[10px] font-medium text-gray-500">Netto</th>
+                <th className="px-1.5 py-1 text-right text-[10px] font-medium text-gray-500">Cena&nbsp;netto</th>
+                <th className="px-1.5 py-1 text-right text-[10px] font-medium text-gray-500">Wartość&nbsp;netto</th>
                 <th className="px-1 py-1 text-center text-[10px] font-medium text-gray-500">U</th>
                 <th className="px-1 py-1 text-center text-[10px] font-medium text-gray-500">K</th>
                 <th className="px-1 py-1 text-center text-[10px] font-medium text-gray-500">W</th>
@@ -761,7 +778,10 @@ export default function OrderDetailPage() {
                   const l = Number(eiLength) || 0
                   const w = Number(eiWidth) || 0
                   const q = Number(eiQty) || 1
+                  const passes = Number(eiPasses) || 1
                   const m2 = (l * w * q) / 1_000_000
+                  const pricePerM2Edit = Number(eiPrice) || 0
+                  const totalEdit = (l === 0 && w === 0) ? pricePerM2Edit * q * passes : m2 * passes * pricePerM2Edit
                   const ic = "w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500 tabular-nums"
                   const kd = (e: React.KeyboardEvent) => { if (e.key === 'Enter') saveEditItem(); if (e.key === 'Escape') setEditingItemId(null) }
                   return (
@@ -770,6 +790,7 @@ export default function OrderDetailPage() {
                       <td className="px-2 py-1"><input type="text" inputMode="numeric" value={eiLength} onChange={(e) => setEiLength(e.target.value)} className={ic} onKeyDown={kd} /></td>
                       <td className="px-2 py-1"><input type="text" inputMode="numeric" value={eiWidth} onChange={(e) => setEiWidth(e.target.value)} className={ic} onKeyDown={kd} /></td>
                       <td className="px-2 py-1"><input type="number" value={eiQty} onChange={(e) => setEiQty(e.target.value)} className={`${ic} w-10`} onKeyDown={kd} /></td>
+                      <td className="px-2 py-1"><input type="number" value={eiPasses} onChange={(e) => setEiPasses(e.target.value)} className={`${ic} w-10`} onKeyDown={kd} placeholder="1" /></td>
                       <td className="px-2 py-1">
                         <select value={eiVariantId} onChange={(e) => {
                             if (e.target.value === '__custom__') {
@@ -791,6 +812,7 @@ export default function OrderDetailPage() {
                       </td>
                       <td className="px-2 py-1 text-right text-gray-400 tabular-nums">{l && w ? fmtPL(m2, 3) : ''}</td>
                       <td className="px-2 py-1"><input type="number" value={eiPrice} onChange={(e) => setEiPrice(e.target.value)} className="w-14 bg-transparent border-b border-gray-300 px-1 py-0.5 text-right text-xs text-gray-800 outline-none focus:border-amber-500 tabular-nums" onKeyDown={kd} /></td>
+                      <td className="px-2 py-1 text-right text-gray-600 tabular-nums">{totalEdit > 0 ? fmtPL(totalEdit, 2) : ''}</td>
                       <td className="px-2 py-1 text-center"><input type="checkbox" checked={eiHandle} onChange={(e) => setEiHandle(e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-amber-500 focus:ring-amber-500/30" /></td>
                       <td className="px-2 py-1 text-center"><input type="checkbox" checked={eiColorSurcharge} onChange={(e) => setEiColorSurcharge(e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-amber-500 focus:ring-amber-500/30" /></td>
                       <td className="px-2 py-1 text-center"><input type="checkbox" checked={eiWplyka} onChange={(e) => setEiWplyka(e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-violet-500 focus:ring-violet-500/30" /></td>
@@ -813,7 +835,10 @@ export default function OrderDetailPage() {
                 const l = Number(newLength) || 0
                 const w = Number(newWidth) || 0
                 const q = Number(newQty) || 1
+                const passes = Number(newPasses) || 1
                 const m2 = (l * w * q) / 1_000_000
+                const effectivePrice = newPrice !== '' ? Number(newPrice) : pricePerM2
+                const totalPreview = m2 * passes * effectivePrice
                 const inputClass = "w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500 tabular-nums"
                 return (
                   <tr ref={itemRowRef} onBlur={handleRowBlur(itemRowRef, handleInlineAdd, () => { if (!Number(newLength) || !Number(newWidth)) setShowInlineAdd(false) })} className="border-b border-gray-100 bg-amber-50/30">
@@ -830,6 +855,11 @@ export default function OrderDetailPage() {
                     </td>
                     <td className="px-2 py-1">
                       <input type="number" value={newQty} onChange={(e) => setNewQty(e.target.value)}
+                        placeholder="1" className={`${inputClass} w-10`}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleInlineAdd(); if (e.key === 'Escape') setShowInlineAdd(false) }} />
+                    </td>
+                    <td className="px-2 py-1">
+                      <input type="number" value={newPasses} onChange={(e) => setNewPasses(e.target.value)}
                         placeholder="1" className={`${inputClass} w-10`}
                         onKeyDown={(e) => { if (e.key === 'Enter') handleInlineAdd(); if (e.key === 'Escape') setShowInlineAdd(false) }} />
                     </td>
@@ -859,6 +889,7 @@ export default function OrderDetailPage() {
                         className="w-14 bg-transparent border-b border-gray-300 px-1 py-0.5 text-right text-xs text-gray-800 outline-none focus:border-amber-500 tabular-nums"
                         onKeyDown={(e) => { if (e.key === 'Enter') handleInlineAdd(); if (e.key === 'Escape') setShowInlineAdd(false) }} />
                     </td>
+                    <td className="px-2 py-1 text-right text-gray-600 tabular-nums">{totalPreview > 0 ? fmtPL(totalPreview, 2) : ''}</td>
                     <td className="px-2 py-1 text-center">
                       <input type="checkbox" checked={newHandle} onChange={(e) => setNewHandle(e.target.checked)}
                         className="h-4 w-4 rounded border-gray-300 text-amber-500 focus:ring-amber-500/30" />
@@ -898,6 +929,11 @@ export default function OrderDetailPage() {
                         onKeyDown={(e) => { if (e.key === 'Enter') handleCustomAdd(); if (e.key === 'Escape') setShowCustomAdd(false) }} />
                     </td>
                     <td className="px-2 py-1">
+                      <input type="number" value={newCustomPasses} onChange={(e) => setNewCustomPasses(e.target.value)}
+                        placeholder="1" className={`${inputClass} w-10`}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleCustomAdd(); if (e.key === 'Escape') setShowCustomAdd(false) }} />
+                    </td>
+                    <td className="px-2 py-1">
                       <select value={newCustomVariantId} onChange={(e) => {
                           if (e.target.value === '__custom__') {
                             const name = prompt('Wpisz nazwę rodzaju:')
@@ -923,6 +959,7 @@ export default function OrderDetailPage() {
                         className="w-14 bg-transparent border-b border-gray-300 px-1 py-0.5 text-right text-xs text-gray-800 outline-none focus:border-amber-500 tabular-nums"
                         onKeyDown={(e) => { if (e.key === 'Enter') handleCustomAdd(); if (e.key === 'Escape') setShowCustomAdd(false) }} />
                     </td>
+                    <td className="px-2 py-1 text-right text-gray-600 tabular-nums">{Number(newCustomPrice) > 0 ? fmtPL(Number(newCustomPrice) * (Number(newCustomQty) || 1) * (Number(newCustomPasses) || 1), 2) : ''}</td>
                     <td className="px-2 py-1 text-center">
                       <input type="checkbox" checked={newCustomHandle} onChange={(e) => setNewCustomHandle(e.target.checked)}
                         className="h-4 w-4 rounded border-gray-300 text-amber-500 focus:ring-amber-500/30" />
@@ -950,7 +987,7 @@ export default function OrderDetailPage() {
                 )
               })()}
               {!showInlineAdd && !showCustomAdd && items.length === 0 && (
-                <tr><td colSpan={12} className="px-2 py-6 text-center text-xs text-gray-400">
+                <tr><td colSpan={14} className="px-2 py-6 text-center text-xs text-gray-400">
                   Brak elementów — kliknij "Dodaj"
                 </td></tr>
               )}
