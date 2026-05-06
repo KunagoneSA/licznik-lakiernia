@@ -27,31 +27,33 @@ export default function OrderCard({ order }: { order: Order }) {
       to={`/zamowienia/${order.id}`}
       className={`block rounded-lg border-l-4 bg-white shadow-sm px-2.5 py-1.5 transition-colors hover:bg-gray-50 ${getUrgencyClass(order.planned_date, order.status)}`}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1 text-xs min-w-0">
-            <span className="font-bold text-amber-600 shrink-0">{formatNumber(order.number, order.created_at)}</span>
-            <span className="text-gray-400 shrink-0">·</span>
-            <span className="flex items-center gap-0.5 text-[11px] text-gray-500 min-w-0 truncate">
-              {getClient(order)?.type === 'company' ? <Building2 className="h-3 w-3 text-blue-500 shrink-0" /> : <User className="h-3 w-3 text-violet-500 shrink-0" />}
-              <span className="truncate">{getClient(order)?.name ?? '—'}</span>
-            </span>
-          </div>
-          <p className="text-[11px] text-gray-700 line-clamp-1">{order.description || 'Brak opisu'}</p>
-          {order.color && <p className="flex items-center gap-1 text-[10px] font-medium text-gray-500 whitespace-nowrap"><ColorSwatch color={order.color} size="sm" />{order.color}</p>}
+      <div>
+        <div className="flex items-center gap-1 text-xs flex-wrap">
+          <span className="font-bold text-amber-600">{formatNumber(order.number, order.created_at)}</span>
+          <span className="text-gray-400">·</span>
+          <span className="flex items-center gap-0.5 text-[11px] text-gray-700 font-medium">
+            {getClient(order)?.type === 'company' ? <Building2 className="h-3 w-3 text-blue-500 shrink-0" /> : <User className="h-3 w-3 text-violet-500 shrink-0" />}
+            {getClient(order)?.name ?? '—'}
+          </span>
         </div>
-        <div className="flex flex-col items-end gap-0.5 ml-2 shrink-0">
+        <div className="mt-0.5 flex items-center justify-between gap-2">
+          <p className="text-[11px] text-gray-600 line-clamp-1 flex-1 min-w-0">{order.description || 'Brak opisu'}</p>
           {order.planned_date && (() => {
             const overdue = !['gotowe', 'wydane', 'fv_wystawiona', 'zapłacone'].includes(order.status) && new Date(order.planned_date).getTime() < Date.now()
             return (
-              <span className={`flex items-center gap-1 text-[11px] ${overdue ? 'text-red-500 font-bold' : 'text-gray-400'}`}>
+              <span className={`flex items-center gap-1 text-[11px] shrink-0 ${overdue ? 'text-red-500 font-bold' : 'text-gray-400'}`}>
                 <Calendar className="h-3 w-3" />
                 {new Date(order.planned_date).toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' })}
               </span>
             )
           })()}
+        </div>
+        <div className="mt-0.5 flex items-center justify-between gap-2">
+          {order.color ? (
+            <p className="flex items-center gap-1 text-[10px] font-medium text-gray-500 truncate"><ColorSwatch color={order.color} size="sm" />{order.color}</p>
+          ) : <span />}
           {(!order.material_provided || !order.paints_provided) && (
-            <div className="flex gap-1">
+            <div className="flex gap-1 shrink-0">
               {!order.material_provided && <span className="text-[9px] font-bold text-red-500 bg-red-50 rounded px-1 py-0.5">Materiał</span>}
               {!order.paints_provided && <span className="text-[9px] font-bold text-red-500 bg-red-50 rounded px-1 py-0.5">Lakiery</span>}
             </div>
