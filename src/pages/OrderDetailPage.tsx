@@ -790,7 +790,7 @@ export default function OrderDetailPage() {
                       <td className="px-2 py-1"><input type="text" inputMode="numeric" value={eiLength} onChange={(e) => setEiLength(e.target.value)} className={ic} onKeyDown={kd} /></td>
                       <td className="px-2 py-1"><input type="text" inputMode="numeric" value={eiWidth} onChange={(e) => setEiWidth(e.target.value)} className={ic} onKeyDown={kd} /></td>
                       <td className="px-2 py-1"><input type="number" value={eiQty} onChange={(e) => setEiQty(e.target.value)} className={`${ic} w-10`} onKeyDown={kd} /></td>
-                      <td className="px-2 py-1"><input type="number" value={eiPasses} onChange={(e) => setEiPasses(e.target.value)} className={`${ic} w-10`} onKeyDown={kd} placeholder="1" /></td>
+                      <td className="px-1 py-1"><input type="text" inputMode="numeric" value={eiPasses} onChange={(e) => setEiPasses(e.target.value)} className={`${ic} w-8`} onKeyDown={kd} placeholder="1" /></td>
                       <td className="px-2 py-1">
                         <select value={eiVariantId} onChange={(e) => {
                             if (e.target.value === '__custom__') {
@@ -858,9 +858,9 @@ export default function OrderDetailPage() {
                         placeholder="1" className={`${inputClass} w-10`}
                         onKeyDown={(e) => { if (e.key === 'Enter') handleInlineAdd(); if (e.key === 'Escape') setShowInlineAdd(false) }} />
                     </td>
-                    <td className="px-2 py-1">
-                      <input type="number" value={newPasses} onChange={(e) => setNewPasses(e.target.value)}
-                        placeholder="1" className={`${inputClass} w-10`}
+                    <td className="px-1 py-1">
+                      <input type="text" inputMode="numeric" value={newPasses} onChange={(e) => setNewPasses(e.target.value)}
+                        placeholder="1" className={`${inputClass} w-8`}
                         onKeyDown={(e) => { if (e.key === 'Enter') handleInlineAdd(); if (e.key === 'Escape') setShowInlineAdd(false) }} />
                     </td>
                     <td className="px-2 py-1">
@@ -928,9 +928,9 @@ export default function OrderDetailPage() {
                         placeholder="1" className={`${inputClass} w-10`}
                         onKeyDown={(e) => { if (e.key === 'Enter') handleCustomAdd(); if (e.key === 'Escape') setShowCustomAdd(false) }} />
                     </td>
-                    <td className="px-2 py-1">
-                      <input type="number" value={newCustomPasses} onChange={(e) => setNewCustomPasses(e.target.value)}
-                        placeholder="1" className={`${inputClass} w-10`}
+                    <td className="px-1 py-1">
+                      <input type="text" inputMode="numeric" value={newCustomPasses} onChange={(e) => setNewCustomPasses(e.target.value)}
+                        placeholder="1" className={`${inputClass} w-8`}
                         onKeyDown={(e) => { if (e.key === 'Enter') handleCustomAdd(); if (e.key === 'Escape') setShowCustomAdd(false) }} />
                     </td>
                     <td className="px-2 py-1">
