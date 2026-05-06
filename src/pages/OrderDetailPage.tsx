@@ -253,8 +253,8 @@ export default function OrderDetailPage() {
     if (!l || !w || !vid) return
     const parsedPrice = Number(newPrice)
     const pricePerM2 = newPrice !== '' && !isNaN(parsedPrice) ? parsedPrice : getDefaultPrice(vid)
-    const m2 = (l * w * q) / 1_000_000
-    const totalPrice = m2 * passes * pricePerM2
+    const m2 = (l * w * q * passes) / 1_000_000
+    const totalPrice = m2 * pricePerM2
     const err = await addItem({
       length_mm: l,
       width_mm: w,
@@ -440,8 +440,8 @@ export default function OrderDetailPage() {
       })
     } else {
       const pricePerM2 = eiPrice !== '' && !isNaN(pricePerUnit) ? pricePerUnit : getDefaultPrice(vid)
-      const m2 = (l * w * q) / 1_000_000
-      const totalPrice = m2 * passes * pricePerM2
+      const m2 = (l * w * q * passes) / 1_000_000
+      const totalPrice = m2 * pricePerM2
       await updateItem(editingItemId, {
         length_mm: l,
         width_mm: w,
@@ -779,9 +779,9 @@ export default function OrderDetailPage() {
                   const w = Number(eiWidth) || 0
                   const q = Number(eiQty) || 1
                   const passes = Number(eiPasses) || 1
-                  const m2 = (l * w * q) / 1_000_000
+                  const m2 = (l * w * q * passes) / 1_000_000
                   const pricePerM2Edit = Number(eiPrice) || 0
-                  const totalEdit = (l === 0 && w === 0) ? pricePerM2Edit * q * passes : m2 * passes * pricePerM2Edit
+                  const totalEdit = (l === 0 && w === 0) ? pricePerM2Edit * q * passes : m2 * pricePerM2Edit
                   const ic = "w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500 tabular-nums"
                   const kd = (e: React.KeyboardEvent) => { if (e.key === 'Enter') saveEditItem(); if (e.key === 'Escape') setEditingItemId(null) }
                   return (
@@ -836,9 +836,9 @@ export default function OrderDetailPage() {
                 const w = Number(newWidth) || 0
                 const q = Number(newQty) || 1
                 const passes = Number(newPasses) || 1
-                const m2 = (l * w * q) / 1_000_000
+                const m2 = (l * w * q * passes) / 1_000_000
                 const effectivePrice = newPrice !== '' ? Number(newPrice) : pricePerM2
-                const totalPreview = m2 * passes * effectivePrice
+                const totalPreview = m2 * effectivePrice
                 const inputClass = "w-full bg-transparent border-b border-gray-300 px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500 tabular-nums"
                 return (
                   <tr ref={itemRowRef} onBlur={handleRowBlur(itemRowRef, handleInlineAdd, () => { if (!Number(newLength) || !Number(newWidth)) setShowInlineAdd(false) })} className="border-b border-gray-100 bg-amber-50/30">
