@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Plus, Trash2, Pencil, Check, X, GripVertical } from 'lucide-react'
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
@@ -413,6 +413,22 @@ export default function OrderDetailPage() {
     setEiWplyka(item.has_wplyka ?? false)
     setEiNotes(item.notes ?? '')
   }
+
+  // Global click handler — save edit when clicking outside the editing row
+  useEffect(() => {
+    if (!editingItemId) return
+    const handler = (e: MouseEvent) => {
+      const row = editItemRowRef.current
+      if (!row) return
+      if (!row.contains(e.target as Node)) {
+        saveEditItem()
+      }
+    }
+    // Delay attaching so the click that started editing doesn't trigger save
+    const timer = setTimeout(() => document.addEventListener('mousedown', handler), 0)
+    return () => { clearTimeout(timer); document.removeEventListener('mousedown', handler) }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editingItemId])
 
   const saveEditItem = async () => {
     if (!editingItemId) return
