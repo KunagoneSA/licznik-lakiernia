@@ -48,7 +48,7 @@ function SortableItemRow({ item, idx, lastAddedId, itemsLength, onEdit, onDelete
       <td className="px-1.5 py-0.5 text-gray-800 tabular-nums">{item.width_mm || '—'}</td>
       <td className="px-1.5 py-0.5 text-gray-800 tabular-nums">{item.quantity}</td>
       <td className="px-0.5 py-0.5 text-gray-800 tabular-nums">{item.passes ?? 1}</td>
-      <td className="px-1.5 py-0.5 text-gray-600 truncate max-w-[140px]">{(item.variant as { name: string } | undefined)?.name ?? '—'}</td>
+      <td className="px-1.5 py-0.5 text-gray-600 truncate">{(item.variant as { name: string } | undefined)?.name ?? '—'}</td>
       <td className="px-2 py-0.5 text-right text-gray-600 tabular-nums">{item.length_mm && item.width_mm ? fmtPL(Number(item.m2), 3) : '—'}</td>
       <td className="px-2 py-0.5 text-right text-gray-600 tabular-nums">{fmtPL(Number(item.price_per_m2), 0)}{item.length_mm === 0 && item.width_mm === 0 ? '/szt' : ''}</td>
       <td className="px-2 py-0.5 text-right text-gray-800 font-medium tabular-nums">{fmtPL(Number(item.total_price), 2)}</td>
@@ -757,8 +757,8 @@ export default function OrderDetailPage() {
                 <th className="px-1.5 py-1 text-left text-[10px] font-medium text-gray-500">Dl</th>
                 <th className="px-1.5 py-1 text-left text-[10px] font-medium text-gray-500">Szer</th>
                 <th className="px-1.5 py-1 text-left text-[10px] font-medium text-gray-500">Szt</th>
-                <th className="px-0.5 py-1 text-left text-[10px] font-medium text-gray-500 w-10">Prz.</th>
-                <th className="px-1.5 py-1 text-left text-[10px] font-medium text-gray-500 max-w-[140px]">Rodzaj</th>
+                <th className="px-0.5 py-1 text-left text-[10px] font-medium text-gray-500 w-14">Prz.</th>
+                <th className="px-1.5 py-1 text-left text-[10px] font-medium text-gray-500 min-w-[120px]">Rodzaj</th>
                 <th className="px-2 py-1 text-right text-[10px] font-medium text-gray-500 w-16">m²</th>
                 <th className="px-2 py-1 text-right text-[10px] font-medium text-gray-500 w-20">Cena&nbsp;netto</th>
                 <th className="px-2 py-1 text-right text-[10px] font-medium text-gray-500 w-24">Wartość&nbsp;netto</th>
@@ -790,7 +790,7 @@ export default function OrderDetailPage() {
                       <td className="px-2 py-1"><input type="text" inputMode="numeric" value={eiLength} onChange={(e) => setEiLength(e.target.value)} className={ic} onKeyDown={kd} /></td>
                       <td className="px-2 py-1"><input type="text" inputMode="numeric" value={eiWidth} onChange={(e) => setEiWidth(e.target.value)} className={ic} onKeyDown={kd} /></td>
                       <td className="px-2 py-1"><input type="number" value={eiQty} onChange={(e) => setEiQty(e.target.value)} className={`${ic} w-10`} onKeyDown={kd} /></td>
-                      <td className="px-1 py-1"><input type="text" inputMode="numeric" value={eiPasses} onChange={(e) => setEiPasses(e.target.value)} className={`${ic} w-8`} onKeyDown={kd} placeholder="1" /></td>
+                      <td className="px-1 py-1"><input type="number" min="1" value={eiPasses} onChange={(e) => setEiPasses(e.target.value)} className={`${ic} w-12`} onKeyDown={kd} placeholder="1" /></td>
                       <td className="px-2 py-1">
                         <select value={eiVariantId} onChange={(e) => {
                             if (e.target.value === '__custom__') {
@@ -859,8 +859,8 @@ export default function OrderDetailPage() {
                         onKeyDown={(e) => { if (e.key === 'Enter') handleInlineAdd(); if (e.key === 'Escape') setShowInlineAdd(false) }} />
                     </td>
                     <td className="px-1 py-1">
-                      <input type="text" inputMode="numeric" value={newPasses} onChange={(e) => setNewPasses(e.target.value)}
-                        placeholder="1" className={`${inputClass} w-8`}
+                      <input type="number" min="1" value={newPasses} onChange={(e) => setNewPasses(e.target.value)}
+                        placeholder="1" className={`${inputClass} w-12`}
                         onKeyDown={(e) => { if (e.key === 'Enter') handleInlineAdd(); if (e.key === 'Escape') setShowInlineAdd(false) }} />
                     </td>
                     <td className="px-2 py-1">
@@ -929,8 +929,8 @@ export default function OrderDetailPage() {
                         onKeyDown={(e) => { if (e.key === 'Enter') handleCustomAdd(); if (e.key === 'Escape') setShowCustomAdd(false) }} />
                     </td>
                     <td className="px-1 py-1">
-                      <input type="text" inputMode="numeric" value={newCustomPasses} onChange={(e) => setNewCustomPasses(e.target.value)}
-                        placeholder="1" className={`${inputClass} w-8`}
+                      <input type="number" min="1" value={newCustomPasses} onChange={(e) => setNewCustomPasses(e.target.value)}
+                        placeholder="1" className={`${inputClass} w-12`}
                         onKeyDown={(e) => { if (e.key === 'Enter') handleCustomAdd(); if (e.key === 'Escape') setShowCustomAdd(false) }} />
                     </td>
                     <td className="px-2 py-1">
