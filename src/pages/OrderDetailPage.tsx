@@ -758,7 +758,7 @@ export default function OrderDetailPage() {
                 <th className="px-1.5 py-1 text-left text-[10px] font-medium text-gray-500">Szer</th>
                 <th className="px-1.5 py-1 text-left text-[10px] font-medium text-gray-500">Szt</th>
                 <th className="px-0.5 py-1 text-left text-[10px] font-medium text-gray-500 w-14">Prz.</th>
-                <th className="px-1.5 py-1 text-left text-[10px] font-medium text-gray-500 min-w-[120px]">Rodzaj</th>
+                <th className="px-1.5 py-1 text-left text-[10px] font-medium text-gray-500 min-w-[200px]">Rodzaj</th>
                 <th className="px-2 py-1 text-right text-[10px] font-medium text-gray-500 w-16">m²</th>
                 <th className="px-2 py-1 text-right text-[10px] font-medium text-gray-500 w-20">Cena&nbsp;netto</th>
                 <th className="px-2 py-1 text-right text-[10px] font-medium text-gray-500 w-24">Wartość&nbsp;netto</th>
@@ -805,7 +805,7 @@ export default function OrderDetailPage() {
                               setEiPrice(String(getDefaultPrice(e.target.value)))
                             }
                           }}
-                          className="w-full min-w-[140px] bg-white border border-gray-300 rounded px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30" onKeyDown={kd}>
+                          className="w-full min-w-[200px] bg-white border border-gray-300 rounded px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30" onKeyDown={kd}>
                           {selectableVariants.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
                           <option value="__custom__">✏️ Inne...</option>
                         </select>
@@ -876,7 +876,7 @@ export default function OrderDetailPage() {
                             setNewVariantId(e.target.value)
                           }
                         }}
-                        className="w-full min-w-[140px] bg-white border border-gray-300 rounded px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30"
+                        className="w-full min-w-[200px] bg-white border border-gray-300 rounded px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30"
                         onKeyDown={(e) => { if (e.key === 'Enter') handleInlineAdd(); if (e.key === 'Escape') setShowInlineAdd(false) }}>
                         {selectableVariants.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
                         <option value="__custom__">✏️ Inne...</option>
@@ -946,7 +946,7 @@ export default function OrderDetailPage() {
                             setNewCustomVariantId(e.target.value)
                           }
                         }}
-                        className="w-full min-w-[140px] bg-white border border-gray-300 rounded px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30"
+                        className="w-full min-w-[200px] bg-white border border-gray-300 rounded px-1 py-0.5 text-xs text-gray-800 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30"
                         onKeyDown={(e) => { if (e.key === 'Enter') handleCustomAdd(); if (e.key === 'Escape') setShowCustomAdd(false) }}>
                         {selectableVariants.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
                         <option value="__custom__">✏️ Inne...</option>
