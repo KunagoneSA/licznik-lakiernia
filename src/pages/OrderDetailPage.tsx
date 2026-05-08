@@ -773,7 +773,7 @@ export default function OrderDetailPage() {
                 <th className="px-2 py-1 text-left text-[10px] font-medium text-gray-500 min-w-[60px]">Dl</th>
                 <th className="px-2 py-1 text-left text-[10px] font-medium text-gray-500 min-w-[60px]">Szer</th>
                 <th className="px-2 py-1 text-left text-[10px] font-medium text-gray-500 min-w-[44px]">Szt</th>
-                <th className="px-0.5 py-1 text-left text-[10px] font-medium text-gray-500 min-w-[56px]">Prz.</th>
+                <th className="px-1 py-1 text-left text-[10px] font-medium text-gray-500 min-w-[72px]">Prz.</th>
                 <th className="px-1.5 py-1 text-left text-[10px] font-medium text-gray-500 min-w-[200px]">Rodzaj</th>
                 <th className="px-3 py-1 text-right text-[10px] font-medium text-gray-500 min-w-[72px]">m²</th>
                 <th className="px-3 py-1 text-right text-[10px] font-medium text-gray-500 min-w-[88px]">Cena&nbsp;netto</th>
@@ -806,7 +806,7 @@ export default function OrderDetailPage() {
                       <td className="px-2 py-1"><input type="text" inputMode="numeric" value={eiLength} onChange={(e) => setEiLength(e.target.value)} className={ic} onKeyDown={kd} /></td>
                       <td className="px-2 py-1"><input type="text" inputMode="numeric" value={eiWidth} onChange={(e) => setEiWidth(e.target.value)} className={ic} onKeyDown={kd} /></td>
                       <td className="px-2 py-1"><input type="number" value={eiQty} onChange={(e) => setEiQty(e.target.value)} className={`${ic} w-10`} onKeyDown={kd} /></td>
-                      <td className="px-1 py-1"><input type="number" min="1" value={eiPasses} onChange={(e) => setEiPasses(e.target.value)} className={`${ic} w-12`} onKeyDown={kd} placeholder="1" /></td>
+                      <td className="px-1 py-1"><input type="number" min="1" value={eiPasses} onChange={(e) => setEiPasses(e.target.value)} className={`${ic} w-16`} onKeyDown={kd} placeholder="1" /></td>
                       <td className="px-2 py-1">
                         <select value={eiVariantId} onChange={(e) => {
                             if (e.target.value === '__custom__') {
@@ -876,7 +876,7 @@ export default function OrderDetailPage() {
                     </td>
                     <td className="px-1 py-1">
                       <input type="number" min="1" value={newPasses} onChange={(e) => setNewPasses(e.target.value)}
-                        placeholder="1" className={`${inputClass} w-12`}
+                        placeholder="1" className={`${inputClass} w-16`}
                         onKeyDown={(e) => { if (e.key === 'Enter') handleInlineAdd(); if (e.key === 'Escape') setShowInlineAdd(false) }} />
                     </td>
                     <td className="px-2 py-1">
@@ -946,7 +946,7 @@ export default function OrderDetailPage() {
                     </td>
                     <td className="px-1 py-1">
                       <input type="number" min="1" value={newCustomPasses} onChange={(e) => setNewCustomPasses(e.target.value)}
-                        placeholder="1" className={`${inputClass} w-12`}
+                        placeholder="1" className={`${inputClass} w-16`}
                         onKeyDown={(e) => { if (e.key === 'Enter') handleCustomAdd(); if (e.key === 'Escape') setShowCustomAdd(false) }} />
                     </td>
                     <td className="px-2 py-1">
