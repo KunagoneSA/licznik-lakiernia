@@ -772,8 +772,8 @@ export default function OrderDetailPage() {
                 <th className="w-5 px-0.5 py-1"></th>
                 <th className="px-2 py-1 text-left text-[10px] font-medium text-gray-500 min-w-[60px]">Dl</th>
                 <th className="px-2 py-1 text-left text-[10px] font-medium text-gray-500 min-w-[60px]">Szer</th>
-                <th className="px-2 py-1 text-left text-[10px] font-medium text-gray-500 min-w-[44px]">Szt</th>
-                <th className="px-1 py-1 text-left text-[10px] font-medium text-gray-500 min-w-[72px]">Prz.</th>
+                <th className="px-2 py-1 text-left text-[10px] font-medium text-gray-500 min-w-[60px]">Szt</th>
+                <th className="px-1 py-1 text-left text-[10px] font-medium text-gray-500 min-w-[60px]">Prz.</th>
                 <th className="px-1.5 py-1 text-left text-[10px] font-medium text-gray-500 min-w-[200px]">Rodzaj</th>
                 <th className="px-3 py-1 text-right text-[10px] font-medium text-gray-500 min-w-[72px]">m²</th>
                 <th className="px-3 py-1 text-right text-[10px] font-medium text-gray-500 min-w-[88px]">Cena&nbsp;netto</th>
