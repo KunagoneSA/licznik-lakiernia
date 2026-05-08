@@ -44,14 +44,14 @@ function SortableItemRow({ item, idx, lastAddedId, itemsLength, onEdit, onDelete
       <td className="px-0.5 py-0.5 cursor-grab" onClick={(e) => e.stopPropagation()} {...attributes} {...listeners}>
         <GripVertical className="h-3 w-3 text-gray-300" />
       </td>
-      <td className="px-1.5 py-0.5 text-gray-800 tabular-nums">{item.length_mm || '—'}</td>
-      <td className="px-1.5 py-0.5 text-gray-800 tabular-nums">{item.width_mm || '—'}</td>
-      <td className="px-1.5 py-0.5 text-gray-800 tabular-nums">{item.quantity}</td>
+      <td className="px-2 py-0.5 text-gray-800 tabular-nums">{item.length_mm || '—'}</td>
+      <td className="px-2 py-0.5 text-gray-800 tabular-nums">{item.width_mm || '—'}</td>
+      <td className="px-2 py-0.5 text-gray-800 tabular-nums">{item.quantity}</td>
       <td className="px-0.5 py-0.5 text-gray-800 tabular-nums">{item.passes ?? 1}</td>
       <td className="px-1.5 py-0.5 text-gray-600 truncate">{(item.variant as { name: string } | undefined)?.name ?? '—'}</td>
-      <td className="px-2 py-0.5 text-right text-gray-600 tabular-nums">{item.length_mm && item.width_mm ? fmtPL(Number(item.m2), 3) : '—'}</td>
-      <td className="px-2 py-0.5 text-right text-gray-600 tabular-nums">{fmtPL(Number(item.price_per_m2), 0)}{item.length_mm === 0 && item.width_mm === 0 ? '/szt' : ''}</td>
-      <td className="px-2 py-0.5 text-right text-gray-800 font-medium tabular-nums">{fmtPL(Number(item.total_price), 2)}</td>
+      <td className="px-3 py-0.5 text-right text-gray-600 tabular-nums">{item.length_mm && item.width_mm ? fmtPL(Number(item.m2), 3) : '—'}</td>
+      <td className="px-3 py-0.5 text-right text-gray-600 tabular-nums">{fmtPL(Number(item.price_per_m2), 0)}{item.length_mm === 0 && item.width_mm === 0 ? '/szt' : ''}</td>
+      <td className="px-3 py-0.5 text-right text-gray-800 font-medium tabular-nums">{fmtPL(Number(item.total_price), 2)}</td>
       <td className="px-1 py-0.5 text-center">{item.has_handle ? <span className="text-xs text-emerald-600">✓</span> : ''}</td>
       <td className="px-1 py-0.5 text-center">{item.color_surcharge ? <span className="text-xs text-amber-600">✓</span> : ''}</td>
       <td className="px-1 py-0.5 text-center">{item.has_wplyka ? <span className="text-xs text-violet-600">✓</span> : ''}</td>
@@ -770,14 +770,14 @@ export default function OrderDetailPage() {
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
                 <th className="w-5 px-0.5 py-1"></th>
-                <th className="px-1.5 py-1 text-left text-[10px] font-medium text-gray-500">Dl</th>
-                <th className="px-1.5 py-1 text-left text-[10px] font-medium text-gray-500">Szer</th>
-                <th className="px-1.5 py-1 text-left text-[10px] font-medium text-gray-500">Szt</th>
-                <th className="px-0.5 py-1 text-left text-[10px] font-medium text-gray-500 w-14">Prz.</th>
+                <th className="px-2 py-1 text-left text-[10px] font-medium text-gray-500 min-w-[60px]">Dl</th>
+                <th className="px-2 py-1 text-left text-[10px] font-medium text-gray-500 min-w-[60px]">Szer</th>
+                <th className="px-2 py-1 text-left text-[10px] font-medium text-gray-500 min-w-[44px]">Szt</th>
+                <th className="px-0.5 py-1 text-left text-[10px] font-medium text-gray-500 min-w-[56px]">Prz.</th>
                 <th className="px-1.5 py-1 text-left text-[10px] font-medium text-gray-500 min-w-[200px]">Rodzaj</th>
-                <th className="px-2 py-1 text-right text-[10px] font-medium text-gray-500 w-16">m²</th>
-                <th className="px-2 py-1 text-right text-[10px] font-medium text-gray-500 w-20">Cena&nbsp;netto</th>
-                <th className="px-2 py-1 text-right text-[10px] font-medium text-gray-500 w-24">Wartość&nbsp;netto</th>
+                <th className="px-3 py-1 text-right text-[10px] font-medium text-gray-500 min-w-[72px]">m²</th>
+                <th className="px-3 py-1 text-right text-[10px] font-medium text-gray-500 min-w-[88px]">Cena&nbsp;netto</th>
+                <th className="px-3 py-1 text-right text-[10px] font-medium text-gray-500 min-w-[104px]">Wartość&nbsp;netto</th>
                 <th className="px-1 py-1 text-center text-[10px] font-medium text-gray-500">U</th>
                 <th className="px-1 py-1 text-center text-[10px] font-medium text-gray-500">K</th>
                 <th className="px-1 py-1 text-center text-[10px] font-medium text-gray-500">W</th>
