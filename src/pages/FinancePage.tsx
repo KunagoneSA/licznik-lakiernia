@@ -349,7 +349,7 @@ export default function FinancePage() {
                 <th className="px-3 py-1.5 text-left font-medium text-gray-500">Data</th>
                 <th className="px-3 py-1.5 text-left font-medium text-gray-500">Produkt</th>
                 <th className="px-3 py-1.5 text-right font-medium text-gray-500">Ilość</th>
-                <th className="px-3 py-1.5 text-right font-medium text-gray-500">Kwota</th>
+                <th className="px-3 py-1.5 text-right font-medium text-gray-500">Kwota netto</th>
               </tr>
             </thead>
             <tbody>
@@ -390,7 +390,7 @@ export default function FinancePage() {
                 <th className="px-3 py-1.5 text-left font-medium text-gray-500">Dostawca</th>
                 <th className="px-3 py-1.5 text-left font-medium text-gray-500">Produkty</th>
                 <th className="px-3 py-1.5 text-right font-medium text-gray-500">Zakupów</th>
-                <th className="px-3 py-1.5 text-right font-medium text-gray-500">Kwota</th>
+                <th className="px-3 py-1.5 text-right font-medium text-gray-500">Kwota netto</th>
                 <th className="px-3 py-1.5 text-right font-medium text-gray-500">Udział</th>
               </tr>
             </thead>

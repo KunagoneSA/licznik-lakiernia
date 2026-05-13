@@ -420,8 +420,8 @@ export default function PaintPurchasesPage() {
                 <tr className="bg-emerald-50 border-b border-emerald-200">
                   <th className="px-3 py-1.5 text-left text-emerald-700">Produkt</th>
                   <th className="px-3 py-1.5 text-right text-emerald-700">Ilość</th>
-                  <th className="px-3 py-1.5 text-right text-emerald-700">Cena</th>
-                  <th className="px-3 py-1.5 text-right text-emerald-700">Suma</th>
+                  <th className="px-3 py-1.5 text-right text-emerald-700">Cena netto</th>
+                  <th className="px-3 py-1.5 text-right text-emerald-700">Suma netto</th>
                   <th className="px-3 py-1.5 text-left text-emerald-700">Kolor</th>
                   <th className="px-3 py-1.5 w-8"></th>
                 </tr>
@@ -587,8 +587,8 @@ export default function PaintPurchasesPage() {
                 <th className="px-2.5 py-2 text-left text-xs font-medium text-gray-500 max-w-[160px]">Dostawca</th>
                 <th className="px-2.5 py-2 text-left text-xs font-medium text-gray-500">Produkt</th>
                 <th className="px-2.5 py-2 text-right text-xs font-medium text-gray-500 w-20">Ilość</th>
-                <th className="px-2.5 py-2 text-right text-xs font-medium text-gray-500 w-20">Cena</th>
-                <th className="px-2.5 py-2 text-right text-xs font-medium text-gray-500 w-24">Suma</th>
+                <th className="px-2.5 py-2 text-right text-xs font-medium text-gray-500 w-20">Cena netto</th>
+                <th className="px-2.5 py-2 text-right text-xs font-medium text-gray-500 w-24">Suma netto</th>
                 <th className="px-2.5 py-2 text-center text-xs font-medium text-gray-500 w-36">Status</th>
                 <th className="px-2.5 py-2 text-left text-xs font-medium text-gray-500 w-24">Kolor</th>
                 <th className="px-2.5 py-2 text-left text-xs font-medium text-gray-500">Komentarz</th>
@@ -736,7 +736,7 @@ export default function PaintPurchasesPage() {
                   <th className="px-3 py-1.5 text-left font-medium text-gray-500">Dostawca</th>
                   <th className="px-3 py-1.5 text-left font-medium text-gray-500">Produkty</th>
                   <th className="px-3 py-1.5 text-right font-medium text-gray-500">Zakupów</th>
-                  <th className="px-3 py-1.5 text-right font-medium text-gray-500">Kwota</th>
+                  <th className="px-3 py-1.5 text-right font-medium text-gray-500">Kwota netto</th>
                 </tr>
               </thead>
               <tbody>
@@ -1055,7 +1055,7 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
                       </select>
                     </div>
                     <div className="w-24">
-                      <label className="block text-[10px] text-gray-400 mb-1">Cena</label>
+                      <label className="block text-[10px] text-gray-400 mb-1">Cena netto</label>
                       <input type="number" step="0.01" value={line.unitPrice || ''} onChange={e => updateLine(i, { unitPrice: Number(e.target.value) })}
                         className={fieldCls} />
                     </div>
@@ -1066,7 +1066,7 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
                         className={fieldCls} />
                     </div>
                     <div className="w-20 text-right shrink-0">
-                      <label className="block text-[10px] text-gray-400 mb-1">Suma</label>
+                      <label className="block text-[10px] text-gray-400 mb-1">Suma netto</label>
                       <div className="h-[38px] flex items-center justify-end text-sm font-semibold text-amber-600">{fmt(line.quantity * line.unitPrice)} zł</div>
                     </div>
                     {lines.length > 1 && (
