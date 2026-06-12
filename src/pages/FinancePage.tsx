@@ -16,7 +16,7 @@ function fmtPL(n: number, d = 2) {
 
 interface OrderWithItems {
   id: string; number: number; status: string; created_at: string; ready_date: string | null
-  client: { name: string } | null; order_items: { total_price: number; m2: number }[]
+  client: { name: string } | null; order_items: { total_price: number; m2: number; quantity: number; has_handle: boolean; has_wplyka: boolean; color_surcharge: boolean }[]
 }
 
 export default function FinancePage() {
@@ -55,15 +55,19 @@ export default function FinancePage() {
   const [editFixedAmount, setEditFixedAmount] = useState('')
   const { toast } = useToast()
 
+  const [variants, setVariants] = useState<{ name: string; default_price_per_m2: number }[]>([])
+
   const fetchData = useCallback(async () => {
     setLoading(true)
-    const [ordersRes, purchasesRes, extraRes, fixedRes] = await Promise.all([
-      supabase.from('orders').select('id, number, status, created_at, ready_date, client:clients(name), order_items(total_price, m2)')
+    const [ordersRes, purchasesRes, extraRes, fixedRes, variantsRes] = await Promise.all([
+      supabase.from('orders').select('id, number, status, created_at, ready_date, client:clients(name), order_items(total_price, m2, quantity, has_handle, has_wplyka, color_surcharge)')
         .in('status', ['gotowe', 'wydane', 'fv_wystawiona', 'zapłacone']),
       supabase.from('paint_purchases').select('*, supplier:suppliers(name)').gte('date', dateFrom).lte('date', dateTo).order('date', { ascending: false }),
       supabase.from('extra_costs').select('*').gte('date', dateFrom).lte('date', dateTo).order('date', { ascending: true }),
       supabase.from('fixed_costs').select('*').eq('month', `${year}-${String(month + 1).padStart(2, '0')}`).order('name'),
+      supabase.from('painting_variants').select('name, default_price_per_m2'),
     ])
+    setVariants((variantsRes.data ?? []) as { name: string; default_price_per_m2: number }[])
     const allOrders = (ordersRes.data as unknown as OrderWithItems[]) ?? []
     setOrders(allOrders.filter(o => {
       if (o.ready_date) return o.ready_date >= dateFrom && o.ready_date <= dateTo
@@ -81,7 +85,20 @@ export default function FinancePage() {
   const filteredPurchases = purchases
 
   const HOURLY_RATE = 45
-  const revenue = useMemo(() => orders.reduce((s, o) => s + o.order_items.reduce((si, i) => si + Number(i.total_price), 0), 0), [orders])
+
+  const handlePrice = useMemo(() => variants.find(v => v.name === 'Uchwyt frezowany')?.default_price_per_m2 ?? 0, [variants])
+  const wplykaPrice = useMemo(() => variants.find(v => v.name.toLowerCase().includes('wpyłka') || v.name.toLowerCase().includes('wpłyka') || v.name.toLowerCase().includes('wypłka'))?.default_price_per_m2 ?? 0, [variants])
+  const colorSurchargePrice = useMemo(() => variants.find(v => v.name === 'Dopłata do koloru')?.default_price_per_m2 ?? 0, [variants])
+
+  const calcOrderValue = (items: { total_price: number; m2: number; quantity: number; has_handle: boolean; has_wplyka: boolean; color_surcharge: boolean }[]) => {
+    const base = items.reduce((s, i) => s + Number(i.total_price), 0)
+    const handles = items.filter(i => i.has_handle).reduce((s, i) => s + handlePrice * Number(i.quantity), 0)
+    const wplyka = items.filter(i => i.has_wplyka).reduce((s, i) => s + wplykaPrice * Number(i.quantity), 0)
+    const colorSurch = items.filter(i => i.color_surcharge).reduce((s, i) => s + colorSurchargePrice * Number(i.m2), 0)
+    return base + handles + wplyka + colorSurch
+  }
+
+  const revenue = useMemo(() => orders.reduce((s, o) => s + calcOrderValue(o.order_items), 0), [orders, handlePrice, wplykaPrice, colorSurchargePrice])
   const totalM2 = useMemo(() => orders.reduce((s, o) => s + o.order_items.reduce((si, i) => si + Number(i.m2), 0), 0), [orders])
   const laborCost = useMemo(() => filteredLogs.reduce((s, l) => s + Number(l.hours) * HOURLY_RATE, 0), [filteredLogs])
   const totalHours = useMemo(() => filteredLogs.reduce((s, l) => s + Number(l.hours), 0), [filteredLogs])
@@ -146,7 +163,7 @@ export default function FinancePage() {
     orders.map((o) => ({
       number: o.number, year: new Date(o.created_at).getFullYear() % 100,
       client: o.client?.name ?? '—',
-      revenue: o.order_items.reduce((s, i) => s + Number(i.total_price), 0),
+      revenue: calcOrderValue(o.order_items),
       m2: o.order_items.reduce((s, i) => s + Number(i.m2), 0),
     })).filter((o) => o.revenue > 0).sort((a, b) => b.revenue - a.revenue),
   [orders])
