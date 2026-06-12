@@ -17,6 +17,7 @@ import ProductsPage from './pages/ProductsPage'
 import DailyWorkLogPage from './pages/DailyWorkLogPage'
 import MonthlyReportPage from './pages/MonthlyReportPage'
 import ExtraCostsPage from './pages/ExtraCostsPage'
+import TicketsPage from './pages/TicketsPage'
 
 export const router = createBrowserRouter([
   {
@@ -45,6 +46,7 @@ export const router = createBrowserRouter([
           { path: 'dziennik-pracy', element: <DailyWorkLogPage /> },
           { path: 'raport-miesieczny', element: <MonthlyReportPage /> },
           { path: 'dodatkowe-koszty', element: <ExtraCostsPage /> },
+          { path: 'zgloszenia', element: <TicketsPage /> },
         ],
       },
     ],
