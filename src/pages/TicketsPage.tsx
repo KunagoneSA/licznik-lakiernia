@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Plus, Trash2, X, AlertTriangle, MessageSquare, CheckCircle2 } from 'lucide-react'
+import { Plus, Trash2, X, AlertTriangle, MessageSquare, CheckCircle2, ShoppingCart } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../contexts/ToastContext'
 
-type TicketType = 'awaria' | 'uwaga'
+type TicketType = 'awaria' | 'uwaga' | 'zapotrzebowanie'
 type TicketStatus = 'otwarte' | 'w_trakcie' | 'zakonczone'
 
 interface Ticket {
@@ -17,8 +17,8 @@ interface Ticket {
   created_by_email: string | null
 }
 
-const TYPE_LABEL: Record<TicketType, string> = { awaria: 'Awaria', uwaga: 'Uwaga' }
-const TYPE_COLOR: Record<TicketType, string> = { awaria: 'bg-red-100 text-red-700', uwaga: 'bg-blue-100 text-blue-700' }
+const TYPE_LABEL: Record<TicketType, string> = { awaria: 'Awaria', uwaga: 'Uwaga', zapotrzebowanie: 'Zapotrzebowanie' }
+const TYPE_COLOR: Record<TicketType, string> = { awaria: 'bg-red-100 text-red-700', uwaga: 'bg-blue-100 text-blue-700', zapotrzebowanie: 'bg-purple-100 text-purple-700' }
 const STATUS_LABEL: Record<TicketStatus, string> = { otwarte: 'Otwarte', w_trakcie: 'W trakcie', zakonczone: 'Zakończone' }
 const STATUS_COLOR: Record<TicketStatus, string> = {
   otwarte: 'bg-amber-100 text-amber-700',
@@ -122,7 +122,7 @@ export default function TicketsPage() {
       {/* New ticket form */}
       {showForm && (
         <div className="rounded-lg border border-amber-200 bg-amber-50/30 p-4 space-y-3">
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <button onClick={() => setNewType('awaria')}
               className={`flex items-center gap-1 rounded px-3 py-1.5 text-xs font-medium ${newType === 'awaria' ? 'bg-red-500 text-white' : 'bg-white border border-gray-300 text-gray-700'}`}>
               <AlertTriangle className="h-3 w-3" /> Awaria
@@ -130,6 +130,10 @@ export default function TicketsPage() {
             <button onClick={() => setNewType('uwaga')}
               className={`flex items-center gap-1 rounded px-3 py-1.5 text-xs font-medium ${newType === 'uwaga' ? 'bg-blue-500 text-white' : 'bg-white border border-gray-300 text-gray-700'}`}>
               <MessageSquare className="h-3 w-3" /> Uwaga
+            </button>
+            <button onClick={() => setNewType('zapotrzebowanie')}
+              className={`flex items-center gap-1 rounded px-3 py-1.5 text-xs font-medium ${newType === 'zapotrzebowanie' ? 'bg-purple-500 text-white' : 'bg-white border border-gray-300 text-gray-700'}`}>
+              <ShoppingCart className="h-3 w-3" /> Zapotrzebowanie
             </button>
           </div>
           <input type="text" placeholder="Tytuł zgłoszenia..." value={newTitle} onChange={(e) => setNewTitle(e.target.value)}
@@ -155,11 +159,13 @@ export default function TicketsPage() {
             <div key={t.id} className="rounded-lg border border-gray-200 bg-white p-3">
               {editId === t.id ? (
                 <div className="space-y-2">
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     <button onClick={() => setEditType('awaria')}
                       className={`rounded px-2 py-1 text-xs font-medium ${editType === 'awaria' ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-600'}`}>Awaria</button>
                     <button onClick={() => setEditType('uwaga')}
                       className={`rounded px-2 py-1 text-xs font-medium ${editType === 'uwaga' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600'}`}>Uwaga</button>
+                    <button onClick={() => setEditType('zapotrzebowanie')}
+                      className={`rounded px-2 py-1 text-xs font-medium ${editType === 'zapotrzebowanie' ? 'bg-purple-500 text-white' : 'bg-gray-100 text-gray-600'}`}>Zapotrzebowanie</button>
                   </div>
                   <input type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)}
                     className="w-full rounded border border-gray-300 px-2 py-1 text-sm outline-none focus:border-amber-500" autoFocus />
