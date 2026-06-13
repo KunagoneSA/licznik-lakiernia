@@ -66,6 +66,12 @@ export default function TicketsPage() {
       status: 'otwarte',
       created_by_email: user?.email ?? null,
     })
+    // Send Telegram notification for zapotrzebowanie type
+    if (newType === 'zapotrzebowanie') {
+      const author = (user?.email ?? '').split('@')[0]
+      const text = `🛒 <b>Nowe zapotrzebowanie</b>\n\n<b>${newTitle.trim()}</b>${newDescription.trim() ? '\n\n' + newDescription.trim() : ''}\n\n<i>Dodał: ${author}</i>`
+      supabase.functions.invoke('notify-telegram', { body: { text } }).catch(() => {})
+    }
     setNewTitle(''); setNewDescription(''); setNewType('awaria'); setShowForm(false)
     toast('Zgłoszenie dodane'); fetchTickets()
   }
