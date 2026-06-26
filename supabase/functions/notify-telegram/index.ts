@@ -13,9 +13,9 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try {
-    const { text } = await req.json()
-    if (!text) {
-      return new Response(JSON.stringify({ error: 'Missing text' }), {
+    const { text, photo_url } = await req.json()
+    if (!text && !photo_url) {
+      return new Response(JSON.stringify({ error: 'Missing text or photo_url' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
@@ -24,10 +24,19 @@ Deno.serve(async (req) => {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
-    const tgRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+
+    const tgUrl = photo_url
+      ? `https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`
+      : `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`
+
+    const tgBody = photo_url
+      ? { chat_id: CHAT_ID, photo: photo_url, caption: text, parse_mode: 'HTML' }
+      : { chat_id: CHAT_ID, text, parse_mode: 'HTML' }
+
+    const tgRes = await fetch(tgUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: CHAT_ID, text, parse_mode: 'HTML' }),
+      body: JSON.stringify(tgBody),
     })
     const tgData = await tgRes.json()
     if (!tgData.ok) {
