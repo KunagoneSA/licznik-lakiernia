@@ -103,7 +103,9 @@ async function callClaude(headers: Record<string, string>, messages: any[]) {
     method: 'POST',
     headers,
     body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
+      // claude-sonnet-4-6 NIE istnieje → API zwracało 404 i faktury zakupów się nie zaciągały
+      // (zgłoszenie d6e07154). claude-sonnet-5 to aktualny, wydajny model do czytania dokumentów.
+      model: 'claude-sonnet-5',
       max_tokens: 2048,
       messages,
     }),
