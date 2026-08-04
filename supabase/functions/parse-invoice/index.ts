@@ -62,8 +62,18 @@ Pozostałe zasady:
 }
 
 function parseJson(text: string) {
-  const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/)
-  return JSON.parse(jsonMatch ? jsonMatch[1].trim() : text.trim())
+  // 1) blok w ```json ... ``` (markdown)
+  const fence = text.match(/```(?:json)?\s*([\s\S]*?)```/)
+  if (fence) return JSON.parse(fence[1].trim())
+  // 2) czysty JSON
+  const trimmed = text.trim()
+  try { return JSON.parse(trimmed) } catch { /* spróbuj wyciąć obiekt niżej */ }
+  // 3) Claude czasem dodaje zdanie przed/po JSON-ie („Oto dane:" itp.) — wycinamy pierwszy pełny
+  //    obiekt { ... }. To była główna przyczyna „Nie udało się sparsować odpowiedzi" (Edyta 8a60ee92).
+  const first = trimmed.indexOf('{')
+  const last = trimmed.lastIndexOf('}')
+  if (first >= 0 && last > first) return JSON.parse(trimmed.slice(first, last + 1))
+  throw new Error('Brak poprawnego JSON w odpowiedzi')
 }
 
 function validateInvoice(parsed: any): { valid: boolean; computedTotal: number; expectedTotal: number; errors: string[] } {
