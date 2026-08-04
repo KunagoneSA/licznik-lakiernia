@@ -116,7 +116,9 @@ async function callClaude(headers: Record<string, string>, messages: any[]) {
       // claude-sonnet-4-6 NIE istnieje → API zwracało 404 i faktury zakupów się nie zaciągały
       // (zgłoszenie d6e07154). claude-sonnet-5 to aktualny, wydajny model do czytania dokumentów.
       model: 'claude-sonnet-5',
-      max_tokens: 2048,
+      // 2048 było za mało: przy fakturach z wieloma pozycjami JSON się ucinał (+ część budżetu zjada
+      // „extended thinking" sonnet-5). 8192 daje zapas na duże faktury lakiernicze (Edyta 8a60ee92).
+      max_tokens: 8192,
       messages,
     }),
   })
@@ -127,7 +129,10 @@ async function callClaude(headers: Record<string, string>, messages: any[]) {
   }
 
   const result = await response.json()
-  return result.content?.[0]?.text ?? ''
+  // claude-sonnet-5 ma domyślnie WŁĄCZONE „extended thinking" → pierwszy blok odpowiedzi to `thinking`
+  // (bez pola .text), a właściwa treść jest w bloku `text`. Kod brał content[0] (thinking) → text1 był
+  // PUSTY → „Nie udało się sparsować odpowiedzi" dla KAŻDEGO PDF-a (Edyta 8a60ee92). Bierzemy blok `text`.
+  return result.content?.find((b: any) => b.type === 'text')?.text ?? ''
 }
 
 Deno.serve(async (req) => {
