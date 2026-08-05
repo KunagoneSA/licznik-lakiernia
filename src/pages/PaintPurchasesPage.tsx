@@ -896,6 +896,15 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
     }
   }
 
+  // Jednym kliknięciem dodaj WSZYSTKIE nierozpoznane pozycje jako nowe materiały — inaczej przy fakturze
+  // z wieloma nowymi farbami przycisk „Zapisz” zostaje wyłączony i faktura się nie zapisuje (Edyta 8a60ee92:
+  // „wgrałam, ale nie widać w zakupach” — bo bez dopisania produktów nie dało się zapisać).
+  const addAllMissingProducts = async () => {
+    for (let i = 0; i < lines.length; i++) {
+      if (!lines[i].productId && prefill?.invoiceItems?.[i]?.product) await addProductFromInvoice(i)
+    }
+  }
+  const missingCount = lines.filter(l => !l.productId).length
   const canSave = supplierId && lines.every(l => l.productId && l.quantity > 0)
 
   const handleSave = async () => {
@@ -1097,7 +1106,22 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
             <span className="text-gray-500">Suma:</span> <span className="text-amber-600 font-bold">{fmt(grandTotal)} zł</span>
           </div>
         </div>
-        <div className="mt-4 flex justify-end gap-2">
+        {missingCount > 0 && (
+          <div className="mt-4 flex items-center gap-3 rounded-lg bg-red-50 ring-1 ring-red-200 px-3 py-2">
+            <span className="text-xs text-red-700">
+              {missingCount === 1 ? '1 pozycja nie ma' : `${missingCount} pozycje nie mają`} przypisanego materiału —
+              bez tego nie zapiszesz faktury. Dopisz je z katalogu albo:
+            </span>
+            <button onClick={addAllMissingProducts} type="button"
+              className="ml-auto shrink-0 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-500">
+              + Dodaj wszystkie brakujące jako nowe materiały
+            </button>
+          </div>
+        )}
+        <div className="mt-4 flex items-center justify-end gap-2">
+          {!canSave && missingCount === 0 && (
+            <span className="mr-auto text-xs text-gray-400">{!supplierId ? 'Wybierz dostawcę, aby zapisać.' : 'Uzupełnij ilości pozycji.'}</span>
+          )}
           <button onClick={onClose} className="rounded-lg px-4 py-2 text-sm text-gray-500 hover:bg-gray-100">Anuluj</button>
           <button onClick={handleSave} disabled={!canSave || saving}
             className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-400 disabled:opacity-50">
