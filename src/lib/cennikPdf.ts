@@ -2,7 +2,7 @@ import type { PaintingVariant } from '../types/database'
 
 // Dane firmy w nagłówku cennika (te same co na proformach w kuna-erp)
 const FIRMA = {
-  nazwa: 'Kunagone Spółka Akcyjna',
+  nazwa: 'Kunagone - lakiernia i renowacja mebli',
   adres: 'Pl. Kilińskiego 1, 32-660 Chełmek',
   nip: 'NIP: 549-244-92-85',
   tel: 'tel. +48 882-905-145',
@@ -69,7 +69,7 @@ export function buildCennikDd(variants: PaintingVariant[], logo: string | null) 
     content: [
       {
         columns: [
-          logo ? { image: logo, fit: [80, 80] as [number, number], width: 90 } : { text: 'KUNAGONE', fontSize: 22, bold: true, width: 90 },
+          logo ? { image: logo, fit: [65, 65] as [number, number], width: 75 } : { text: 'KUNAGONE', fontSize: 22, bold: true, width: 90 },
           {
             width: '*',
             alignment: 'right' as const,
@@ -85,24 +85,24 @@ export function buildCennikDd(variants: PaintingVariant[], logo: string | null) 
         columnGap: 20,
       },
       { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1.5, lineColor: AMBER }], margin: [0, 14, 0, 18] as [number, number, number, number] },
-      { text: 'Cennik usług lakierowania formatek', fontSize: 16, bold: true, margin: [0, 0, 0, 2] as [number, number, number, number] },
-      { text: `Obowiązuje od: ${dzis}`, fontSize: 9, color: GRAY, margin: [0, 0, 0, 14] as [number, number, number, number] },
+      { text: 'Cennik usług lakierowania formatek', fontSize: 14, bold: true, margin: [0, 0, 0, 2] as [number, number, number, number] },
+      { text: `Obowiązuje od: ${dzis}`, fontSize: 8, color: GRAY, margin: [0, 0, 0, 10] as [number, number, number, number] },
       {
         table: {
           headerRows: 1,
-          widths: hasMdf ? ['*', 80, 80, 55] : ['*', 90, 60],
+          widths: hasMdf ? ['*', 65, 65, 45] : ['*', 75, 50],
           body: [headerRow, ...rows],
         },
         layout: {
           hLineWidth: (i: number, node: { table: { body: unknown[] } }) => (i === 0 || i === 1 || i === node.table.body.length ? 1 : 0.5),
           vLineWidth: () => 0,
           hLineColor: (i: number) => (i === 1 ? AMBER : BORDER),
-          paddingTop: () => 6,
-          paddingBottom: () => 6,
-          paddingLeft: () => 8,
-          paddingRight: () => 8,
+          paddingTop: () => 3.5,
+          paddingBottom: () => 3.5,
+          paddingLeft: () => 6,
+          paddingRight: () => 6,
         },
-        fontSize: 10,
+        fontSize: 9,
       },
       { text: 'Podane ceny są cenami netto w PLN za m². Do cen należy doliczyć podatek VAT.', fontSize: 8, color: GRAY, margin: [0, 12, 0, 0] as [number, number, number, number] },
       { text: 'Cennik nie stanowi oferty handlowej w rozumieniu art. 66 Kodeksu cywilnego.', fontSize: 8, color: GRAY, margin: [0, 2, 0, 0] as [number, number, number, number] },
