@@ -31,7 +31,12 @@ async function loadLogoDataUrl(): Promise<string | null> {
   }
 }
 
-export function buildCennikDd(variants: PaintingVariant[], logo: string | null) {
+export interface CennikPdfOptions {
+  /** Nazwa klienta — pojawia się pod tytułem („Cennik przygotowany dla: …”) i w nazwie pliku */
+  clientName?: string
+}
+
+export function buildCennikDd(variants: PaintingVariant[], logo: string | null, options: CennikPdfOptions = {}) {
   // Parowanie wariantów głównych z ich odpowiednikami "(+ MDF)" — ta sama logika co w CennikPage
   const mdfVariants = new Map(
     variants
@@ -86,6 +91,9 @@ export function buildCennikDd(variants: PaintingVariant[], logo: string | null) 
       },
       { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1.5, lineColor: AMBER }], margin: [0, 14, 0, 18] as [number, number, number, number] },
       { text: 'Cennik usług lakierowania formatek', fontSize: 14, bold: true, margin: [0, 0, 0, 2] as [number, number, number, number] },
+      ...(options.clientName
+        ? [{ text: `Cennik przygotowany dla: ${options.clientName}`, fontSize: 10, bold: true, color: AMBER, margin: [0, 2, 0, 0] as [number, number, number, number] }]
+        : []),
       { text: `Obowiązuje od: ${dzis}`, fontSize: 8, color: GRAY, margin: [0, 0, 0, 10] as [number, number, number, number] },
       {
         table: {
@@ -123,7 +131,7 @@ export function buildCennikDd(variants: PaintingVariant[], logo: string | null) 
   return dd
 }
 
-export async function generateCennikPdf(variants: PaintingVariant[]) {
+export async function generateCennikPdf(variants: PaintingVariant[], options: CennikPdfOptions = {}) {
   // pdfmake ładowany dopiero przy kliknięciu, żeby nie obciążać startu aplikacji
   const [pdfMakeModule, vfsModule] = await Promise.all([
     import('pdfmake/build/pdfmake'),
@@ -133,9 +141,10 @@ export async function generateCennikPdf(variants: PaintingVariant[]) {
   pdfMake.addVirtualFileSystem(vfsModule.default ?? vfsModule)
 
   const logo = await loadLogoDataUrl()
-  const dd = buildCennikDd(variants, logo)
+  const dd = buildCennikDd(variants, logo, options)
 
-  const nazwaPliku = `Cennik lakierowania Kunagone ${new Date().toISOString().slice(0, 10)}.pdf`
+  const czlonKlient = options.clientName ? ` - ${options.clientName.replace(/[\\/:*?"<>|]/g, '')}` : ''
+  const nazwaPliku = `Cennik lakierowania Kunagone${czlonKlient} ${new Date().toISOString().slice(0, 10)}.pdf`
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   pdfMake.createPdf(dd as any).download(nazwaPliku)
 }
