@@ -1,10 +1,12 @@
 import { useCallback, useRef, useState } from 'react'
-import { Building2, Check, ChevronDown, ChevronUp, Pencil, Plus, Save, Trash2, User, X } from 'lucide-react'
+import { Building2, Check, ChevronDown, ChevronUp, FileDown, Pencil, Plus, Save, Trash2, User, X } from 'lucide-react'
 import { useClients } from '../hooks/useClients'
 import { usePaintingVariants } from '../hooks/usePaintingVariants'
 import { useClientPricing } from '../hooks/useClientPricing'
 import { supabase } from '../lib/supabase'
 import { useToast } from '../contexts/ToastContext'
+import { generateCennikPdf } from '../lib/cennikPdf'
+import CennikPdfHistory from '../components/CennikPdfHistory'
 import type { Client, ClientType } from '../types/database'
 
 export default function ClientsPage() {
@@ -33,6 +35,28 @@ export default function ClientsPage() {
   const [newVarName, setNewVarName] = useState('')
   const [newVarPrice, setNewVarPrice] = useState('')
   const [newVarSides, setNewVarSides] = useState(2)
+  const [generatingPdf, setGeneratingPdf] = useState(false)
+  const [historyRefresh, setHistoryRefresh] = useState(0)
+
+  const handleClientPdf = async (clientId: string, clientName: string) => {
+    if (generatingPdf) return
+    setGeneratingPdf(true)
+    try {
+      // Ceny efektywne klienta: indywidualna z client_pricing albo domyślna z cennika
+      const effectiveVariants = variants.map((v) => ({
+        ...v,
+        default_price_per_m2: pricing.find((p) => p.variant_id === v.id)?.price_per_m2 ?? v.default_price_per_m2,
+      }))
+      await generateCennikPdf(effectiveVariants, { clientId, clientName })
+      setHistoryRefresh((n) => n + 1)
+      toast('Cennik PDF wygenerowany')
+    } catch (err) {
+      console.error('Błąd generowania PDF cennika klienta:', err)
+      toast('Nie udało się wygenerować PDF', 'error')
+    } finally {
+      setGeneratingPdf(false)
+    }
+  }
 
   const mdfVariantsMap = new Map(
     variants.filter((v) => v.name.includes('(+ MDF)')).map((v) => [v.name.replace(' (+ MDF)', ''), v])
@@ -370,10 +394,16 @@ export default function ClientsPage() {
                 {sel.type === 'company' ? <Building2 className="h-4 w-4 text-blue-500" /> : <User className="h-4 w-4 text-violet-500" />}
                 <h2 className="text-sm font-semibold text-gray-700">Cennik — {sel.name}</h2>
               </div>
-              <button onClick={() => setShowAddVariant(true)}
-                className="flex items-center gap-1 rounded-md bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-600 hover:bg-amber-100">
-                <Plus className="h-3 w-3" /> Dodaj wariant
-              </button>
+              <div className="flex items-center gap-1.5">
+                <button onClick={() => handleClientPdf(sel.id, sel.name)} disabled={generatingPdf || pricingLoading || variants.length === 0}
+                  className="flex items-center gap-1 rounded-md bg-white border border-gray-300 px-2 py-1 text-[11px] font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50">
+                  <FileDown className="h-3 w-3" /> {generatingPdf ? 'Generuję…' : 'Pobierz PDF'}
+                </button>
+                <button onClick={() => setShowAddVariant(true)}
+                  className="flex items-center gap-1 rounded-md bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-600 hover:bg-amber-100">
+                  <Plus className="h-3 w-3" /> Dodaj wariant
+                </button>
+              </div>
             </div>
 
             {showAddVariant && (
@@ -502,6 +532,8 @@ export default function ClientsPage() {
                 </table>
               </div>
             )}
+
+            <CennikPdfHistory clientId={selectedId} refreshToken={historyRefresh} />
           </div>
         )
       })()}
