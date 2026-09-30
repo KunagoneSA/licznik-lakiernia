@@ -27,6 +27,10 @@ export default function PaintPurchasesPage() {
   const [dateFrom, setDateFrom] = useState(thisMonthStart)
   const [dateTo, setDateTo] = useState(thisMonthEnd)
   const { toast } = useToast()
+  // Zakupy dla lakierni wpisywane w Zaopatrzeniu kuna-erp (kategoria „lakiernia") — Anna wgrywa tam faktury
+  // na filtry, rękawiczki, czyściwo. Pokazujemy je tutaj, bo Finanse widzi tylko administrator, a Anna
+  // patrzy na zakupy (cb3e6f9f: „nie widzę tabeli zakupy z zaopatrzenia ERP w lakierni").
+  const [zakupyErp, setZakupyErp] = useState<{ id: string; numer: string | null; data: string | null; opis: string | null; zamowienie: string | null; dostawca: string | null; koszt: number | null; koszt_dostawy: number | null; waluta: string | null }[]>([])
 
   // Inline editing state
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -59,6 +63,12 @@ export default function PaintPurchasesPage() {
     if (dateTo) query = query.lte('date', dateTo)
     const { data } = await query
     setPurchases((data as any[])?.map(d => ({ ...d, supplier: d.supplier ?? undefined, product_ref: d.product_ref ?? undefined })) ?? [])
+    let qErp = supabase.from('erp_supplies').select('id, numer, data, opis, zamowienie, dostawca, koszt, koszt_dostawy, waluta')
+      .eq('kategoria', 'lakiernia').order('data', { ascending: false })
+    if (dateFrom) qErp = qErp.gte('data', dateFrom)
+    if (dateTo) qErp = qErp.lte('data', dateTo)
+    const erpRes = await qErp
+    setZakupyErp(erpRes.error ? [] : (erpRes.data ?? []) as typeof zakupyErp)
     setLoading(false)
   }, [dateFrom, dateTo])
 
@@ -715,6 +725,48 @@ export default function PaintPurchasesPage() {
         </div>
       )}
 
+      {/* Zakupy z Zaopatrzenia ERP — te same pozycje, które Finanse wliczają w koszty materiałów. */}
+      {zakupyErp.length > 0 && (
+        <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+          <div className="bg-gray-50 px-3 py-1.5 flex items-center justify-between border-b border-gray-200">
+            <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Zakupy z Zaopatrzenia (ERP)</span>
+            <span className="text-[10px] text-gray-400">wpisywane w kuna-erp, kategoria „Lakiernia" · wliczone w koszty lakierni</span>
+          </div>
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50/50">
+                <th className="px-3 py-1.5 text-left font-medium text-gray-500">Data</th>
+                <th className="px-3 py-1.5 text-left font-medium text-gray-500">Nr</th>
+                <th className="px-3 py-1.5 text-left font-medium text-gray-500">Co</th>
+                <th className="px-3 py-1.5 text-left font-medium text-gray-500">Dostawca</th>
+                <th className="px-3 py-1.5 text-right font-medium text-gray-500">Kwota netto</th>
+              </tr>
+            </thead>
+            <tbody>
+              {zakupyErp.map((z, i) => {
+                const obca = (z.waluta || 'PLN') !== 'PLN'
+                const kwota = (Number(z.koszt) || 0) + (Number(z.koszt_dostawy) || 0)
+                return (
+                  <tr key={z.id} className={`border-b border-gray-50 ${i % 2 === 1 ? 'bg-gray-50/30' : ''} ${obca ? 'opacity-50' : ''}`}>
+                    <td className="px-3 py-1 text-gray-600">{z.data}</td>
+                    <td className="px-3 py-1 text-gray-500">{z.numer || '—'}</td>
+                    <td className="px-3 py-1 text-gray-800">{z.opis || z.zamowienie || '—'}</td>
+                    <td className="px-3 py-1 text-gray-600">{z.dostawca || '—'}</td>
+                    <td className="px-3 py-1 text-right text-amber-600 tabular-nums">{fmt(kwota)} {obca ? z.waluta : 'zł'}</td>
+                  </tr>
+                )
+              })}
+              <tr className="bg-gray-50 font-medium">
+                <td className="px-3 py-1.5 text-gray-700" colSpan={4}>Razem</td>
+                <td className="px-3 py-1.5 text-right text-amber-600 tabular-nums">
+                  {fmt(zakupyErp.filter(z => (z.waluta || 'PLN') === 'PLN').reduce((s, z) => s + (Number(z.koszt) || 0) + (Number(z.koszt_dostawy) || 0), 0))} zł
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
+
       {/* Supplier summary */}
       {filtered.length > 0 && (() => {
         const sMap = new Map<string, { total: number; count: number; products: Set<string> }>()
@@ -896,6 +948,15 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
     }
   }
 
+  // Jednym kliknięciem dodaj WSZYSTKIE nierozpoznane pozycje jako nowe materiały — inaczej przy fakturze
+  // z wieloma nowymi farbami przycisk „Zapisz” zostaje wyłączony i faktura się nie zapisuje (Edyta 8a60ee92:
+  // „wgrałam, ale nie widać w zakupach” — bo bez dopisania produktów nie dało się zapisać).
+  const addAllMissingProducts = async () => {
+    for (let i = 0; i < lines.length; i++) {
+      if (!lines[i].productId && prefill?.invoiceItems?.[i]?.product) await addProductFromInvoice(i)
+    }
+  }
+  const missingCount = lines.filter(l => !l.productId).length
   const canSave = supplierId && lines.every(l => l.productId && l.quantity > 0)
 
   const handleSave = async () => {
@@ -1097,7 +1158,22 @@ function PurchaseFormModal({ suppliers, products, onSupplierAdded, onProductAdde
             <span className="text-gray-500">Suma:</span> <span className="text-amber-600 font-bold">{fmt(grandTotal)} zł</span>
           </div>
         </div>
-        <div className="mt-4 flex justify-end gap-2">
+        {missingCount > 0 && (
+          <div className="mt-4 flex items-center gap-3 rounded-lg bg-red-50 ring-1 ring-red-200 px-3 py-2">
+            <span className="text-xs text-red-700">
+              {missingCount === 1 ? '1 pozycja nie ma' : `${missingCount} pozycje nie mają`} przypisanego materiału —
+              bez tego nie zapiszesz faktury. Dopisz je z katalogu albo:
+            </span>
+            <button onClick={addAllMissingProducts} type="button"
+              className="ml-auto shrink-0 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-500">
+              + Dodaj wszystkie brakujące jako nowe materiały
+            </button>
+          </div>
+        )}
+        <div className="mt-4 flex items-center justify-end gap-2">
+          {!canSave && missingCount === 0 && (
+            <span className="mr-auto text-xs text-gray-400">{!supplierId ? 'Wybierz dostawcę, aby zapisać.' : 'Uzupełnij ilości pozycji.'}</span>
+          )}
           <button onClick={onClose} className="rounded-lg px-4 py-2 text-sm text-gray-500 hover:bg-gray-100">Anuluj</button>
           <button onClick={handleSave} disabled={!canSave || saving}
             className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-400 disabled:opacity-50">

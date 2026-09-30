@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Plus, Trash2, Save, Pencil, ChevronUp, ChevronDown } from 'lucide-react'
+import { Plus, Trash2, Save, Pencil, ChevronUp, ChevronDown, FileDown } from 'lucide-react'
 import { usePaintingVariants } from '../hooks/usePaintingVariants'
 import { supabase } from '../lib/supabase'
 import { useToast } from '../contexts/ToastContext'
+import { generateCennikPdf } from '../lib/cennikPdf'
 
 export default function CennikPage() {
   const { variants, loading, refetch } = usePaintingVariants()
@@ -15,6 +16,21 @@ export default function CennikPage() {
   const [newName, setNewName] = useState('')
   const [newPrice, setNewPrice] = useState('')
   const [newSides, setNewSides] = useState(2)
+  const [generatingPdf, setGeneratingPdf] = useState(false)
+
+  const handlePdf = async () => {
+    if (generatingPdf) return
+    setGeneratingPdf(true)
+    try {
+      await generateCennikPdf(variants)
+      toast('Cennik PDF wygenerowany')
+    } catch (err) {
+      console.error('Błąd generowania PDF cennika:', err)
+      toast('Nie udało się wygenerować PDF', 'error')
+    } finally {
+      setGeneratingPdf(false)
+    }
+  }
 
   const startEdit = (v: typeof variants[number]) => {
     setEditingId(v.id)
@@ -98,10 +114,16 @@ export default function CennikPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between max-w-lg">
         <h1 className="text-xl font-bold text-gray-900">Cennik 2026</h1>
-        <button onClick={() => setShowAdd(true)}
-          className="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-400">
-          <Plus className="h-4 w-4" /> Dodaj wariant
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={handlePdf} disabled={generatingPdf || variants.length === 0}
+            className="flex items-center gap-2 rounded-lg bg-white border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+            <FileDown className="h-4 w-4" /> {generatingPdf ? 'Generuję…' : 'Pobierz PDF'}
+          </button>
+          <button onClick={() => setShowAdd(true)}
+            className="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-400">
+            <Plus className="h-4 w-4" /> Dodaj wariant
+          </button>
+        </div>
       </div>
 
       {showAdd && (
