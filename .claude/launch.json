@@ -4,7 +4,7 @@
     {
       "name": "dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": ["--prefix", "/Users/arturek/Developer/licznik-lakiernia", "run", "dev"],
       "port": 5174
     }
   ]
