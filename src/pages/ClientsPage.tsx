@@ -6,6 +6,7 @@ import { useClientPricing } from '../hooks/useClientPricing'
 import { supabase } from '../lib/supabase'
 import { useToast } from '../contexts/ToastContext'
 import { generateCennikPdf } from '../lib/cennikPdf'
+import CennikPdfHistory from '../components/CennikPdfHistory'
 import type { Client, ClientType } from '../types/database'
 
 export default function ClientsPage() {
@@ -35,8 +36,9 @@ export default function ClientsPage() {
   const [newVarPrice, setNewVarPrice] = useState('')
   const [newVarSides, setNewVarSides] = useState(2)
   const [generatingPdf, setGeneratingPdf] = useState(false)
+  const [historyRefresh, setHistoryRefresh] = useState(0)
 
-  const handleClientPdf = async (clientName: string) => {
+  const handleClientPdf = async (clientId: string, clientName: string) => {
     if (generatingPdf) return
     setGeneratingPdf(true)
     try {
@@ -45,7 +47,8 @@ export default function ClientsPage() {
         ...v,
         default_price_per_m2: pricing.find((p) => p.variant_id === v.id)?.price_per_m2 ?? v.default_price_per_m2,
       }))
-      await generateCennikPdf(effectiveVariants, { clientName })
+      await generateCennikPdf(effectiveVariants, { clientId, clientName })
+      setHistoryRefresh((n) => n + 1)
       toast('Cennik PDF wygenerowany')
     } catch (err) {
       console.error('Błąd generowania PDF cennika klienta:', err)
@@ -392,7 +395,7 @@ export default function ClientsPage() {
                 <h2 className="text-sm font-semibold text-gray-700">Cennik — {sel.name}</h2>
               </div>
               <div className="flex items-center gap-1.5">
-                <button onClick={() => handleClientPdf(sel.name)} disabled={generatingPdf || pricingLoading || variants.length === 0}
+                <button onClick={() => handleClientPdf(sel.id, sel.name)} disabled={generatingPdf || pricingLoading || variants.length === 0}
                   className="flex items-center gap-1 rounded-md bg-white border border-gray-300 px-2 py-1 text-[11px] font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50">
                   <FileDown className="h-3 w-3" /> {generatingPdf ? 'Generuję…' : 'Pobierz PDF'}
                 </button>
@@ -529,6 +532,8 @@ export default function ClientsPage() {
                 </table>
               </div>
             )}
+
+            <CennikPdfHistory clientId={selectedId} refreshToken={historyRefresh} />
           </div>
         )
       })()}

@@ -1,4 +1,8 @@
+import { supabase } from './supabase'
 import type { PaintingVariant } from '../types/database'
+
+// Data ważności drukowana na cenniku — zaktualizować przy nowym cenniku
+export const CENNIK_WAZNY_DO = '31.12.2026'
 
 // Dane firmy w nagłówku cennika (te same co na proformach w kuna-erp)
 const FIRMA = {
@@ -34,6 +38,25 @@ async function loadLogoDataUrl(): Promise<string | null> {
 export interface CennikPdfOptions {
   /** Nazwa klienta — pojawia się pod tytułem („Cennik przygotowany dla: …”) i w nazwie pliku */
   clientName?: string
+  /** Id klienta — tylko do wpisu w historii generowań */
+  clientId?: string
+}
+
+/** Zapis do historii generowań (tabela cennik_pdf_log). Błąd logowania nie przerywa pobierania PDF. */
+async function logCennikGeneration(variants: PaintingVariant[], options: CennikPdfOptions) {
+  try {
+    const { data: userData } = await supabase.auth.getUser()
+    const prices = variants.map((v) => ({ name: v.name, price: v.default_price_per_m2, sides: v.sides }))
+    const { error } = await supabase.from('cennik_pdf_log').insert({
+      client_id: options.clientId ?? null,
+      client_name: options.clientName ?? null,
+      generated_by: userData?.user?.email ?? null,
+      prices,
+    })
+    if (error) console.error('Nie zapisano historii cennika:', error.message)
+  } catch (err) {
+    console.error('Nie zapisano historii cennika:', err)
+  }
 }
 
 export function buildCennikDd(variants: PaintingVariant[], logo: string | null, options: CennikPdfOptions = {}) {
@@ -94,7 +117,7 @@ export function buildCennikDd(variants: PaintingVariant[], logo: string | null, 
       ...(options.clientName
         ? [{ text: `Cennik przygotowany dla: ${options.clientName}`, fontSize: 10, bold: true, color: AMBER, margin: [0, 2, 0, 0] as [number, number, number, number] }]
         : []),
-      { text: `Obowiązuje od: ${dzis}`, fontSize: 8, color: GRAY, margin: [0, 0, 0, 10] as [number, number, number, number] },
+      { text: `Obowiązuje od: ${dzis}  ·  Cennik ważny do: ${CENNIK_WAZNY_DO}`, fontSize: 8, color: GRAY, margin: [0, 0, 0, 10] as [number, number, number, number] },
       {
         table: {
           headerRows: 1,
@@ -147,4 +170,6 @@ export async function generateCennikPdf(variants: PaintingVariant[], options: Ce
   const nazwaPliku = `Cennik lakierowania Kunagone${czlonKlient} ${new Date().toISOString().slice(0, 10)}.pdf`
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   pdfMake.createPdf(dd as any).download(nazwaPliku)
+
+  await logCennikGeneration(variants, options)
 }

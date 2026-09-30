@@ -4,6 +4,7 @@ import { usePaintingVariants } from '../hooks/usePaintingVariants'
 import { supabase } from '../lib/supabase'
 import { useToast } from '../contexts/ToastContext'
 import { generateCennikPdf } from '../lib/cennikPdf'
+import CennikPdfHistory from '../components/CennikPdfHistory'
 
 export default function CennikPage() {
   const { variants, loading, refetch } = usePaintingVariants()
@@ -17,12 +18,14 @@ export default function CennikPage() {
   const [newPrice, setNewPrice] = useState('')
   const [newSides, setNewSides] = useState(2)
   const [generatingPdf, setGeneratingPdf] = useState(false)
+  const [historyRefresh, setHistoryRefresh] = useState(0)
 
   const handlePdf = async () => {
     if (generatingPdf) return
     setGeneratingPdf(true)
     try {
       await generateCennikPdf(variants)
+      setHistoryRefresh((n) => n + 1)
       toast('Cennik PDF wygenerowany')
     } catch (err) {
       console.error('Błąd generowania PDF cennika:', err)
@@ -234,6 +237,8 @@ export default function CennikPage() {
           </tbody>
         </table>
       </div>
+
+      <CennikPdfHistory clientId={null} refreshToken={historyRefresh} />
     </div>
   )
 }
