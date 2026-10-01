@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { ZakupyZaopatrzenia, POLA_ZAKUPU_ERP, kosztZakupuErp, tylkoPln, type ZakupErp } from '../components/ZakupyZaopatrzenia'
 import { Navigate } from 'react-router-dom'
 import { Plus, Trash2, X, ChevronLeft, ChevronRight, Copy } from 'lucide-react'
 
@@ -46,7 +47,7 @@ export default function FinancePage() {
   // ale do tej pory lakiernia ich nie widziała (Anna cb3e6f9f, 30.09.2026: „dodawane koszty nie są
   // widoczne, mimo wgranej faktury"). Czytamy je wprost z tej samej bazy, bez kopiowania, żeby nie
   // było dwóch wersji tych samych kosztów.
-  const [zakupyErp, setZakupyErp] = useState<{ id: string; numer: string | null; data: string | null; opis: string | null; zamowienie: string | null; dostawca: string | null; koszt: number | null; koszt_dostawy: number | null; waluta: string | null }[]>([])
+  const [zakupyErp, setZakupyErp] = useState<ZakupErp[]>([])
   const [loading, setLoading] = useState(true)
   const [newExtraDesc, setNewExtraDesc] = useState('')
   const [newExtraAmount, setNewExtraAmount] = useState('')
@@ -74,10 +75,10 @@ export default function FinancePage() {
       supabase.from('painting_variants').select('name, default_price_per_m2'),
     ])
     const erpRes = await supabase.from('erp_supplies')
-      .select('id, numer, data, opis, zamowienie, dostawca, koszt, koszt_dostawy, waluta')
+      .select(POLA_ZAKUPU_ERP)
       .eq('kategoria', 'lakiernia').gte('data', dateFrom).lte('data', dateTo).order('data', { ascending: false })
     // Brak dostępu albo błąd nie może zablokować raportu — lakiernia liczy się dalej ze swoich tabel.
-    setZakupyErp(erpRes.error ? [] : (erpRes.data ?? []) as typeof zakupyErp)
+    setZakupyErp(erpRes.error ? [] : (erpRes.data ?? []) as ZakupErp[])
     setVariants((variantsRes.data ?? []) as { name: string; default_price_per_m2: number }[])
     const allOrders = (ordersRes.data as unknown as OrderWithItems[]) ?? []
     setOrders(allOrders.filter(o => {
@@ -115,8 +116,7 @@ export default function FinancePage() {
   const totalHours = useMemo(() => filteredLogs.reduce((s, l) => s + Number(l.hours), 0), [filteredLogs])
   // Koszt pozycji z Zaopatrzenia: sama pozycja plus jej wysyłka. Liczymy tylko PLN — lakiernia rozlicza się
   // w złotówkach, a pozycja w obcej walucie bez kursu dałaby zmyśloną kwotę.
-  const kosztZakupuErp = (z: { koszt: number | null; koszt_dostawy: number | null }) => (Number(z.koszt) || 0) + (Number(z.koszt_dostawy) || 0)
-  const zakupyErpPln = useMemo(() => zakupyErp.filter(z => (z.waluta || 'PLN') === 'PLN'), [zakupyErp])
+  const zakupyErpPln = useMemo(() => zakupyErp.filter(tylkoPln), [zakupyErp])
   const zakupyErpKoszt = useMemo(() => zakupyErpPln.reduce((s, z) => s + kosztZakupuErp(z), 0), [zakupyErpPln])
   const materialCost = useMemo(() => filteredPurchases.filter(p => (p as unknown as { in_report?: boolean }).in_report !== false).reduce((s, p) => s + Number(p.total), 0) + zakupyErpKoszt, [filteredPurchases, zakupyErpKoszt])
   const extraCostTotal = useMemo(() => extraCosts.reduce((s, c) => s + Number(c.amount), 0), [extraCosts])
@@ -413,49 +413,8 @@ export default function FinancePage() {
         )
       })()}
 
-      {/* Zakupy z Zaopatrzenia ERP (Anna cb3e6f9f) — osobna tabela, żeby było widać, skąd przyszły.
-          Wliczone w „Materiały" razem z zakupami lakierów. */}
-      {zakupyErp.length > 0 && (
-        <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
-          <div className="bg-gray-50 px-3 py-1.5 flex items-center justify-between border-b border-gray-200">
-            <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Zakupy z Zaopatrzenia (ERP)</span>
-            <span className="text-[10px] text-gray-400">kategoria „Lakiernia" · wliczone w materiały</span>
-          </div>
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="border-b border-gray-200 bg-gray-50/50">
-                <th className="px-3 py-1.5 text-left font-medium text-gray-500">Data</th>
-                <th className="px-3 py-1.5 text-left font-medium text-gray-500">Nr</th>
-                <th className="px-3 py-1.5 text-left font-medium text-gray-500">Co</th>
-                <th className="px-3 py-1.5 text-left font-medium text-gray-500">Dostawca</th>
-                <th className="px-3 py-1.5 text-right font-medium text-gray-500">Kwota netto</th>
-              </tr>
-            </thead>
-            <tbody>
-              {zakupyErp.map((z, i) => {
-                const obca = (z.waluta || 'PLN') !== 'PLN'
-                return (
-                  <tr key={z.id} className={`border-b border-gray-50 ${i % 2 === 1 ? 'bg-gray-50/30' : ''} ${obca ? 'opacity-50' : ''}`}>
-                    <td className="px-3 py-1 text-gray-600">{z.data}</td>
-                    <td className="px-3 py-1 text-gray-500">{z.numer || '—'}</td>
-                    <td className="px-3 py-1 text-gray-800">{z.opis || z.zamowienie || '—'}</td>
-                    <td className="px-3 py-1 text-gray-600">{z.dostawca || '—'}</td>
-                    <td className="px-3 py-1 text-right text-orange-600 tabular-nums">
-                      {fmtPL(kosztZakupuErp(z))} {obca ? z.waluta : 'zł'}
-                      {!!Number(z.koszt_dostawy) && <span className="ml-1 text-[10px] text-gray-400">(w tym wysyłka {fmtPL(Number(z.koszt_dostawy))})</span>}
-                      {obca && <span className="ml-1 text-[10px] text-gray-400">nie wliczone — inna waluta</span>}
-                    </td>
-                  </tr>
-                )
-              })}
-              <tr className="bg-gray-50 font-semibold border-t border-gray-200">
-                <td className="px-3 py-1.5 text-gray-700" colSpan={4}>Razem</td>
-                <td className="px-3 py-1.5 text-right text-orange-600 tabular-nums">{fmtPL(zakupyErpKoszt)} zł</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      )}
+      {/* Zakupy z Zaopatrzenia ERP (Anna cb3e6f9f) — wliczone w „Materiały", ze zwrotami. */}
+      <ZakupyZaopatrzenia zakupy={zakupyErp} onZmiana={fetchData} dopisek={'kategoria „Lakiernia" · wliczone w materiały'} />
 
       {/* Purchases by supplier */}
       {supplierStats.length > 0 && (
