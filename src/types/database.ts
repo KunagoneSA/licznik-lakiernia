@@ -11,6 +11,8 @@ export interface Client {
   email: string | null
   access_code: string | null
   created_at: string
+  // Karta tego klienta w ERP Kuna (erp_contractors) — wspólny CRM z handlowcem lakierni (06.10.2026)
+  contractor_id?: string | null
 }
 
 export interface PaintingVariant {
@@ -46,6 +48,8 @@ export interface Order {
   notes: string | null
   created_at: string
   created_by: string | null
+  // Handlowiec, który pozyskał zamówienie (opiekun karty w ERP w chwili przyjęcia) — jego wynik
+  handlowiec?: string | null
   client?: Client
 }
 

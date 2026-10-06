@@ -5,6 +5,7 @@ import { useClients } from '../hooks/useClients'
 import { useToast } from '../contexts/ToastContext'
 import { useModalKeys } from '../hooks/useModalKeys'
 import ColorSwatch from './ColorSwatch'
+import { kartaErp } from './ErpKlient'
 
 interface Props {
   onClose: () => void
@@ -26,8 +27,13 @@ export default function NewOrderModal({ onClose, onSaved }: Props) {
   const handleSave = async () => {
     if (!clientId) return
     setSaving(true)
+    // Zamówienie liczy się opiekunowi klienta z ERP w chwili przyjęcia (np. handlowcowi lakierni).
+    // Zapisujemy go przy zamówieniu, żeby późniejsza zmiana opiekuna nie przepisywała historii.
+    const contractorId = clients.find((c) => c.id === clientId)?.contractor_id
+    const handlowiec = contractorId ? (await kartaErp(contractorId))?.opiekun ?? null : null
     const { error } = await supabase.from('orders').insert({
       client_id: clientId,
+      handlowiec,
       description: description || null,
       color: color || null,
       accepted_date: acceptedDate || null,
