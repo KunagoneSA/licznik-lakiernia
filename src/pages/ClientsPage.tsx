@@ -7,11 +7,13 @@ import { supabase } from '../lib/supabase'
 import { useToast } from '../contexts/ToastContext'
 import { generateCennikPdf } from '../lib/cennikPdf'
 import CennikPdfHistory from '../components/CennikPdfHistory'
-import { PowiazanieErp, SzukajWErp, type KartaErp } from '../components/ErpKlient'
+import { useAuth } from '../contexts/AuthContext'
+import { NotatkiCrm, PowiazanieErp, SzukajWErp, type KartaErp } from '../components/ErpKlient'
 import type { Client, ClientType } from '../types/database'
 
 export default function ClientsPage() {
   const { clients, refetch: refetchClients } = useClients()
+  const { user } = useAuth()
   const { variants, refetch: refetchVariants } = usePaintingVariants()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const { pricing, loading: pricingLoading, upsertPricing, deletePricing } = useClientPricing(selectedId)
@@ -418,6 +420,7 @@ export default function ClientsPage() {
         return (
           <div key={selectedId} className="space-y-3 border-t border-gray-200 pt-4">
             <PowiazanieErp clientId={sel.id} contractorId={sel.contractor_id} onZmiana={refetchClients} />
+            {sel.contractor_id && <NotatkiCrm contractorId={sel.contractor_id} email={user?.email} />}
             <div className="flex items-center justify-between max-w-lg">
               <div className="flex items-center gap-2">
                 {sel.type === 'company' ? <Building2 className="h-4 w-4 text-blue-500" /> : <User className="h-4 w-4 text-violet-500" />}

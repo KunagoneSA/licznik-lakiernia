@@ -108,3 +108,64 @@ export function PowiazanieErp({ clientId, contractorId, onZmiana }: {
     </div>
   )
 }
+
+// ── Notatki CRM z lakierni (etap 4, 06.10.2026) ──────────────────────────────────────────
+// Kasia (kierownik lakierni) dopisuje notatki od razu do karty klienta w ERP, tej samej, którą prowadzi
+// handlowiec lakierni i nadzoruje Kamila. Notatki z zamówień Kunagone (autor „Zamówienie") pomijamy.
+type Notatka = { id: string; content: string; author_name: string | null; created_at: string }
+
+const autor = (email: string | undefined) =>
+  email === 'lakiernia@kunagone.pl' ? 'Kasia (lakiernia)' : `${(email ?? '').split('@')[0]} (lakiernia)`
+
+export function NotatkiCrm({ contractorId, email }: { contractorId: string; email: string | undefined }) {
+  const [lista, setLista] = useState<Notatka[]>([])
+  const [tekst, setTekst] = useState('')
+  const [zapisuje, setZapisuje] = useState(false)
+  const [blad, setBlad] = useState('')
+
+  const wczytaj = async () => {
+    const { data } = await supabase.from('erp_contractor_notes').select('id, content, author_name, created_at')
+      .eq('contractor_id', contractorId).neq('author_name', 'Zamówienie')
+      .order('created_at', { ascending: false }).limit(20)
+    setLista((data ?? []) as Notatka[])
+  }
+  useEffect(() => { void wczytaj() }, [contractorId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const dodaj = async () => {
+    const tresc = tekst.trim()
+    if (!tresc) return
+    setZapisuje(true); setBlad('')
+    const { error } = await supabase.from('erp_contractor_notes')
+      .insert({ contractor_id: contractorId, content: tresc, author_email: email ?? null, author_name: autor(email) })
+    setZapisuje(false)
+    if (error) { setBlad('Nie zapisało się: ' + error.message); return }
+    setTekst('')
+    await wczytaj()
+  }
+
+  return (
+    <div className="max-w-lg rounded-lg border border-gray-200 bg-white p-2.5">
+      <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-gray-500">Notatki CRM (widać je w ERP)</div>
+      <div className="flex gap-1.5">
+        <textarea value={tekst} onChange={(e) => setTekst(e.target.value)} rows={2} placeholder="Np. dzwonił klient, chce wycenę na fronty w kolorze…"
+          onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) void dodaj() }}
+          className="w-full resize-y rounded border border-gray-300 px-2 py-1 text-xs outline-none focus:ring-2 focus:ring-amber-500/30" />
+        <button type="button" disabled={zapisuje || !tekst.trim()} onClick={() => void dodaj()}
+          className="self-start rounded bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-600 disabled:opacity-50">
+          {zapisuje ? 'Zapisuję…' : 'Dodaj'}
+        </button>
+      </div>
+      {blad && <p className="mt-1 text-[11px] text-red-600">{blad}</p>}
+      {lista.length > 0 && (
+        <div className="mt-2 max-h-64 divide-y divide-gray-100 overflow-y-auto">
+          {lista.map((n) => (
+            <div key={n.id} className="py-1 text-xs">
+              <div className="text-[10px] text-gray-400">{new Date(n.created_at).toLocaleString('pl-PL', { dateStyle: 'short', timeStyle: 'short' })} · {n.author_name ?? '—'}</div>
+              <div className="whitespace-pre-wrap text-gray-700">{n.content}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
