@@ -22,8 +22,9 @@ export interface ZakupErp {
   waluta: string | null
   zwrocono_ilosc: number | null
   zwrot_notatka: string | null
+  zalaczniki?: { url: string; name?: string }[] | null   // faktura (PDF albo zdjęcie) wgrana w ERP (Anna 34ff4632)
 }
-export const POLA_ZAKUPU_ERP = 'id, numer, data, opis, zamowienie, dostawca, ilosc, koszt, koszt_dostawy, waluta, zwrocono_ilosc, zwrot_notatka'
+export const POLA_ZAKUPU_ERP = 'id, numer, data, opis, zamowienie, dostawca, ilosc, koszt, koszt_dostawy, waluta, zwrocono_ilosc, zwrot_notatka, zalaczniki'
 
 /** Ile zwrócono, przycięte do ilości pozycji. Pozycja bez ilości: zwrot znaczy „całość" (1 z 1). */
 const iloscPozycji = (z: ZakupErp) => (Number(z.ilosc) > 0 ? Number(z.ilosc) : 1)
@@ -103,6 +104,12 @@ export function ZakupyZaopatrzenia({ zakupy, onZmiana, dopisek }: { zakupy: Zaku
                 <td className="px-3 py-1 text-gray-500">{z.numer || '—'}</td>
                 <td className="px-3 py-1 text-gray-800">
                   <span className={calyZwrot ? 'line-through text-gray-400' : ''}>{z.opis || z.zamowienie || '—'}</span>
+                  {(z.zalaczniki ?? []).map((a, k) => (
+                    <a key={a.url} href={a.url} target="_blank" rel="noopener noreferrer" title={a.name || 'Faktura'}
+                      className="ml-1.5 text-[10px] font-semibold text-amber-600 hover:underline">
+                      📎 {/\.pdf($|\?)/i.test(a.url) ? 'PDF' : 'foto'}{(z.zalaczniki ?? []).length > 1 ? ` ${k + 1}` : ''}
+                    </a>
+                  ))}
                   {Number(z.ilosc) > 0 && <span className="ml-1 text-[10px] text-gray-400">({z.ilosc} szt.)</span>}
                   {zwrot > 0 && (
                     <div className="text-[10px] font-medium text-rose-600">
