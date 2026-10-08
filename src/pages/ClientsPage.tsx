@@ -63,10 +63,12 @@ export default function ClientsPage() {
     }
   }
 
+  // W cenniku klienta tylko warianty z in_cennik — ukryte (historyczne) zostają w zamówieniach
+  const cennikVariants = variants.filter((v) => v.in_cennik !== false)
   const mdfVariantsMap = new Map(
-    variants.filter((v) => v.name.includes('(+ MDF)')).map((v) => [v.name.replace(' (+ MDF)', ''), v])
+    cennikVariants.filter((v) => v.name.includes('(+ MDF)')).map((v) => [v.name.replace(' (+ MDF)', ''), v])
   )
-  const mainVariantsList = variants.filter((v) => !v.name.includes('(+ MDF)'))
+  const mainVariantsList = cennikVariants.filter((v) => !v.name.includes('(+ MDF)'))
 
   const startVariantEdit = (v: typeof variants[number]) => {
     setEditingVariantId(v.id)

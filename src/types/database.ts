@@ -21,6 +21,10 @@ export interface PaintingVariant {
   default_price_per_m2: number
   sides: number
   sort_order: number | null
+  /** false = nie pokazuj w cenniku ani w PDF (wariant tylko do zamówień / historyczny) */
+  in_cennik: boolean
+  /** 'm2' albo 'szt' — jednostka ceny */
+  unit: string
 }
 
 export interface ClientPricing {
