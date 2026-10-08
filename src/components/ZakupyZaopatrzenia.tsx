@@ -8,6 +8,8 @@ import { useToast } from '../contexts/ToastContext'
 // Zwrot (Anna cb3e6f9f, 01.10.2026): „przycisk »zwrócono«, po jego naciśnięciu przekreślasz pozycję (nie usuwasz)
 // i odliczasz automatycznie ten koszt; daj możliwość edycji, bo mogę kupić 3 puszki bejcy, a zwrócić tylko 1".
 // Zwrot zapisujemy przy samej pozycji w erp_supplies, więc liczy się wszędzie: tu, w Finansach i w kaflu ERP.
+// Zmiana (Anna 8ccce21a, 08.10.2026): bez liczenia sztuk, tylko całość albo część. Proporcja kosztu „nie będzie
+// dawać wiarygodnych danych". Całość = koszt towaru się nie liczy; część = oznaczenie, koszt bez zmian.
 
 export interface ZakupErp {
   id: string
@@ -22,18 +24,20 @@ export interface ZakupErp {
   waluta: string | null
   zwrocono_ilosc: number | null
   zwrot_notatka: string | null
+  zwrot_at: string | null
   zalaczniki?: { url: string; name?: string }[] | null   // faktura (PDF albo zdjęcie) wgrana w ERP (Anna 34ff4632)
 }
-export const POLA_ZAKUPU_ERP = 'id, numer, data, opis, zamowienie, dostawca, ilosc, koszt, koszt_dostawy, waluta, zwrocono_ilosc, zwrot_notatka, zalaczniki'
+export const POLA_ZAKUPU_ERP = 'id, numer, data, opis, zamowienie, dostawca, ilosc, koszt, koszt_dostawy, waluta, zwrocono_ilosc, zwrot_notatka, zwrot_at, zalaczniki'
 
-/** Ile zwrócono, przycięte do ilości pozycji. Pozycja bez ilości: zwrot znaczy „całość" (1 z 1). */
+/** Ilość pozycji. Pozycja bez ilości liczy się jako 1 sztuka. */
 const iloscPozycji = (z: ZakupErp) => (Number(z.ilosc) > 0 ? Number(z.ilosc) : 1)
-const iloscZwrotu = (z: ZakupErp) => Math.min(Math.max(Number(z.zwrocono_ilosc) || 0, 0), iloscPozycji(z))
+/** Zwrot w bazie (ta sama reguła co Zaopatrzenie w ERP): zwrot_at = był zwrot; zwrocono_ilosc >= ilości = całość, inaczej część. */
+const rodzajZwrotu = (z: ZakupErp): 'calosc' | 'czesc' | null =>
+  !z.zwrot_at ? null : (Number(z.zwrocono_ilosc) || 0) >= iloscPozycji(z) ? 'calosc' : 'czesc'
 
-/** Koszt po zwrocie: część pozycji proporcjonalnie do tego, co zostało, plus wysyłka (wysyłki nikt nie oddaje). */
+/** Koszt po zwrocie: zwrot całości = sama wysyłka; zwrot części = bez zmian (wysyłki nikt nie oddaje). */
 export function kosztZakupuErp(z: ZakupErp): number {
-  const pozostalo = (iloscPozycji(z) - iloscZwrotu(z)) / iloscPozycji(z)
-  return (Number(z.koszt) || 0) * pozostalo + (Number(z.koszt_dostawy) || 0)
+  return (rodzajZwrotu(z) === 'calosc' ? 0 : (Number(z.koszt) || 0)) + (Number(z.koszt_dostawy) || 0)
 }
 export const tylkoPln = (z: ZakupErp) => (z.waluta || 'PLN') === 'PLN'
 
@@ -43,20 +47,18 @@ export function ZakupyZaopatrzenia({ zakupy, onZmiana, dopisek }: { zakupy: Zaku
   const { user } = useAuth()
   const { toast } = useToast()
   const [edytowany, setEdytowany] = useState<string | null>(null)
-  const [ile, setIle] = useState('')
+  const [rodzaj, setRodzaj] = useState<'calosc' | 'czesc'>('calosc')
   const [notatka, setNotatka] = useState('')
   const [zapisuje, setZapisuje] = useState(false)
 
   const otworz = (z: ZakupErp) => {
     setEdytowany(z.id)
-    setIle(String(iloscZwrotu(z) || iloscPozycji(z)).replace('.', ','))
+    setRodzaj(rodzajZwrotu(z) ?? 'calosc')
     setNotatka(z.zwrot_notatka ?? '')
   }
   const zapisz = async (z: ZakupErp, cofnij = false) => {
-    const wartosc = cofnij ? null : Number(ile.replace(',', '.'))
-    if (!cofnij && (!Number.isFinite(wartosc) || (wartosc as number) <= 0 || (wartosc as number) > iloscPozycji(z))) {
-      toast(`Podaj ilość zwrotu od 0 do ${iloscPozycji(z)}`, 'error'); return
-    }
+    // Całość = cała ilość pozycji; część = bez liczenia sztuk (ERP może dopisać sztuki zdjęte ze stanu).
+    const wartosc = cofnij ? null : rodzaj === 'calosc' ? iloscPozycji(z) : null
     setZapisuje(true)
     const { data, error } = await supabase.from('erp_supplies').update({
       zwrocono_ilosc: wartosc,
@@ -67,7 +69,7 @@ export function ZakupyZaopatrzenia({ zakupy, onZmiana, dopisek }: { zakupy: Zaku
     setZapisuje(false)
     // Brak zwróconego wiersza = zapis nie przeszedł (np. uprawnienia), choć błędu nie było.
     if (error || !data?.length) { toast('Nie zapisano zwrotu' + (error ? `: ${error.message}` : ''), 'error'); return }
-    toast(cofnij ? 'Zwrot cofnięty' : 'Zwrot zapisany, koszt odliczony')
+    toast(cofnij ? 'Zwrot cofnięty' : rodzaj === 'calosc' ? 'Zwrot całości zapisany, koszt odliczony' : 'Zwrot części zapisany')
     setEdytowany(null)
     onZmiana()
   }
@@ -95,9 +97,8 @@ export function ZakupyZaopatrzenia({ zakupy, onZmiana, dopisek }: { zakupy: Zaku
         <tbody>
           {zakupy.map((z, i) => {
             const obca = !tylkoPln(z)
-            const zwrot = iloscZwrotu(z)
-            const calyZwrot = zwrot > 0 && zwrot >= iloscPozycji(z)
-            const czesciowy = zwrot > 0 && !calyZwrot
+            const rz = rodzajZwrotu(z)
+            const calyZwrot = rz === 'calosc'
             return (
               <tr key={z.id} className={`border-b border-gray-50 align-top ${i % 2 === 1 ? 'bg-gray-50/30' : ''} ${obca ? 'opacity-50' : ''}`}>
                 <td className="px-3 py-1 text-gray-600">{z.data}</td>
@@ -111,23 +112,26 @@ export function ZakupyZaopatrzenia({ zakupy, onZmiana, dopisek }: { zakupy: Zaku
                     </a>
                   ))}
                   {Number(z.ilosc) > 0 && <span className="ml-1 text-[10px] text-gray-400">({z.ilosc} szt.)</span>}
-                  {zwrot > 0 && (
+                  {rz && (
                     <div className="text-[10px] font-medium text-rose-600">
-                      {calyZwrot ? 'Zwrócono całość' : `Zwrócono ${zwrot} z ${iloscPozycji(z)}`}
+                      {calyZwrot ? 'Zwrócono całość' : 'Zwrócono część'}
                       {z.zwrot_notatka && <span className="font-normal text-gray-500"> · {z.zwrot_notatka}</span>}
                     </div>
                   )}
                   {edytowany === z.id && (
                     <div className="mt-1 flex flex-wrap items-center gap-1.5 print:hidden">
                       <span className="text-[10px] text-gray-500">Zwrócono</span>
-                      <input value={ile} onChange={(e) => setIle(e.target.value)} inputMode="decimal"
-                        className="w-14 rounded border border-gray-300 px-1 py-0.5 text-right text-[11px]" />
-                      <span className="text-[10px] text-gray-500">z {iloscPozycji(z)}</span>
+                      {(['calosc', 'czesc'] as const).map((v) => (
+                        <button key={v} type="button" onClick={() => setRodzaj(v)}
+                          className={`rounded border px-2 py-0.5 text-[11px] font-semibold ${rodzaj === v ? 'border-rose-500 bg-rose-500 text-white' : 'border-gray-300 bg-white text-gray-600 hover:bg-rose-50'}`}>
+                          {v === 'calosc' ? 'całość' : 'część'}
+                        </button>
+                      ))}
                       <input value={notatka} onChange={(e) => setNotatka(e.target.value)} placeholder="powód, np. uszkodzona puszka"
                         className="min-w-[140px] flex-1 rounded border border-gray-300 px-1.5 py-0.5 text-[11px]" />
                       <button type="button" disabled={zapisuje} onClick={() => void zapisz(z)}
                         className="rounded bg-amber-500 px-2 py-0.5 text-[11px] font-semibold text-white hover:bg-amber-600 disabled:opacity-50">Zapisz</button>
-                      {zwrot > 0 && (
+                      {rz && (
                         <button type="button" disabled={zapisuje} onClick={() => void zapisz(z, true)}
                           className="rounded px-2 py-0.5 text-[11px] text-gray-500 hover:bg-gray-100">Cofnij zwrot</button>
                       )}
@@ -138,16 +142,16 @@ export function ZakupyZaopatrzenia({ zakupy, onZmiana, dopisek }: { zakupy: Zaku
                 <td className="px-3 py-1 text-gray-600">{z.dostawca || '—'}</td>
                 <td className="px-3 py-1 text-right tabular-nums">
                   <span className={calyZwrot ? 'text-gray-400' : 'text-orange-600'}>{fmt(kosztZakupuErp(z))} {obca ? z.waluta : 'zł'}</span>
-                  {czesciowy && <div className="text-[10px] text-gray-400 line-through">{fmt((Number(z.koszt) || 0) + (Number(z.koszt_dostawy) || 0))} zł</div>}
+                  {calyZwrot && !!Number(z.koszt) && <div className="text-[10px] text-gray-400 line-through">{fmt((Number(z.koszt) || 0) + (Number(z.koszt_dostawy) || 0))} zł</div>}
                   {!!Number(z.koszt_dostawy) && <div className="text-[10px] text-gray-400">w tym wysyłka {fmt(Number(z.koszt_dostawy))}</div>}
                   {obca && <div className="text-[10px] text-gray-400">nie wliczone — inna waluta</div>}
                 </td>
                 <td className="px-2 py-1 text-right print:hidden">
                   <button type="button" onClick={() => (edytowany === z.id ? setEdytowany(null) : otworz(z))}
-                    title={zwrot > 0 ? 'Popraw zwrot' : 'Zwrot (całość albo część)'}
+                    title={rz ? 'Popraw zwrot' : 'Zwrot (całość albo część)'}
                     className="inline-flex items-center gap-1 rounded border border-gray-200 px-1.5 py-0.5 text-[10px] text-gray-500 hover:bg-gray-50 hover:text-rose-600">
-                    {zwrot > 0 ? <Pencil className="h-3 w-3" /> : <Undo2 className="h-3 w-3" />}
-                    {zwrot > 0 ? 'Zwrot' : 'Zwrócono'}
+                    {rz ? <Pencil className="h-3 w-3" /> : <Undo2 className="h-3 w-3" />}
+                    {rz ? 'Zwrot' : 'Zwrócono'}
                   </button>
                 </td>
               </tr>
