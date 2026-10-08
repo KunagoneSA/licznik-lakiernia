@@ -85,13 +85,15 @@ export default function CennikPage() {
     refetch()
   }
 
+  // W cenniku tylko warianty z in_cennik — ukryte (historyczne) zostają w zamówieniach
+  const cennikVariants = variants.filter((v) => v.in_cennik !== false)
   // Pair up main variants with their "+ MDF" counterparts (needed early for moveVariant)
   const mdfVariants = new Map(
-    variants
+    cennikVariants
       .filter((v) => v.name.includes('(+ MDF)'))
       .map((v) => [v.name.replace(' (+ MDF)', ''), v])
   )
-  const mainVariants = variants.filter((v) => !v.name.includes('(+ MDF)'))
+  const mainVariants = cennikVariants.filter((v) => !v.name.includes('(+ MDF)'))
   const hasMdfColumn = mdfVariants.size > 0
 
   const handleDelete = async (id: string, name: string) => {
@@ -199,7 +201,7 @@ export default function CennikPage() {
                   ) : (
                     <>
                       <td className="px-2 py-1.5 text-gray-800 font-medium">{v.name}</td>
-                      <td className="py-1.5 pr-5 text-right text-amber-600 font-semibold tabular-nums">{v.default_price_per_m2}</td>
+                      <td className="py-1.5 pr-5 text-right text-amber-600 font-semibold tabular-nums">{v.default_price_per_m2}{v.unit === 'szt' && <span className="text-[9px] text-gray-400 font-normal"> /szt</span>}</td>
                       {hasMdfColumn && (
                         <td className="py-1.5 pr-5 text-right text-amber-600 font-semibold tabular-nums">
                           {mdfV ? mdfV.default_price_per_m2 : ''}

@@ -7,10 +7,13 @@ import { supabase } from '../lib/supabase'
 import { useToast } from '../contexts/ToastContext'
 import { generateCennikPdf } from '../lib/cennikPdf'
 import CennikPdfHistory from '../components/CennikPdfHistory'
+import { useAuth } from '../contexts/AuthContext'
+import { NotatkiCrm, PowiazanieErp, SzukajWErp, type KartaErp } from '../components/ErpKlient'
 import type { Client, ClientType } from '../types/database'
 
 export default function ClientsPage() {
   const { clients, refetch: refetchClients } = useClients()
+  const { user } = useAuth()
   const { variants, refetch: refetchVariants } = usePaintingVariants()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const { pricing, loading: pricingLoading, upsertPricing, deletePricing } = useClientPricing(selectedId)
@@ -19,6 +22,8 @@ export default function ClientsPage() {
   const [newContactName, setNewContactName] = useState('')
   const [newPhone, setNewPhone] = useState('')
   const [newEmail, setNewEmail] = useState('')
+  // Karta w ERP wybrana przy dodawaniu (klient handlowca lakierni) — wypełnia pola i wiąże klienta
+  const [newKartaErp, setNewKartaErp] = useState<KartaErp | null>(null)
   const { toast } = useToast()
 
   // Inline editing state
@@ -58,10 +63,12 @@ export default function ClientsPage() {
     }
   }
 
+  // W cenniku klienta tylko warianty z in_cennik — ukryte (historyczne) zostają w zamówieniach
+  const cennikVariants = variants.filter((v) => v.in_cennik !== false)
   const mdfVariantsMap = new Map(
-    variants.filter((v) => v.name.includes('(+ MDF)')).map((v) => [v.name.replace(' (+ MDF)', ''), v])
+    cennikVariants.filter((v) => v.name.includes('(+ MDF)')).map((v) => [v.name.replace(' (+ MDF)', ''), v])
   )
-  const mainVariantsList = variants.filter((v) => !v.name.includes('(+ MDF)'))
+  const mainVariantsList = cennikVariants.filter((v) => !v.name.includes('(+ MDF)'))
 
   const startVariantEdit = (v: typeof variants[number]) => {
     setEditingVariantId(v.id)
@@ -139,7 +146,9 @@ export default function ClientsPage() {
       contact_name: newContactName.trim() || null,
       phone: newPhone.trim() || null,
       email: newEmail.trim() || null,
+      contractor_id: newKartaErp?.id ?? null,
     })
+    setNewKartaErp(null)
     setNewName('')
     setNewContactName('')
     setNewPhone('')
@@ -158,7 +167,27 @@ export default function ClientsPage() {
     refetchClients()
   }
 
+  const wybierzZErp = (k: KartaErp) => {
+    setNewKartaErp(k)
+    setNewName(k.name)
+    setNewContactName(k.contact_person ?? '')
+    setNewPhone(k.phone ?? '')
+    setNewEmail(k.email ?? '')
+  }
+  const polePowiazania = (
+    <div>
+      <label className="block text-[10px] font-medium text-gray-500 uppercase mb-0.5">Klient z ERP (opcjonalnie)</label>
+      {newKartaErp ? (
+        <div className="flex items-center gap-2 text-xs text-sky-800">
+          Powiązany z kartą: <b>{newKartaErp.name}</b>{newKartaErp.opiekun ? ` (opiekun: ${newKartaErp.opiekun})` : ''}
+          <button type="button" onClick={() => setNewKartaErp(null)} className="text-gray-400 hover:text-red-500"><X className="h-3 w-3" /></button>
+        </div>
+      ) : <SzukajWErp onWybierz={wybierzZErp} />}
+    </div>
+  )
+
   const resetAddForm = () => {
+    setNewKartaErp(null)
     setNewName('')
     setNewContactName('')
     setNewPhone('')
@@ -247,7 +276,7 @@ export default function ClientsPage() {
                       className={`border-b border-gray-100 cursor-pointer transition-colors ${
                         selectedId === c.id ? 'bg-amber-50' : 'hover:bg-gray-50'
                       }`}>
-                      <td className="px-2 py-1 font-medium text-gray-800">{c.name}</td>
+                      <td className="px-2 py-1 font-medium text-gray-800">{c.name}{c.contractor_id && <span className="ml-1.5 rounded bg-sky-100 px-1 text-[9px] font-semibold text-sky-700" title="Powiązany z kartą w ERP">ERP</span>}</td>
                       <td className="px-2 py-1 text-gray-500">{c.contact_name || '—'}</td>
                       <td className="px-2 py-1 text-gray-500">{c.phone || '—'}</td>
                       <td className="px-2 py-1 text-gray-500">{c.email || '—'}</td>
@@ -269,6 +298,7 @@ export default function ClientsPage() {
 
           {showAdd === 'company' && (
             <div className="mt-2 space-y-2 rounded-lg border border-amber-200 bg-amber-50/50 p-3">
+              {polePowiazania}
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-[10px] font-medium text-gray-500 uppercase mb-0.5">Nazwa firmy</label>
@@ -340,6 +370,7 @@ export default function ClientsPage() {
                       selectedId === c.id ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-white text-gray-700 hover:bg-gray-50 border border-transparent'
                     }`}>
                     <span className="font-medium">{c.name}</span>
+                    {c.contractor_id && <span className="ml-1.5 rounded bg-sky-100 px-1 text-[9px] font-semibold text-sky-700" title="Powiązany z kartą w ERP">ERP</span>}
                     {c.phone && <span className="ml-2 text-gray-400">{c.phone}</span>}
                   </button>
                   <button onClick={() => handleDeleteClient(c.id, c.name)}
@@ -354,6 +385,7 @@ export default function ClientsPage() {
 
           {showAdd === 'individual' && (
             <div className="mt-2 space-y-2 rounded-lg border border-amber-200 bg-amber-50/50 p-3">
+              {polePowiazania}
               <div>
                 <label className="block text-[10px] font-medium text-gray-500 uppercase mb-0.5">Imię i nazwisko</label>
                 <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)}
@@ -389,6 +421,8 @@ export default function ClientsPage() {
         const hasMdfCol = mdfVariantsMap.size > 0
         return (
           <div key={selectedId} className="space-y-3 border-t border-gray-200 pt-4">
+            <PowiazanieErp clientId={sel.id} contractorId={sel.contractor_id} onZmiana={refetchClients} />
+            {sel.contractor_id && <NotatkiCrm contractorId={sel.contractor_id} email={user?.email} />}
             <div className="flex items-center justify-between max-w-lg">
               <div className="flex items-center gap-2">
                 {sel.type === 'company' ? <Building2 className="h-4 w-4 text-blue-500" /> : <User className="h-4 w-4 text-violet-500" />}
