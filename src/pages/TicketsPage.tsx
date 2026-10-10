@@ -4,6 +4,24 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../contexts/ToastContext'
 
+// Zdjęcie z prywatnego bucketu ticket-attachments: link podpisany na godzinę, bez dostępu „na sam link".
+// Starsze wpisy mogły mieć pełny publiczny adres, więc wyciągamy z niego ścieżkę.
+function ZdjecieZgloszenia({ sciezka }: { sciezka: string }) {
+  const [url, setUrl] = useState<string | null>(null)
+  useEffect(() => {
+    const p = sciezka.includes('/ticket-attachments/') ? decodeURIComponent(sciezka.split('/ticket-attachments/')[1]) : sciezka
+    let aktywny = true
+    void supabase.storage.from('ticket-attachments').createSignedUrl(p, 3600).then(({ data }) => { if (aktywny) setUrl(data?.signedUrl ?? null) })
+    return () => { aktywny = false }
+  }, [sciezka])
+  if (!url) return null
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer" className="mt-2 block">
+      <img src={url} alt="załącznik" className="max-h-48 rounded border border-gray-200" />
+    </a>
+  )
+}
+
 type TicketType = 'awaria' | 'uwaga' | 'zapotrzebowanie'
 type TicketStatus = 'otwarte' | 'w_trakcie' | 'zakonczone'
 
@@ -147,8 +165,8 @@ export default function TicketsPage() {
           contentType: photo.type, upsert: false,
         })
         if (upErr) { toast('Błąd uploadu zdjęcia'); console.error(upErr); setSubmittingComment(null); return }
-        const { data: pub } = supabase.storage.from('ticket-attachments').getPublicUrl(path)
-        photoUrl = pub.publicUrl
+        // Bucket jest prywatny: zapisujemy samą ścieżkę, a zdjęcie pokazujemy przez krótki podpisany link.
+        photoUrl = path
       }
       const { error: insErr } = await supabase.from('ticket_comments').insert({
         ticket_id: ticketId,
@@ -322,11 +340,7 @@ export default function TicketsPage() {
                               )}
                             </div>
                             {c.text && <p className="mt-1 text-xs text-gray-700 whitespace-pre-wrap">{c.text}</p>}
-                            {c.photo_url && (
-                              <a href={c.photo_url} target="_blank" rel="noopener noreferrer" className="mt-2 block">
-                                <img src={c.photo_url} alt="załącznik" className="max-h-48 rounded border border-gray-200" />
-                              </a>
-                            )}
+                            {c.photo_url && <ZdjecieZgloszenia sciezka={c.photo_url} />}
                           </div>
                         ))}
 
